@@ -1,7 +1,7 @@
 {
   "name": "munim-bluetooth",
   "version": "0.2.1",
-  "description": "munim-bluetooth is a react native package for all your Bluetooth, BLE, and BLE pheripheral needs",
+  "description": "A comprehensive React Native library for all your Bluetooth Low Energy (BLE) needs, supporting both peripheral and central roles with Expo support",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -16,7 +16,18 @@
   },
   "keywords": [
     "react-native",
-    "munim-bluetooth"
+    "expo",
+    "bluetooth",
+    "ble",
+    "peripheral",
+    "central",
+    "gatt",
+    "bluetooth-low-energy",
+    "ios",
+    "android",
+    "typescript",
+    "nitro-modules",
+    "munim-technologies"
   ],
   "files": [
     "src",
@@ -46,13 +57,27 @@
     "type": "git",
     "url": "https://github.com/munimtechnologies/munim-bluetooth.git"
   },
-  "author": "sheehanmunim",
+  "author": "sheehanmunim <support@munimtech.com> (https://github.com/sheehanmunim)",
   "license": "MIT",
-  "bugs": "https://github.com/munimtechnologies/munim-bluetooth/issues",
+  "bugs": {
+    "url": "https://github.com/munimtechnologies/munim-bluetooth/issues"
+  },
   "homepage": "https://github.com/munimtechnologies/munim-bluetooth#readme",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "expo": {
+    "name": "munim-bluetooth",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "install": {
+      "exclude": [
+        "react-native"
+      ]
+    }
   },
   "devDependencies": {
     "@jamesacarr/eslint-formatter-github-actions": "^0.2.0",
