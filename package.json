@@ -1,6 +1,6 @@
 {
   "name": "munim-bluetooth",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "munim-bluetooth is a react native package for all your Bluetooth, BLE, and BLE pheripheral needs",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
