@@ -1,10 +1,10 @@
-# react-native-munim-bluetooth
+# munim-bluetooth
 
 munim-bluetooth is a react native package for all your Bluetooth, BLE, and BLE pheripheral needs
 
-[![Version](https://img.shields.io/npm/v/react-native-munim-bluetooth.svg)](https://www.npmjs.com/package/react-native-munim-bluetooth)
-[![Downloads](https://img.shields.io/npm/dm/react-native-munim-bluetooth.svg)](https://www.npmjs.com/package/react-native-munim-bluetooth)
-[![License](https://img.shields.io/npm/l/react-native-munim-bluetooth.svg)](https://github.com/patrickkabwe/react-native-munim-bluetooth/LICENSE)
+[![Version](https://img.shields.io/npm/v/munim-bluetooth.svg)](https://www.npmjs.com/package/munim-bluetooth)
+[![Downloads](https://img.shields.io/npm/dm/munim-bluetooth.svg)](https://www.npmjs.com/package/munim-bluetooth)
+[![License](https://img.shields.io/npm/l/munim-bluetooth.svg)](https://github.com/munimtechnologies/munim-bluetooth/LICENSE)
 
 ## Requirements
 
@@ -17,7 +17,7 @@ munim-bluetooth is a react native package for all your Bluetooth, BLE, and BLE p
 ## Installation
 
 ```bash
-npm install react-native-munim-bluetooth react-native-nitro-modules
+npm install munim-bluetooth react-native-nitro-modules
 ```
 
 ## Credits

@@ -1,5 +1,5 @@
 {
-  "name": "react-native-munim-bluetooth",
+  "name": "munim-bluetooth",
   "version": "0.1.0",
   "description": "munim-bluetooth is a react native package for all your Bluetooth, BLE, and BLE pheripheral needs",
   "main": "./lib/commonjs/index.js",
@@ -16,7 +16,7 @@
   },
   "keywords": [
     "react-native",
-    "react-native-munim-bluetooth"
+    "munim-bluetooth"
   ],
   "files": [
     "src",
@@ -42,11 +42,11 @@
   "workspaces": [
     "example"
   ],
-  "repository": "https://github.com/sheehanmunim/react-native-munim-bluetooth.git",
+  "repository": "https://github.com/munimtechnologies/munim-bluetooth.git",
   "author": "sheehanmunim",
   "license": "MIT",
-  "bugs": "https://github.com/sheehanmunim/react-native-munim-bluetooth/issues",
-  "homepage": "https://github.com/sheehanmunim/react-native-munim-bluetooth#readme",
+  "bugs": "https://github.com/munimtechnologies/munim-bluetooth/issues",
+  "homepage": "https://github.com/munimtechnologies/munim-bluetooth#readme",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

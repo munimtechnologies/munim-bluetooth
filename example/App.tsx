@@ -1,6 +1,6 @@
 import React from 'react';
 import {Text, View, StyleSheet } from 'react-native';
-import { MunimBluetooth } from 'react-native-munim-bluetooth';
+import { MunimBluetooth } from 'munim-bluetooth';
 
 function App(): React.JSX.Element {
   return (
