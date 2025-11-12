@@ -42,7 +42,10 @@
   "workspaces": [
     "example"
   ],
-  "repository": "https://github.com/munimtechnologies/munim-bluetooth.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/munimtechnologies/munim-bluetooth.git"
+  },
   "author": "sheehanmunim",
   "license": "MIT",
   "bugs": "https://github.com/munimtechnologies/munim-bluetooth/issues",
