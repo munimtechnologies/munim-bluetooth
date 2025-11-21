@@ -7,7 +7,7 @@
 
 import Foundation
 import CoreBluetooth
-import ReactNativeNitroModules
+import NitroModules
 import React
 
 class HybridMunimBluetooth: HybridMunimBluetoothSpec {
