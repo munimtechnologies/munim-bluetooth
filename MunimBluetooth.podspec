@@ -32,6 +32,5 @@ Pod::Spec.new do |s|
 
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'
-  s.dependency 'react-native-nitro-modules'
   install_modules_dependencies(s)
 end
