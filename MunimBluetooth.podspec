@@ -22,8 +22,13 @@ Pod::Spec.new do |s|
     "cpp/**/*.{hpp,cpp}",
   ]
 
-  load 'nitrogen/generated/ios/MunimBluetooth+autolinking.rb'
-  add_nitrogen_files(s)
+  autolinking_script = File.join(__dir__, "nitrogen/generated/ios/MunimBluetooth+autolinking.rb")
+  if File.exist?(autolinking_script)
+    load autolinking_script
+    add_nitrogen_files(s)
+  else
+    Pod::UI.puts "[MunimBluetooth] Skipping Nitro autolinking – #{autolinking_script} not found"
+  end
 
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'

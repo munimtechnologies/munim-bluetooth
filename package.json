@@ -1,6 +1,6 @@
 {
   "name": "munim-bluetooth",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "A comprehensive React Native library for all your Bluetooth Low Energy (BLE) needs, supporting both peripheral and central roles with Expo support",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",

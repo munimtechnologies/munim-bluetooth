@@ -1,11 +1,17 @@
 package com.munimbluetooth
 
-import com.margelo.nitro.munimbluetooth.HybridMunimBluetoothSpec
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
+import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.WritableArray
+import com.facebook.react.bridge.WritableMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.margelo.nitro.NitroModules
+import com.margelo.nitro.munimbluetooth.HybridMunimBluetoothSpec
 import kotlinx.coroutines.*
 import java.util.*
 
@@ -28,6 +34,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val discoveredDevices = mutableMapOf<String, BluetoothDevice>()
     private val connectedDevices = mutableMapOf<String, BluetoothGatt>()
     private val deviceCharacteristics = mutableMapOf<String, MutableList<BluetoothGattCharacteristic>>()
+    private val eventEmitter = NitroEventEmitter(TAG)
     
     init {
         // Initialize Bluetooth managers - this would need ReactApplicationContext in real implementation
@@ -35,9 +42,8 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
     
     private fun getBluetoothManager(): BluetoothManager? {
-        // In a real implementation, this would get the context from ReactApplicationContext
-        // For now, return null - actual implementation would need context injection
-        return null
+        val context = NitroModules.applicationContext ?: return null
+        return context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     }
     
     private fun ensureBluetoothManager() {
@@ -317,8 +323,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 val deviceId = device.address
                 discoveredDevices[deviceId] = device
                 
-                // Emit deviceFound event
-                // In real implementation, this would use event emitter
+                eventEmitter.emit(
+                    "deviceFound",
+                    buildScanPayload(result)
+                )
             }
             
             override fun onBatchScanResults(results: MutableList<ScanResult>) {
@@ -588,6 +596,60 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         // This is a no-op as Nitro modules handle events differently
     }
     
+    private fun buildScanPayload(result: ScanResult): Map<String, Any?> {
+        val record = result.scanRecord
+        val manufacturerData = extractManufacturerData(record)
+        val serviceUUIDs = record?.serviceUuids?.map { it.uuid.toString() }
+        val serviceData = extractServiceData(record)
+        val txPower = record?.txPowerLevel?.takeIf { it != Int.MIN_VALUE }
+        val advertisementData = mutableMapOf<String, Any?>()
+        record?.deviceName?.let { advertisementData["completeLocalName"] = it }
+        txPower?.let { advertisementData["txPowerLevel"] = it }
+        manufacturerData?.let { advertisementData["manufacturerData"] = it }
+        serviceUUIDs?.let { advertisementData["serviceUUIDs"] = it }
+        serviceData?.takeIf { it.isNotEmpty() }?.let { advertisementData["serviceData"] = it }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            advertisementData["isConnectable"] = result.isConnectable
+        }
+        advertisementData["rssi"] = result.rssi
+        
+        return mapOf(
+            "id" to result.device.address,
+            "name" to result.device.name,
+            "localName" to record?.deviceName,
+            "manufacturerData" to manufacturerData,
+            "serviceUUIDs" to serviceUUIDs,
+            "serviceData" to serviceData,
+            "rssi" to result.rssi,
+            "txPowerLevel" to txPower,
+            "isConnectable" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) result.isConnectable else null,
+            "advertisementData" to advertisementData
+        )
+    }
+    
+    private fun extractManufacturerData(record: ScanRecord?): String? {
+        val data = record?.manufacturerSpecificData ?: return null
+        if (data.size() == 0) return null
+        val bytes = data.valueAt(0) ?: return null
+        return bytes.toHexString()
+    }
+    
+    private fun extractServiceData(record: ScanRecord?): List<Map<String, Any?>>? {
+        val map = record?.serviceData ?: return null
+        val result = map.entries.mapNotNull { entry ->
+            val bytes = entry.value ?: return@mapNotNull null
+            mapOf(
+                "uuid" to entry.key.uuid.toString(),
+                "data" to bytes.toHexString()
+            )
+        }
+        return result.takeIf { it.isNotEmpty() }
+    }
+    
+    private fun ByteArray.toHexString(): String {
+        return joinToString("") { "%02x".format(it) }
+    }
+    
     // MARK: - Helper Methods
     
     private fun processAdvertisingData(
@@ -702,5 +764,68 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
         
         gattServerReady = true
+    }
+}
+
+private class NitroEventEmitter(private val tag: String) {
+    fun emit(eventName: String, payload: Map<String, Any?>) {
+        val context = NitroModules.applicationContext
+        if (context == null) {
+            Log.w(tag, "Unable to emit $eventName: React context unavailable")
+            return
+        }
+        
+        val writable = Arguments.createMap()
+        payload.forEach { (key, value) ->
+            writeValue(writable, key, value)
+        }
+        
+        context
+            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            .emit(eventName, writable)
+    }
+    
+    private fun writeValue(map: WritableMap, key: String, value: Any?) {
+        when (value) {
+            null -> map.putNull(key)
+            is String -> map.putString(key, value)
+            is Boolean -> map.putBoolean(key, value)
+            is Int -> map.putInt(key, value)
+            is Double -> map.putDouble(key, value)
+            is Float -> map.putDouble(key, value.toDouble())
+            is Long -> map.putDouble(key, value.toDouble())
+            is Map<*, *> -> map.putMap(key, convertMap(value))
+            is List<*> -> map.putArray(key, convertArray(value))
+            else -> map.putString(key, value.toString())
+        }
+    }
+    
+    private fun convertMap(map: Map<*, *>): WritableMap {
+        val writable = Arguments.createMap()
+        map.forEach { (key, value) ->
+            if (key is String) {
+                writeValue(writable, key, value)
+            }
+        }
+        return writable
+    }
+    
+    private fun convertArray(list: List<*>): WritableArray {
+        val writable = Arguments.createArray()
+        list.forEach { value ->
+            when (value) {
+                null -> writable.pushNull()
+                is String -> writable.pushString(value)
+                is Boolean -> writable.pushBoolean(value)
+                is Int -> writable.pushInt(value)
+                is Double -> writable.pushDouble(value)
+                is Float -> writable.pushDouble(value.toDouble())
+                is Long -> writable.pushDouble(value.toDouble())
+                is Map<*, *> -> writable.pushMap(convertMap(value))
+                is List<*> -> writable.pushArray(convertArray(value))
+                else -> writable.pushString(value.toString())
+            }
+        }
+        return writable
     }
 }

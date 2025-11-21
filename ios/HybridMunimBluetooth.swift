@@ -8,6 +8,7 @@
 import Foundation
 import CoreBluetooth
 import ReactNativeNitroModules
+import React
 
 class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // Peripheral Manager
@@ -627,7 +628,24 @@ class NitroEventEmitter {
     }
     
     func emit(_ eventName: String, _ body: [String: Any]) {
-        // Nitro modules event emission would be handled here
-        // This is a placeholder for the actual implementation
+        let sendEvent = {
+            guard let bridge = RCTBridge.current() ?? RCTBridge.currentBridge() else {
+                NSLog("[\(self.moduleName)] Unable to emit event \(eventName): missing bridge")
+                return
+            }
+            
+            bridge.enqueueJSCall(
+                "RCTDeviceEventEmitter",
+                method: "emit",
+                args: [eventName, body],
+                completion: nil
+            )
+        }
+        
+        if Thread.isMainThread {
+            sendEvent()
+        } else {
+            DispatchQueue.main.async(execute: sendEvent)
+        }
     }
 }
