@@ -14,14 +14,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // Peripheral Manager
     private var peripheralManager: CBPeripheralManager?
     private var peripheralServices: [CBMutableService] = []
-    private var currentAdvertisingData: [String: Any] = [:]
+    private var currentAdvertisingData: AdvertisingDataTypes?
     
     // Central Manager
     private var centralManager: CBCentralManager?
     private var discoveredPeripherals: [String: CBPeripheral] = [:]
     private var connectedPeripherals: [String: CBPeripheral] = [:]
     private var peripheralCharacteristics: [String: [CBCharacteristic]] = [:]
-    private var scanOptions: [String: Any]?
+    private var scanOptions: ScanOptions?
     private var isScanning = false
     
     // Event emitter
@@ -36,7 +36,277 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     
     // MARK: - Peripheral Features
     
-    func startAdvertising(options: [String: Any]) throws {
+    override func startAdvertising(options: AdvertisingOptions) throws {
+        guard let peripheralManager = peripheralManager,
+              peripheralManager.state == .poweredOn else {
+            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+        }
+        
+        var advertisingData: [String: Any] = [:]
+        
+        // Service UUIDs
+        if !options.serviceUUIDs.isEmpty {
+            let uuids = options.serviceUUIDs.compactMap { CBUUID(string: $0) }
+            advertisingData[CBAdvertisementDataServiceUUIDsKey] = uuids
+        }
+        
+        // Local name
+        if let localName = options.localName {
+            advertisingData[CBAdvertisementDataLocalNameKey] = localName
+        }
+        
+        // Manufacturer data
+        if let manufacturerData = options.manufacturerData,
+           let data = hexStringToData(manufacturerData) {
+            advertisingData[CBAdvertisementDataManufacturerDataKey] = data
+        }
+        
+        // Advertising data
+        if let advertisingDataTypes = options.advertisingData {
+            processAdvertisingData(advertisingDataTypes, into: &advertisingData)
+        }
+        
+        currentAdvertisingData = options.advertisingData
+        peripheralManager.startAdvertising(advertisingData as? [String: Any])
+    }
+    
+    override func updateAdvertisingData(advertisingData: AdvertisingDataTypes) throws {
+        guard let peripheralManager = peripheralManager,
+              peripheralManager.state == .poweredOn else {
+            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+        }
+        
+        peripheralManager.stopAdvertising()
+        
+        var newAdvertisingData: [String: Any] = [:]
+        processAdvertisingData(advertisingData, into: &newAdvertisingData)
+        
+        currentAdvertisingData = advertisingData
+        peripheralManager.startAdvertising(newAdvertisingData as? [String: Any])
+    }
+    
+    override func getAdvertisingData() throws -> Promise<AdvertisingDataTypes> {
+        return Promise { resolver in
+            resolver.resolve(self.currentAdvertisingData ?? AdvertisingDataTypes())
+        }
+    }
+    
+    override func stopAdvertising() throws {
+        peripheralManager?.stopAdvertising()
+        currentAdvertisingData = nil
+    }
+    
+    override func setServices(services: [GATTService]) throws {
+        peripheralServices.removeAll()
+        
+        for service in services {
+            let serviceUUID = CBUUID(string: service.uuid)
+            let mutableService = CBMutableService(type: serviceUUID, primary: true)
+            
+            var characteristics: [CBMutableCharacteristic] = []
+            
+            for characteristic in service.characteristics {
+                let charUUID = CBUUID(string: characteristic.uuid)
+                
+                var properties: CBCharacteristicProperties = []
+                for prop in characteristic.properties {
+                    switch prop {
+                    case "read":
+                        properties.insert(.read)
+                    case "write":
+                        properties.insert(.write)
+                    case "writeWithoutResponse":
+                        properties.insert(.writeWithoutResponse)
+                    case "notify":
+                        properties.insert(.notify)
+                    case "indicate":
+                        properties.insert(.indicate)
+                    default:
+                        break
+                    }
+                }
+                
+                var value: Data?
+                if let valueString = characteristic.value {
+                    value = hexStringToData(valueString)
+                    if !properties.contains(.read) {
+                        properties.insert(.read)
+                    }
+                }
+                
+                let permissions: CBAttributePermissions = value != nil ? .readable : [.readable, .writeable]
+                
+                let mutableChar = CBMutableCharacteristic(
+                    type: charUUID,
+                    properties: properties,
+                    value: value,
+                    permissions: permissions
+                )
+                
+                characteristics.append(mutableChar)
+            }
+            
+            mutableService.characteristics = characteristics
+            peripheralServices.append(mutableService)
+        }
+        
+        for service in peripheralServices {
+            peripheralManager?.add(service)
+        }
+    }
+    
+    // MARK: - Central/Manager Features
+    
+    override func isBluetoothEnabled() throws -> Promise<Bool> {
+        return Promise { resolver in
+            let isEnabled = self.centralManager?.state == .poweredOn
+            resolver.resolve(isEnabled ?? false)
+        }
+    }
+    
+    override func requestBluetoothPermission() throws -> Promise<Bool> {
+        return Promise { resolver in
+            // In iOS, permissions are handled by CBPeripheralManager/CBCentralManager
+            resolver.resolve(true)
+        }
+    }
+    
+    override func startScan(options: ScanOptions?) throws {
+        guard let centralManager = centralManager,
+              centralManager.state == .poweredOn else {
+            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+        }
+        
+        scanOptions = options
+        isScanning = true
+        
+        var scanOptions: [String: Any] = [:]
+        if let options = options {
+            scanOptions[CBCentralManagerScanOptionAllowDuplicatesKey] = options.allowDuplicates ?? false
+        }
+        
+        centralManager.scanForPeripherals(withServices: nil, options: scanOptions as [String : Any])
+    }
+    
+    override func stopScan() throws {
+        centralManager?.stopScan()
+        isScanning = false
+    }
+    
+    override func connect(deviceId: String) throws -> Promise<Void> {
+        return Promise { resolver in
+            guard let peripheral = self.discoveredPeripherals[deviceId] else {
+                resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not found"]))
+                return
+            }
+            
+            self.centralManager?.connect(peripheral, options: nil)
+            self.connectedPeripherals[deviceId] = peripheral
+            resolver.resolve(())
+        }
+    }
+    
+    override func disconnect(deviceId: String) throws {
+        guard let peripheral = connectedPeripherals[deviceId] else { return }
+        centralManager?.cancelPeripheralConnection(peripheral)
+        connectedPeripherals.removeValue(forKey: deviceId)
+    }
+    
+    override func discoverServices(deviceId: String) throws -> Promise<[GATTService]> {
+        return Promise { resolver in
+            guard let peripheral = self.connectedPeripherals[deviceId] else {
+                resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return
+            }
+            
+            peripheral.discoverServices(nil)
+            resolver.resolve([])
+        }
+    }
+    
+    override func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<CharacteristicValue> {
+        return Promise { resolver in
+            resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
+        }
+    }
+    
+    override func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?) throws -> Promise<Void> {
+        return Promise { resolver in
+            resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
+        }
+    }
+    
+    override func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
+        // Not implemented
+    }
+    
+    override func unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
+        // Not implemented
+    }
+    
+    override func getConnectedDevices() throws -> Promise<[String]> {
+        return Promise { resolver in
+            resolver.resolve(Array(self.connectedPeripherals.keys))
+        }
+    }
+    
+    override func readRSSI(deviceId: String) throws -> Promise<Double> {
+        return Promise { resolver in
+            guard let peripheral = self.connectedPeripherals[deviceId] else {
+                resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return
+            }
+            
+            peripheral.readRSSI()
+            resolver.resolve(0)
+        }
+    }
+    
+    override func addListener(eventName: String) throws {
+        // Event management
+    }
+    
+    override func removeListeners(count: Double) throws {
+        // Event management
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func hexStringToData(_ hex: String) -> Data? {
+        var data = Data()
+        var hex = hex
+        
+        if hex.count % 2 != 0 {
+            hex = "0" + hex
+        }
+        
+        let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
+        regex.enumerateMatches(in: hex, range: NSRange(hex.startIndex..., in: hex)) { match, _, _ in
+            let byteStr = (hex as NSString).substring(with: match!.range)
+            let num = UInt8(byteStr, radix: 16)!
+            data.append(num)
+        }
+        
+        return data.isEmpty ? nil : data
+    }
+    
+    private func processAdvertisingData(_ data: AdvertisingDataTypes, into advertisingData: inout [String: Any]) {
+        if let flags = data.flags {
+            advertisingData[CBAdvertisementDataIsConnectable] = true
+        }
+        
+        if let completeLocalName = data.completeLocalName {
+            advertisingData[CBAdvertisementDataLocalNameKey] = completeLocalName
+        }
+        
+        if let txPowerLevel = data.txPowerLevel {
+            advertisingData[CBAdvertisementDataTxPowerLevelKey] = txPowerLevel
+        }
+    }
+}
+
+// MARK: - CBPeripheralManagerDelegate
+extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
         guard let peripheralManager = peripheralManager,
               peripheralManager.state == .poweredOn else {
             throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
@@ -156,284 +426,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
     
-    // MARK: - Central Features
-    
-    func isBluetoothEnabled() throws -> Bool {
-        guard let centralManager = centralManager else { return false }
-        return centralManager.state == .poweredOn
-    }
-    
-    func requestBluetoothPermission() throws -> Bool {
-        guard let centralManager = centralManager else { return false }
-        // On iOS, permission is requested automatically when creating CBCentralManager
-        // The state will be .unauthorized if permission is denied
-        return centralManager.state != .unauthorized
-    }
-    
-    func startScan(options: [String: Any]?) throws {
-        guard let centralManager = centralManager,
-              centralManager.state == .poweredOn else {
-            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
-        }
-        
-        guard !isScanning else { return }
-        
-        scanOptions = options
-        isScanning = true
-        discoveredPeripherals.removeAll()
-        
-        var serviceUUIDs: [CBUUID]?
-        if let serviceUUIDsArray = options?["serviceUUIDs"] as? [String] {
-            serviceUUIDs = serviceUUIDsArray.compactMap { CBUUID(string: $0) }
-        }
-        
-        centralManager.scanForPeripherals(withServices: serviceUUIDs, options: [
-            CBCentralManagerScanOptionAllowDuplicatesKey: options?["allowDuplicates"] as? Bool ?? false
-        ])
-    }
-    
-    func stopScan() throws {
-        guard isScanning else { return }
-        centralManager?.stopScan()
-        isScanning = false
-        scanOptions = nil
-    }
-    
-    func connect(deviceId: String) throws {
-        guard let peripheral = discoveredPeripherals[deviceId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Device not found"])
-        }
-        
-        centralManager?.connect(peripheral, options: nil)
-    }
-    
-    func disconnect(deviceId: String) throws {
-        guard let peripheral = connectedPeripherals[deviceId] ?? discoveredPeripherals[deviceId] else {
-            return
-        }
-        
-        centralManager?.cancelPeripheralConnection(peripheral)
-    }
-    
-    func discoverServices(deviceId: String) throws -> [[String: Any]] {
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Device not connected"])
-        }
-        
-        peripheral.discoverServices(nil)
-        
-        // Wait for services to be discovered (in real implementation, this would be async)
-        // For now, return empty array - services will be discovered via delegate callbacks
-        return []
-    }
-    
-    func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> [String: Any] {
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Device not connected"])
-        }
-        
-        guard let characteristics = peripheralCharacteristics[deviceId],
-              let characteristic = characteristics.first(where: {
-                  $0.service?.uuid == CBUUID(string: serviceUUID) &&
-                  $0.uuid == CBUUID(string: characteristicUUID)
-              }) else {
-            throw NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"])
-        }
-        
-        peripheral.readValue(for: characteristic)
-        
-        // Return empty for now - value will come via delegate callback
-        return [
-            "value": "",
-            "serviceUUID": serviceUUID,
-            "characteristicUUID": characteristicUUID
-        ]
-    }
-    
-    func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: String?) throws {
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Device not connected"])
-        }
-        
-        guard let characteristics = peripheralCharacteristics[deviceId],
-              let characteristic = characteristics.first(where: {
-                  $0.service?.uuid == CBUUID(string: serviceUUID) &&
-                  $0.uuid == CBUUID(string: characteristicUUID)
-              }) else {
-            throw NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"])
-        }
-        
-        guard let data = hexStringToData(value) else {
-            throw NSError(domain: "MunimBluetooth", code: 4, userInfo: [NSLocalizedDescriptionKey: "Invalid hex string"])
-        }
-        
-        let type: CBCharacteristicWriteType = (writeType == "writeWithoutResponse") ? .withoutResponse : .withResponse
-        peripheral.writeValue(data, for: characteristic, type: type)
-    }
-    
-    func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Device not connected"])
-        }
-        
-        guard let characteristics = peripheralCharacteristics[deviceId],
-              let characteristic = characteristics.first(where: {
-                  $0.service?.uuid == CBUUID(string: serviceUUID) &&
-                  $0.uuid == CBUUID(string: characteristicUUID)
-              }) else {
-            throw NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"])
-        }
-        
-        peripheral.setNotifyValue(true, for: characteristic)
-    }
-    
-    func unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Device not connected"])
-        }
-        
-        guard let characteristics = peripheralCharacteristics[deviceId],
-              let characteristic = characteristics.first(where: {
-                  $0.service?.uuid == CBUUID(string: serviceUUID) &&
-                  $0.uuid == CBUUID(string: characteristicUUID)
-              }) else {
-            throw NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"])
-        }
-        
-        peripheral.setNotifyValue(false, for: characteristic)
-    }
-    
-    func getConnectedDevices() throws -> [String] {
-        return Array(connectedPeripherals.keys)
-    }
-    
-    func readRSSI(deviceId: String) throws -> Double {
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Device not connected"])
-        }
-        
-        peripheral.readRSSI()
-        // RSSI will come via delegate callback
-        return 0.0
-    }
-    
-    // MARK: - Event Management
-    
-    func addListener(eventName: String) throws {
-        // Event listeners are handled by the event emitter
-        // This is a no-op as Nitro modules handle events differently
-    }
-    
-    func removeListeners(count: Double) throws {
-        // Event listeners are handled by the event emitter
-        // This is a no-op as Nitro modules handle events differently
-    }
-    
-    // MARK: - Helper Methods
-    
-    private func processAdvertisingData(_ dataDict: [String: Any], into advertisingData: inout [String: Any]) {
-        // Flags
-        if let flags = dataDict["flags"] as? Int {
-            let isConnectable = (flags & 0x02) != 0
-            advertisingData[CBAdvertisementDataIsConnectable] = isConnectable
-        }
-        
-        // Service UUIDs
-        addServiceUUIDs(dataDict["incompleteServiceUUIDs16"], to: &advertisingData, key: CBAdvertisementDataServiceUUIDsKey)
-        addServiceUUIDs(dataDict["completeServiceUUIDs16"], to: &advertisingData, key: CBAdvertisementDataServiceUUIDsKey)
-        addServiceUUIDs(dataDict["incompleteServiceUUIDs32"], to: &advertisingData, key: CBAdvertisementDataServiceUUIDsKey)
-        addServiceUUIDs(dataDict["completeServiceUUIDs32"], to: &advertisingData, key: CBAdvertisementDataServiceUUIDsKey)
-        addServiceUUIDs(dataDict["incompleteServiceUUIDs128"], to: &advertisingData, key: CBAdvertisementDataServiceUUIDsKey)
-        addServiceUUIDs(dataDict["completeServiceUUIDs128"], to: &advertisingData, key: CBAdvertisementDataServiceUUIDsKey)
-        
-        // Local Name
-        if let shortenedName = dataDict["shortenedLocalName"] as? String {
-            advertisingData[CBAdvertisementDataLocalNameKey] = shortenedName
-        }
-        if let completeName = dataDict["completeLocalName"] as? String {
-            advertisingData[CBAdvertisementDataLocalNameKey] = completeName
-        }
-        
-        // Tx Power Level
-        if let txPower = dataDict["txPowerLevel"] as? Int {
-            advertisingData[CBAdvertisementDataTxPowerLevelKey] = txPower
-        }
-        
-        // Service Solicitation
-        addServiceUUIDs(dataDict["serviceSolicitationUUIDs16"], to: &advertisingData, key: CBAdvertisementDataSolicitedServiceUUIDsKey)
-        addServiceUUIDs(dataDict["serviceSolicitationUUIDs128"], to: &advertisingData, key: CBAdvertisementDataSolicitedServiceUUIDsKey)
-        addServiceUUIDs(dataDict["serviceSolicitationUUIDs32"], to: &advertisingData, key: CBAdvertisementDataSolicitedServiceUUIDsKey)
-        
-        // Service Data
-        addServiceData(dataDict["serviceData16"], to: &advertisingData)
-        addServiceData(dataDict["serviceData32"], to: &advertisingData)
-        addServiceData(dataDict["serviceData128"], to: &advertisingData)
-        
-        // Appearance
-        if let appearance = dataDict["appearance"] as? Int {
-            let appearanceData = Data(bytes: [UInt8(appearance & 0xFF), UInt8((appearance >> 8) & 0xFF)], count: 2)
-            advertisingData[CBUUID(string: "1800")] = appearanceData
-        }
-        
-        // Manufacturer Data
-        if let manufacturerData = dataDict["manufacturerData"] as? String,
-           let data = hexStringToData(manufacturerData) {
-            advertisingData[CBAdvertisementDataManufacturerDataKey] = data
-        }
-    }
-    
-    private func addServiceUUIDs(_ uuids: Any?, to advertisingData: inout [String: Any], key: String) {
-        guard let uuidArray = uuids as? [String] else { return }
-        
-        let cbUUIDs = uuidArray.compactMap { CBUUID(string: $0) }
-        if !cbUUIDs.isEmpty {
-            if var existing = advertisingData[key] as? [CBUUID] {
-                existing.append(contentsOf: cbUUIDs)
-                advertisingData[key] = existing
-            } else {
-                advertisingData[key] = cbUUIDs
-            }
-        }
-    }
-    
-    private func addServiceData(_ serviceDataArray: Any?, to advertisingData: inout [String: Any]) {
-        guard let array = serviceDataArray as? [[String: Any]] else { return }
-        
-        for serviceData in array {
-            guard let uuid = serviceData["uuid"] as? String,
-                  let dataString = serviceData["data"] as? String,
-                  let data = hexStringToData(dataString) else { continue }
-            
-            advertisingData[uuid] = data
-        }
-    }
-    
-    private func hexStringToData(_ hexString: String) -> Data? {
-        let cleanHex = hexString.replacingOccurrences(of: " ", with: "")
-        guard cleanHex.count % 2 == 0 else { return nil }
-        
-        var data = Data()
-        var index = cleanHex.startIndex
-        
-        while index < cleanHex.endIndex {
-            let nextIndex = cleanHex.index(index, offsetBy: 2)
-            guard nextIndex <= cleanHex.endIndex else { break }
-            
-            let byteString = String(cleanHex[index..<nextIndex])
-            if let byte = UInt8(byteString, radix: 16) {
-                data.append(byte)
-            }
-            
-            index = nextIndex
-        }
-        
-        return data
-    }
-}
-
-// MARK: - CBPeripheralManagerDelegate
-
-extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
+    // MARK: - CBPeripheralManagerDelegate
+    extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         // Handle state updates
     }
