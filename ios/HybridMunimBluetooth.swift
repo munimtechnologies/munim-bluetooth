@@ -10,7 +10,7 @@ import CoreBluetooth
 import NitroModules
 import React
 
-class HybridMunimBluetooth: NSObject, HybridMunimBluetoothSpec {
+class HybridMunimBluetooth: NSObject, HybridMunimBluetoothSpec, CBPeripheralManagerDelegate, CBCentralManagerDelegate, CBPeripheralDelegate {
     // Peripheral Manager
     private var peripheralManager: CBPeripheralManager?
     private var peripheralServices: [CBMutableService] = []
@@ -305,8 +305,8 @@ class HybridMunimBluetooth: NSObject, HybridMunimBluetoothSpec {
     }
 }
 
-// MARK: - CBPeripheralManagerDelegate
-extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
+// MARK: - CBPeripheralManagerDelegate Implementation
+extension HybridMunimBluetooth {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         // Handle state updates
     }
@@ -328,8 +328,8 @@ extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
     }
 }
 
-// MARK: - CBCentralManagerDelegate
-extension HybridMunimBluetooth: CBCentralManagerDelegate {
+// MARK: - CBCentralManagerDelegate Implementation
+extension HybridMunimBluetooth {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         let state = central.state
         eventEmitter?.emit("bluetoothStateChanged", ["state": state.rawValue])
@@ -371,8 +371,8 @@ extension HybridMunimBluetooth: CBCentralManagerDelegate {
     }
 }
 
-// MARK: - CBPeripheralDelegate
-extension HybridMunimBluetooth: CBPeripheralDelegate {
+// MARK: - CBPeripheralDelegate Implementation
+extension HybridMunimBluetooth {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         

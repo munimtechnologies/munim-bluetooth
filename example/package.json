@@ -16,7 +16,7 @@
     "@react-native/new-app-screen": "0.83.1",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-nitro-modules": "0.33.1",
-    "munim-bluetooth": "^0.3.5"
+    "munim-bluetooth": "^0.3.6"
   },
   "devDependencies": {
     "@babel/core": "^7.28.6",
