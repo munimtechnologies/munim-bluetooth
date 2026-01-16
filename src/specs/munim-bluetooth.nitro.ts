@@ -1,5 +1,11 @@
 import { type HybridObject } from 'react-native-nitro-modules'
 
+// Service Data Entry
+export interface ServiceDataEntry {
+  uuid: string
+  data: string
+}
+
 // BLE Advertising Data Types - Only Platform-Supported Types
 export interface AdvertisingDataTypes {
   // 0x01 - Flags (partial support)
@@ -25,18 +31,9 @@ export interface AdvertisingDataTypes {
   serviceSolicitationUUIDs128?: string[]
 
   // 0x16, 0x20, 0x21 - Service Data (fully supported)
-  serviceData16?: Array<{
-    uuid: string
-    data: string
-  }>
-  serviceData32?: Array<{
-    uuid: string
-    data: string
-  }>
-  serviceData128?: Array<{
-    uuid: string
-    data: string
-  }>
+  serviceData16?: ServiceDataEntry[]
+  serviceData32?: ServiceDataEntry[]
+  serviceData128?: ServiceDataEntry[]
 
   // 0x19 - Appearance (partial support)
   appearance?: number
@@ -58,21 +55,27 @@ export interface BLEDevice {
   isConnectable?: boolean
 }
 
+// Scan mode type
+export type ScanMode = 'lowPower' | 'balanced' | 'lowLatency'
+
 // Scan options
 export interface ScanOptions {
   serviceUUIDs?: string[]
   allowDuplicates?: boolean
-  scanMode?: 'lowPower' | 'balanced' | 'lowLatency'
+  scanMode?: ScanMode
+}
+
+// GATT Characteristic
+export interface GATTCharacteristic {
+  uuid: string
+  properties: string[]
+  value?: string
 }
 
 // GATT Service
 export interface GATTService {
   uuid: string
-  characteristics: Array<{
-    uuid: string
-    properties: string[]
-    value?: string
-  }>
+  characteristics: GATTCharacteristic[]
 }
 
 // Characteristic value
@@ -80,6 +83,17 @@ export interface CharacteristicValue {
   value: string
   serviceUUID: string
   characteristicUUID: string
+}
+
+// Write type for characteristic writes
+export type WriteType = 'write' | 'writeWithoutResponse'
+
+// Advertising options for startAdvertising
+export interface AdvertisingOptions {
+  serviceUUIDs: string[]
+  localName?: string
+  manufacturerData?: string
+  advertisingData?: AdvertisingDataTypes
 }
 
 export interface MunimBluetooth
@@ -92,12 +106,7 @@ export interface MunimBluetooth
    * @param options - An object with serviceUUIDs (string[]) and supported advertising data types.
    *                  This must be a plain JS object (no Maps/Sets/functions).
    */
-  startAdvertising(options: {
-    serviceUUIDs: string[]
-    localName?: string
-    manufacturerData?: string
-    advertisingData?: AdvertisingDataTypes
-  }): void
+  startAdvertising(options: AdvertisingOptions): void
 
   /**
    * Update advertising data while advertising is active.
@@ -206,7 +215,7 @@ export interface MunimBluetooth
     serviceUUID: string,
     characteristicUUID: string,
     value: string,
-    writeType?: 'write' | 'writeWithoutResponse'
+    writeType?: WriteType
   ): Promise<void>
 
   /**
