@@ -44,9 +44,11 @@ public extension HybridMunimBluetoothSpec_protocol {
 }
 
 /// See ``HybridMunimBluetoothSpec``
-open class HybridMunimBluetoothSpec_base {
+open class HybridMunimBluetoothSpec_base: NSObject {
   private weak var cxxWrapper: HybridMunimBluetoothSpec_cxx? = nil
-  public init() { }
+  public override init() {
+    super.init()
+  }
   public func getCxxWrapper() -> HybridMunimBluetoothSpec_cxx {
   #if DEBUG
     guard self is any HybridMunimBluetoothSpec else {
