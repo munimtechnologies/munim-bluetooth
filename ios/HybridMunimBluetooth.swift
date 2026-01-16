@@ -82,9 +82,9 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
     
     func getAdvertisingData() throws -> Promise<AdvertisingDataTypes> {
-        return Promise { resolver in
-            resolver.resolve(self.currentAdvertisingData ?? AdvertisingDataTypes())
-        }
+        let promise = Promise<AdvertisingDataTypes>()
+        promise.resolve(withResult: self.currentAdvertisingData ?? AdvertisingDataTypes())
+        return promise
     }
     
     func stopAdvertising() throws {
@@ -154,17 +154,17 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // MARK: - Central/Manager Features
     
     func isBluetoothEnabled() throws -> Promise<Bool> {
-        return Promise { resolver in
-            let isEnabled = self.centralManager?.state == .poweredOn
-            resolver.resolve(isEnabled ?? false)
-        }
+        let promise = Promise<Bool>()
+        let isEnabled = self.centralManager?.state == .poweredOn
+        promise.resolve(withResult: isEnabled ?? false)
+        return promise
     }
     
     func requestBluetoothPermission() throws -> Promise<Bool> {
-        return Promise { resolver in
-            // In iOS, permissions are handled by CBPeripheralManager/CBCentralManager
-            resolver.resolve(true)
-        }
+        let promise = Promise<Bool>()
+        // In iOS, permissions are handled by CBPeripheralManager/CBCentralManager
+        promise.resolve(withResult: true)
+        return promise
     }
     
     func startScan(options: ScanOptions?) throws {
@@ -190,16 +190,16 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
     
     func connect(deviceId: String) throws -> Promise<Void> {
-        return Promise { resolver in
-            guard let peripheral = self.discoveredPeripherals[deviceId] else {
-                resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not found"]))
-                return
-            }
-            
-            self.centralManager?.connect(peripheral, options: nil)
-            self.connectedPeripherals[deviceId] = peripheral
-            resolver.resolve(())
+        let promise = Promise<Void>()
+        guard let peripheral = self.discoveredPeripherals[deviceId] else {
+            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not found"]))
+            return promise
         }
+        
+        self.centralManager?.connect(peripheral, options: nil)
+        self.connectedPeripherals[deviceId] = peripheral
+        promise.resolve(withResult: ())
+        return promise
     }
     
     func disconnect(deviceId: String) throws {
@@ -209,27 +209,27 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
     
     func discoverServices(deviceId: String) throws -> Promise<[GATTService]> {
-        return Promise { resolver in
-            guard let peripheral = self.connectedPeripherals[deviceId] else {
-                resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
-                return
-            }
-            
-            peripheral.discoverServices(nil)
-            resolver.resolve([])
+        let promise = Promise<[GATTService]>()
+        guard let peripheral = self.connectedPeripherals[deviceId] else {
+            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+            return promise
         }
+        
+        peripheral.discoverServices(nil)
+        promise.resolve(withResult: [])
+        return promise
     }
     
     func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<CharacteristicValue> {
-        return Promise { resolver in
-            resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
-        }
+        let promise = Promise<CharacteristicValue>()
+        promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
+        return promise
     }
     
     func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?) throws -> Promise<Void> {
-        return Promise { resolver in
-            resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
-        }
+        let promise = Promise<Void>()
+        promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
+        return promise
     }
     
     func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
@@ -241,21 +241,21 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
     
     func getConnectedDevices() throws -> Promise<[String]> {
-        return Promise { resolver in
-            resolver.resolve(Array(self.connectedPeripherals.keys))
-        }
+        let promise = Promise<[String]>()
+        promise.resolve(withResult: Array(self.connectedPeripherals.keys))
+        return promise
     }
     
     func readRSSI(deviceId: String) throws -> Promise<Double> {
-        return Promise { resolver in
-            guard let peripheral = self.connectedPeripherals[deviceId] else {
-                resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
-                return
-            }
-            
-            peripheral.readRSSI()
-            resolver.resolve(0)
+        let promise = Promise<Double>()
+        guard let peripheral = self.connectedPeripherals[deviceId] else {
+            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+            return promise
         }
+        
+        peripheral.readRSSI()
+        promise.resolve(withResult: 0)
+        return promise
     }
     
     func addListener(eventName: String) throws {
