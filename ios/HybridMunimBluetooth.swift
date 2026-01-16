@@ -10,7 +10,7 @@ import CoreBluetooth
 import NitroModules
 import React
 
-class HybridMunimBluetooth: HybridMunimBluetoothSpec {
+class HybridMunimBluetooth: NSObject, HybridMunimBluetoothSpec {
     // Peripheral Manager
     private var peripheralManager: CBPeripheralManager?
     private var peripheralServices: [CBMutableService] = []
@@ -36,7 +36,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     
     // MARK: - Peripheral Features
     
-    override func startAdvertising(options: AdvertisingOptions) throws {
+    func startAdvertising(options: AdvertisingOptions) throws {
         guard let peripheralManager = peripheralManager,
               peripheralManager.state == .poweredOn else {
             throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
@@ -70,7 +70,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         peripheralManager.startAdvertising(advertisingData as? [String: Any])
     }
     
-    override func updateAdvertisingData(advertisingData: AdvertisingDataTypes) throws {
+    func updateAdvertisingData(advertisingData: AdvertisingDataTypes) throws {
         guard let peripheralManager = peripheralManager,
               peripheralManager.state == .poweredOn else {
             throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
@@ -85,18 +85,18 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         peripheralManager.startAdvertising(newAdvertisingData as? [String: Any])
     }
     
-    override func getAdvertisingData() throws -> Promise<AdvertisingDataTypes> {
+    func getAdvertisingData() throws -> Promise<AdvertisingDataTypes> {
         return Promise { resolver in
             resolver.resolve(self.currentAdvertisingData ?? AdvertisingDataTypes())
         }
     }
     
-    override func stopAdvertising() throws {
+    func stopAdvertising() throws {
         peripheralManager?.stopAdvertising()
         currentAdvertisingData = nil
     }
     
-    override func setServices(services: [GATTService]) throws {
+    func setServices(services: [GATTService]) throws {
         peripheralServices.removeAll()
         
         for service in services {
@@ -157,21 +157,21 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     
     // MARK: - Central/Manager Features
     
-    override func isBluetoothEnabled() throws -> Promise<Bool> {
+    func isBluetoothEnabled() throws -> Promise<Bool> {
         return Promise { resolver in
             let isEnabled = self.centralManager?.state == .poweredOn
             resolver.resolve(isEnabled ?? false)
         }
     }
     
-    override func requestBluetoothPermission() throws -> Promise<Bool> {
+    func requestBluetoothPermission() throws -> Promise<Bool> {
         return Promise { resolver in
             // In iOS, permissions are handled by CBPeripheralManager/CBCentralManager
             resolver.resolve(true)
         }
     }
     
-    override func startScan(options: ScanOptions?) throws {
+    func startScan(options: ScanOptions?) throws {
         guard let centralManager = centralManager,
               centralManager.state == .poweredOn else {
             throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
@@ -188,12 +188,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         centralManager.scanForPeripherals(withServices: nil, options: scanOptions as [String : Any])
     }
     
-    override func stopScan() throws {
+    func stopScan() throws {
         centralManager?.stopScan()
         isScanning = false
     }
     
-    override func connect(deviceId: String) throws -> Promise<Void> {
+    func connect(deviceId: String) throws -> Promise<Void> {
         return Promise { resolver in
             guard let peripheral = self.discoveredPeripherals[deviceId] else {
                 resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not found"]))
@@ -206,13 +206,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
     
-    override func disconnect(deviceId: String) throws {
+    func disconnect(deviceId: String) throws {
         guard let peripheral = connectedPeripherals[deviceId] else { return }
         centralManager?.cancelPeripheralConnection(peripheral)
         connectedPeripherals.removeValue(forKey: deviceId)
     }
     
-    override func discoverServices(deviceId: String) throws -> Promise<[GATTService]> {
+    func discoverServices(deviceId: String) throws -> Promise<[GATTService]> {
         return Promise { resolver in
             guard let peripheral = self.connectedPeripherals[deviceId] else {
                 resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
@@ -224,33 +224,33 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
     
-    override func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<CharacteristicValue> {
+    func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<CharacteristicValue> {
         return Promise { resolver in
             resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
         }
     }
     
-    override func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?) throws -> Promise<Void> {
+    func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?) throws -> Promise<Void> {
         return Promise { resolver in
             resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"]))
         }
     }
     
-    override func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
+    func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
         // Not implemented
     }
     
-    override func unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
+    func unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws {
         // Not implemented
     }
     
-    override func getConnectedDevices() throws -> Promise<[String]> {
+    func getConnectedDevices() throws -> Promise<[String]> {
         return Promise { resolver in
             resolver.resolve(Array(self.connectedPeripherals.keys))
         }
     }
     
-    override func readRSSI(deviceId: String) throws -> Promise<Double> {
+    func readRSSI(deviceId: String) throws -> Promise<Double> {
         return Promise { resolver in
             guard let peripheral = self.connectedPeripherals[deviceId] else {
                 resolver.reject(NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
@@ -262,11 +262,11 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
     
-    override func addListener(eventName: String) throws {
+    func addListener(eventName: String) throws {
         // Event management
     }
     
-    override func removeListeners(count: Double) throws {
+    func removeListeners(count: Double) throws {
         // Event management
     }
     
