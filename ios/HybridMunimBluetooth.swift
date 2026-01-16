@@ -10,7 +10,7 @@ import CoreBluetooth
 import NitroModules
 import React
 
-class HybridMunimBluetooth: NSObject, HybridMunimBluetoothSpec, CBPeripheralManagerDelegate, CBCentralManagerDelegate, CBPeripheralDelegate {
+class HybridMunimBluetooth: HybridMunimBluetoothSpec, CBPeripheralManagerDelegate, CBCentralManagerDelegate, CBPeripheralDelegate {
     // Peripheral Manager
     private var peripheralManager: CBPeripheralManager?
     private var peripheralServices: [CBMutableService] = []
