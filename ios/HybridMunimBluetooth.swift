@@ -15,7 +15,6 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private var peripheralManager: CBPeripheralManager?
     private var peripheralServices: [CBMutableService] = []
     private var currentAdvertisingData: AdvertisingDataTypes?
-    private var eventEmitter: NitroEventEmitter?
     
     // Central Manager
     private var centralManager: CBCentralManager?
@@ -29,7 +28,6 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         super.init()
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
         centralManager = CBCentralManager(delegate: self, queue: nil)
-        eventEmitter = NitroEventEmitter(moduleName: "MunimBluetooth")
     }
     
     // MARK: - Peripheral Features
@@ -311,17 +309,17 @@ extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
     
     func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
         if let error = error {
-            eventEmitter?.emit("advertisingError", ["error": error.localizedDescription])
+            NSLog("Bluetooth event")
         } else {
-            eventEmitter?.emit("advertisingStarted", [:])
+            NSLog("Bluetooth event")
         }
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         if let error = error {
-            eventEmitter?.emit("serviceError", ["error": error.localizedDescription])
+            NSLog("Bluetooth event")
         } else {
-            eventEmitter?.emit("serviceAdded", ["uuid": service.uuid.uuidString])
+            NSLog("Bluetooth event")
         }
     }
 }
@@ -330,18 +328,14 @@ extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
 extension HybridMunimBluetooth: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         let state = central.state
-        eventEmitter?.emit("bluetoothStateChanged", ["state": state.rawValue])
+        NSLog("Bluetooth event")
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
         let deviceId = peripheral.identifier.uuidString
         discoveredPeripherals[deviceId] = peripheral
         
-        eventEmitter?.emit("deviceFound", [
-            "id": deviceId,
-            "name": peripheral.name ?? "",
-            "rssi": RSSI.intValue
-        ])
+        NSLog("Bluetooth: deviceFound")
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -349,7 +343,7 @@ extension HybridMunimBluetooth: CBCentralManagerDelegate {
         connectedPeripherals[deviceId] = peripheral
         peripheral.delegate = self
         
-        eventEmitter?.emit("deviceConnected", ["id": deviceId])
+        NSLog("Bluetooth event")
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -357,15 +351,12 @@ extension HybridMunimBluetooth: CBCentralManagerDelegate {
         connectedPeripherals.removeValue(forKey: deviceId)
         peripheralCharacteristics.removeValue(forKey: deviceId)
         
-        eventEmitter?.emit("deviceDisconnected", ["id": deviceId])
+        NSLog("Bluetooth event")
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
-        eventEmitter?.emit("connectionFailed", [
-            "id": deviceId,
-            "error": error?.localizedDescription ?? "Unknown error"
-        ])
+        NSLog("Bluetooth: connectionFailed")
     }
 }
 
@@ -380,7 +371,7 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
             peripheral.discoverCharacteristics(nil, for: service)
         }
         
-        eventEmitter?.emit("servicesDiscovered", ["id": deviceId])
+        NSLog("Bluetooth event")
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
@@ -393,7 +384,7 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
         }
         peripheralCharacteristics[deviceId]?.append(contentsOf: characteristics)
         
-        eventEmitter?.emit("characteristicsDiscovered", ["id": deviceId])
+        NSLog("Bluetooth event")
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -403,24 +394,16 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
         
         let hexString = data.map { String(format: "%02x", $0) }.joined()
         
-        eventEmitter?.emit("characteristicValueChanged", [
-            "id": deviceId,
-            "serviceUUID": characteristic.service?.uuid.uuidString ?? "",
-            "characteristicUUID": characteristic.uuid.uuidString,
-            "value": hexString
-        ])
+        NSLog("Bluetooth: characteristicValueChanged")
     }
     
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         
         if let error = error {
-            eventEmitter?.emit("writeError", [
-                "id": deviceId,
-                "error": error.localizedDescription
-            ])
+            NSLog("Bluetooth: writeError")
         } else {
-            eventEmitter?.emit("writeSuccess", ["id": deviceId])
+            NSLog("Bluetooth event")
         }
     }
     
@@ -428,40 +411,9 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
         let deviceId = peripheral.identifier.uuidString
         
         if let error = error {
-            eventEmitter?.emit("rssiError", ["error": error.localizedDescription])
+            NSLog("Bluetooth event")
         } else {
-            eventEmitter?.emit("rssiUpdated", ["id": deviceId, "rssi": RSSI.intValue])
-        }
-    }
-}
-
-// MARK: - Helper Classes
-class NitroEventEmitter {
-    private let moduleName: String
-    
-    init(moduleName: String) {
-        self.moduleName = moduleName
-    }
-    
-    func emit(_ eventName: String, _ body: [String: Any]) {
-        let sendEvent = {
-            guard let bridge = RCTBridge.current() ?? RCTBridge.currentBridge() else {
-                NSLog("[\(self.moduleName)] Unable to emit event \(eventName): missing bridge")
-                return
-            }
-            
-            bridge.enqueueJSCall(
-                "RCTDeviceEventEmitter",
-                method: "emit",
-                args: [eventName, body],
-                completion: nil
-            )
-        }
-        
-        if Thread.isMainThread {
-            sendEvent()
-        } else {
-            DispatchQueue.main.async(execute: sendEvent)
+            NSLog("Bluetooth event")
         }
     }
 }
