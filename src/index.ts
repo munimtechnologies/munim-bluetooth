@@ -14,12 +14,22 @@ const MunimBluetooth =
 
 // Event Emitter for Bluetooth events
 const { MunimBluetoothEventEmitter } = NativeModules
+
+console.log('[munim-bluetooth] Checking for event emitter...', MunimBluetoothEventEmitter ? 'FOUND' : 'NOT FOUND')
+console.log('[munim-bluetooth] Available NativeModules:', Object.keys(NativeModules).filter(key => key.includes('Bluetooth') || key.includes('Munim')))
+
 let eventEmitter: NativeEventEmitter | null = null
 
 if (MunimBluetoothEventEmitter) {
-  eventEmitter = new NativeEventEmitter(MunimBluetoothEventEmitter)
+  try {
+    eventEmitter = new NativeEventEmitter(MunimBluetoothEventEmitter)
+    console.log('[munim-bluetooth] Event emitter initialized successfully')
+  } catch (error) {
+    console.error('[munim-bluetooth] Failed to initialize event emitter:', error)
+  }
 } else {
-  console.warn('[munim-bluetooth] Event emitter not available - device discovery events will not work')
+  console.warn('[munim-bluetooth] Event emitter module not found in NativeModules - device discovery events will not work')
+  console.warn('[munim-bluetooth] This usually means the native module was not linked properly or needs a rebuild')
 }
 
 // ========== Peripheral Features ==========
