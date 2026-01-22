@@ -30,6 +30,52 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
+    // MARK: - Event Emission
+    private func emitDeviceFound(device: CBPeripheral, advertisementData: [String: Any], rssi: NSNumber) {
+        // Build device data dictionary
+        var deviceData: [String: Any] = [
+            "id": device.identifier.uuidString,
+            "rssi": rssi.intValue
+        ]
+        
+        // Add device name if available
+        if let name = device.name {
+            deviceData["name"] = name
+        }
+        
+        // Extract and add advertising data
+        if let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String {
+            deviceData["localName"] = localName
+        }
+        
+        if let serviceUUIDs = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
+            deviceData["serviceUUIDs"] = serviceUUIDs.map { $0.uuidString }
+        }
+        
+        if let manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
+            deviceData["manufacturerData"] = manufacturerData.map { String(format: "%02x", $0) }.joined()
+        }
+        
+        if let txPowerLevel = advertisementData[CBAdvertisementDataTxPowerLevelKey] as? NSNumber {
+            deviceData["txPowerLevel"] = txPowerLevel.intValue
+        }
+        
+        if let isConnectable = advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber {
+            deviceData["isConnectable"] = isConnectable.boolValue
+        }
+        
+        // Store advertising data
+        deviceData["advertisingData"] = advertisementData
+        
+        // Emit event through the event emitter
+        if let emitter = MunimBluetoothEventEmitter.shared {
+            emitter.emitDeviceFound(deviceData)
+            NSLog("[MunimBluetooth] ✅ Device found event emitted: %@", device.identifier.uuidString)
+        } else {
+            NSLog("[MunimBluetooth] ⚠️ Event emitter not initialized!")
+        }
+    }
+    
     // MARK: - Peripheral Features
     
     func startAdvertising(options: AdvertisingOptions) throws {
@@ -335,7 +381,10 @@ extension HybridMunimBluetooth: CBCentralManagerDelegate {
         let deviceId = peripheral.identifier.uuidString
         discoveredPeripherals[deviceId] = peripheral
         
-        NSLog("Bluetooth: deviceFound")
+        // Emit the device found event
+        emitDeviceFound(device: peripheral, advertisementData: advertisementData, rssi: RSSI)
+        
+        NSLog("Bluetooth: deviceFound - %@", deviceId)
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {

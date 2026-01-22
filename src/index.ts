@@ -1,4 +1,5 @@
 import { NitroModules } from 'react-native-nitro-modules'
+import { NativeEventEmitter, NativeModules } from 'react-native'
 import type {
   MunimBluetooth as MunimBluetoothSpec,
   AdvertisingDataTypes,
@@ -10,6 +11,16 @@ import type {
 
 const MunimBluetooth =
   NitroModules.createHybridObject<MunimBluetoothSpec>('MunimBluetooth')
+
+// Event Emitter for Bluetooth events
+const { MunimBluetoothEventEmitter } = NativeModules
+let eventEmitter: NativeEventEmitter | null = null
+
+if (MunimBluetoothEventEmitter) {
+  eventEmitter = new NativeEventEmitter(MunimBluetoothEventEmitter)
+} else {
+  console.warn('[munim-bluetooth] Event emitter not available - device discovery events will not work')
+}
 
 // ========== Peripheral Features ==========
 
@@ -234,7 +245,40 @@ export function readRSSI(deviceId: string): Promise<number> {
 // ========== Event Management ==========
 
 /**
+ * Add a device found event listener (for scanning).
+ * 
+ * @param callback - Function to call when a device is found
+ * @returns A function to remove the listener
+ */
+export function addDeviceFoundListener(callback: (device: BLEDevice) => void): () => void {
+  if (!eventEmitter) {
+    console.warn('[munim-bluetooth] Cannot add listener - event emitter not available')
+    return () => {}
+  }
+  
+  const subscription = eventEmitter.addListener('deviceFound', callback)
+  return () => subscription.remove()
+}
+
+/**
  * Add an event listener.
+ *
+ * @param eventName - The name of the event to listen for.
+ * @param callback - The callback to invoke when the event occurs.
+ * @returns A function to remove the listener
+ */
+export function addEventListener(eventName: string, callback: (data: any) => void): () => void {
+  if (!eventEmitter) {
+    console.warn('[munim-bluetooth] Cannot add listener - event emitter not available')
+    return () => {}
+  }
+  
+  const subscription = eventEmitter.addListener(eventName, callback)
+  return () => subscription.remove()
+}
+
+/**
+ * Add an event listener (legacy method).
  *
  * @param eventName - The name of the event to listen for.
  */
@@ -284,6 +328,8 @@ export default {
   getConnectedDevices,
   readRSSI,
   // Events
+  addDeviceFoundListener,
+  addEventListener,
   addListener,
   removeListeners,
 }
