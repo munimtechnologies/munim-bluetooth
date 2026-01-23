@@ -79,9 +79,18 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // MARK: - Peripheral Features
     
     func startAdvertising(options: AdvertisingOptions) throws {
-        guard let peripheralManager = peripheralManager,
-              peripheralManager.state == .poweredOn else {
-            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+        guard let peripheralManager = peripheralManager else {
+            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
+        }
+        
+        guard peripheralManager.state == .poweredOn else {
+            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
+        }
+        
+        // Stop any existing advertising first
+        if peripheralManager.isAdvertising {
+            NSLog("[MunimBluetooth] Stopping existing advertising")
+            peripheralManager.stopAdvertising()
         }
         
         var advertisingData: [String: Any] = [:]
@@ -90,17 +99,20 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         if !options.serviceUUIDs.isEmpty {
             let uuids = options.serviceUUIDs.compactMap { CBUUID(string: $0) }
             advertisingData[CBAdvertisementDataServiceUUIDsKey] = uuids
+            NSLog("[MunimBluetooth] Advertising service UUIDs: %@", options.serviceUUIDs)
         }
         
         // Local name
         if let localName = options.localName {
             advertisingData[CBAdvertisementDataLocalNameKey] = localName
+            NSLog("[MunimBluetooth] Advertising local name: %@", localName)
         }
         
         // Manufacturer data
         if let manufacturerData = options.manufacturerData,
            let data = hexStringToData(manufacturerData) {
             advertisingData[CBAdvertisementDataManufacturerDataKey] = data
+            NSLog("[MunimBluetooth] Advertising manufacturer data: %@ bytes", String(data.count))
         }
         
         // Advertising data
@@ -109,7 +121,9 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
         
         currentAdvertisingData = options.advertisingData
-        peripheralManager.startAdvertising(advertisingData as? [String: Any])
+        
+        NSLog("[MunimBluetooth] Starting advertising with data: %@", advertisingData)
+        peripheralManager.startAdvertising(advertisingData)
     }
     
     func updateAdvertisingData(advertisingData: AdvertisingDataTypes) throws {
@@ -139,13 +153,27 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
     
     func setServices(services: [GATTService]) throws {
+        guard let peripheralManager = peripheralManager else {
+            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
+        }
+        
+        guard peripheralManager.state == .poweredOn else {
+            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
+        }
+        
+        // Remove existing services first
+        peripheralManager.removeAllServices()
         peripheralServices.removeAll()
+        
+        NSLog("[MunimBluetooth] Setting up %d services", services.count)
         
         for service in services {
             let serviceUUID = CBUUID(string: service.uuid)
             let mutableService = CBMutableService(type: serviceUUID, primary: true)
             
             var characteristics: [CBMutableCharacteristic] = []
+            
+            NSLog("[MunimBluetooth] Service %@: %d characteristics", service.uuid, service.characteristics.count)
             
             for characteristic in service.characteristics {
                 let charUUID = CBUUID(string: characteristic.uuid)
@@ -186,15 +214,17 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 )
                 
                 characteristics.append(mutableChar)
+                NSLog("[MunimBluetooth] Characteristic added: %@ with properties: %lu", characteristic.uuid, properties.rawValue)
             }
             
             mutableService.characteristics = characteristics
             peripheralServices.append(mutableService)
+            
+            NSLog("[MunimBluetooth] Adding service to peripheral manager: %@", service.uuid)
+            peripheralManager.add(mutableService)
         }
         
-        for service in peripheralServices {
-            peripheralManager?.add(service)
-        }
+        NSLog("[MunimBluetooth] All services added successfully")
     }
     
     // MARK: - Central/Manager Features
