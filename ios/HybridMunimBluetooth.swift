@@ -95,34 +95,47 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         
         var advertisingData: [String: Any] = [:]
         
-        // Service UUIDs
+        // Service UUIDs - ALLOWED
         if !options.serviceUUIDs.isEmpty {
             let uuids = options.serviceUUIDs.compactMap { CBUUID(string: $0) }
             advertisingData[CBAdvertisementDataServiceUUIDsKey] = uuids
             NSLog("[MunimBluetooth] Advertising service UUIDs: %@", options.serviceUUIDs)
         }
         
-        // Local name
+        // Local name - ALLOWED
         if let localName = options.localName {
             advertisingData[CBAdvertisementDataLocalNameKey] = localName
             NSLog("[MunimBluetooth] Advertising local name: %@", localName)
         }
         
-        // Manufacturer data
-        if let manufacturerData = options.manufacturerData,
-           let data = hexStringToData(manufacturerData) {
-            advertisingData[CBAdvertisementDataManufacturerDataKey] = data
-            NSLog("[MunimBluetooth] Advertising manufacturer data: %@ bytes", String(data.count))
+        // Manufacturer data - NOT ALLOWED by iOS for peripheral advertising
+        // This can only be included when you're a central scanning for peripherals
+        if options.manufacturerData != nil {
+            NSLog("[MunimBluetooth] ⚠️ WARNING: Manufacturer data cannot be advertised on iOS")
+            NSLog("[MunimBluetooth] iOS only allows localName and serviceUUIDs in peripheral advertisements")
+            // Don't add it to advertisingData - it will cause a warning/error
         }
         
-        // Advertising data
+        // Advertising data types - Most are NOT ALLOWED
         if let advertisingDataTypes = options.advertisingData {
-            processAdvertisingData(advertisingDataTypes, into: &advertisingData)
+            // Only process allowed fields
+            if let completeLocalName = advertisingDataTypes.completeLocalName {
+                advertisingData[CBAdvertisementDataLocalNameKey] = completeLocalName
+                NSLog("[MunimBluetooth] Using complete local name from advertising data: %@", completeLocalName)
+            }
+            
+            // Warn about unsupported fields
+            if advertisingDataTypes.txPowerLevel != nil {
+                NSLog("[MunimBluetooth] ⚠️ WARNING: txPowerLevel cannot be set in peripheral advertisements on iOS")
+            }
+            if advertisingDataTypes.flags != nil {
+                NSLog("[MunimBluetooth] ⚠️ WARNING: flags cannot be set in peripheral advertisements on iOS")
+            }
         }
         
         currentAdvertisingData = options.advertisingData
         
-        NSLog("[MunimBluetooth] Starting advertising with data: %@", advertisingData)
+        NSLog("[MunimBluetooth] Starting advertising with allowed data: %@", advertisingData)
         peripheralManager.startAdvertising(advertisingData)
     }
     
