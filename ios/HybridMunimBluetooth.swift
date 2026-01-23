@@ -196,15 +196,32 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                     }
                 }
                 
-                var value: Data?
-                if let valueString = characteristic.value {
-                    value = hexStringToData(valueString)
-                    if !properties.contains(.read) {
-                        properties.insert(.read)
+                // Important: In CoreBluetooth, if you provide a 'value' parameter,
+                // the characteristic becomes cached and read-only.
+                // For writable characteristics, the value MUST be nil.
+                var value: Data? = nil
+                let hasWriteProperty = properties.contains(.write) || properties.contains(.writeWithoutResponse)
+                
+                if !hasWriteProperty {
+                    // Only set a static value for read-only characteristics
+                    if let valueString = characteristic.value {
+                        value = hexStringToData(valueString)
                     }
                 }
                 
-                let permissions: CBAttributePermissions = value != nil ? .readable : [.readable, .writeable]
+                // Always ensure read is present if we have a value
+                if value != nil && !properties.contains(.read) {
+                    properties.insert(.read)
+                }
+                
+                // Set permissions based on properties
+                var permissions: CBAttributePermissions = []
+                if properties.contains(.read) {
+                    permissions.insert(.readable)
+                }
+                if hasWriteProperty {
+                    permissions.insert(.writeable)
+                }
                 
                 let mutableChar = CBMutableCharacteristic(
                     type: charUUID,
@@ -214,7 +231,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 )
                 
                 characteristics.append(mutableChar)
-                NSLog("[MunimBluetooth] Characteristic added: %@ with properties: %lu", characteristic.uuid, properties.rawValue)
+                NSLog("[MunimBluetooth] Characteristic added: %@ with properties: %lu, hasValue: %@", 
+                      characteristic.uuid, properties.rawValue, value != nil ? "YES" : "NO")
             }
             
             mutableService.characteristics = characteristics
