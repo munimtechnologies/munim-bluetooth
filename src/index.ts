@@ -15,8 +15,16 @@ const MunimBluetooth =
 // Event Emitter for Bluetooth events
 const { MunimBluetoothEventEmitter } = NativeModules
 
-console.log('[munim-bluetooth] Checking for event emitter...', MunimBluetoothEventEmitter ? 'FOUND' : 'NOT FOUND')
-console.log('[munim-bluetooth] Available NativeModules:', Object.keys(NativeModules).filter(key => key.includes('Bluetooth') || key.includes('Munim')))
+console.log(
+  '[munim-bluetooth] Checking for event emitter...',
+  MunimBluetoothEventEmitter ? 'FOUND' : 'NOT FOUND'
+)
+console.log(
+  '[munim-bluetooth] Available NativeModules:',
+  Object.keys(NativeModules).filter(
+    (key) => key.includes('Bluetooth') || key.includes('Munim')
+  )
+)
 
 let eventEmitter: NativeEventEmitter | null = null
 
@@ -25,11 +33,18 @@ if (MunimBluetoothEventEmitter) {
     eventEmitter = new NativeEventEmitter(MunimBluetoothEventEmitter)
     console.log('[munim-bluetooth] Event emitter initialized successfully')
   } catch (error) {
-    console.error('[munim-bluetooth] Failed to initialize event emitter:', error)
+    console.error(
+      '[munim-bluetooth] Failed to initialize event emitter:',
+      error
+    )
   }
 } else {
-  console.warn('[munim-bluetooth] Event emitter module not found in NativeModules - device discovery events will not work')
-  console.warn('[munim-bluetooth] This usually means the native module was not linked properly or needs a rebuild')
+  console.warn(
+    '[munim-bluetooth] Event emitter module not found in NativeModules - device discovery events will not work'
+  )
+  console.warn(
+    '[munim-bluetooth] This usually means the native module was not linked properly or needs a rebuild'
+  )
 }
 
 // ========== Peripheral Features ==========
@@ -40,10 +55,10 @@ if (MunimBluetoothEventEmitter) {
  * @param options - An object with serviceUUIDs (string[]) and supported advertising data types.
  */
 export function startAdvertising(options: {
-  serviceUUIDs: string[];
-  localName?: string;
-  manufacturerData?: string;
-  advertisingData?: AdvertisingDataTypes;
+  serviceUUIDs: string[]
+  localName?: string
+  manufacturerData?: string
+  advertisingData?: AdvertisingDataTypes
 }): void {
   return MunimBluetooth.startAdvertising(options)
 }
@@ -256,16 +271,20 @@ export function readRSSI(deviceId: string): Promise<number> {
 
 /**
  * Add a device found event listener (for scanning).
- * 
+ *
  * @param callback - Function to call when a device is found
  * @returns A function to remove the listener
  */
-export function addDeviceFoundListener(callback: (device: BLEDevice) => void): () => void {
+export function addDeviceFoundListener(
+  callback: (device: BLEDevice) => void
+): () => void {
   if (!eventEmitter) {
-    console.warn('[munim-bluetooth] Cannot add listener - event emitter not available')
+    console.warn(
+      '[munim-bluetooth] Cannot add listener - event emitter not available'
+    )
     return () => {}
   }
-  
+
   const subscription = eventEmitter.addListener('deviceFound', callback)
   return () => subscription.remove()
 }
@@ -277,12 +296,17 @@ export function addDeviceFoundListener(callback: (device: BLEDevice) => void): (
  * @param callback - The callback to invoke when the event occurs.
  * @returns A function to remove the listener
  */
-export function addEventListener(eventName: string, callback: (data: any) => void): () => void {
+export function addEventListener(
+  eventName: string,
+  callback: (data: any) => void
+): () => void {
   if (!eventEmitter) {
-    console.warn('[munim-bluetooth] Cannot add listener - event emitter not available')
+    console.warn(
+      '[munim-bluetooth] Cannot add listener - event emitter not available'
+    )
     return () => {}
   }
-  
+
   const subscription = eventEmitter.addListener(eventName, callback)
   return () => subscription.remove()
 }
