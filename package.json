@@ -85,11 +85,11 @@
     "@semantic-release/git": "^10.0.1",
     "@types/jest": "^29.5.14",
     "@types/react": "19.2.8",
-    "nitrogen": "0.33.1",
+    "nitrogen": "0.33.7",
     "react": "19.2.3",
     "react-native": "0.83.1",
     "react-native-builder-bob": "^0.40.17",
-    "react-native-nitro-modules": "0.33.1",
+    "react-native-nitro-modules": "0.33.7",
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "semantic-release": "^25.0.2",
     "typescript": "^5.8.3"
