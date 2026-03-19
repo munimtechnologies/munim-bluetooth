@@ -1,5 +1,10 @@
 import { NitroModules } from 'react-native-nitro-modules'
-import { NativeEventEmitter, NativeModules } from 'react-native'
+import {
+  DeviceEventEmitter,
+  NativeEventEmitter,
+  NativeModules,
+  Platform,
+} from 'react-native'
 import type {
   MunimBluetooth as MunimBluetoothSpec,
   AdvertisingDataTypes,
@@ -12,12 +17,18 @@ import type {
 const MunimBluetooth =
   NitroModules.createHybridObject<MunimBluetoothSpec>('MunimBluetooth')
 
-// Event Emitter for Bluetooth events
-const { MunimBluetoothEventEmitter } = NativeModules
+// Android emits through DeviceEventEmitter from the Nitro module itself.
+// iOS exposes a dedicated RCTEventEmitter module.
+const nativeEventModule =
+  Platform.OS === 'ios' ? NativeModules.MunimBluetoothEventEmitter : null
 
 console.log(
   '[munim-bluetooth] Checking for event emitter...',
-  MunimBluetoothEventEmitter ? 'FOUND' : 'NOT FOUND'
+  Platform.OS === 'android'
+    ? 'USING_DEVICE_EVENT_EMITTER'
+    : nativeEventModule
+      ? 'FOUND'
+      : 'NOT FOUND'
 )
 console.log(
   '[munim-bluetooth] Available NativeModules:',
@@ -26,11 +37,14 @@ console.log(
   )
 )
 
-let eventEmitter: NativeEventEmitter | null = null
+let eventEmitter: Pick<NativeEventEmitter, 'addListener'> | null = null
 
-if (MunimBluetoothEventEmitter) {
+if (Platform.OS === 'android') {
+  eventEmitter = DeviceEventEmitter
+  console.log('[munim-bluetooth] Using DeviceEventEmitter on Android')
+} else if (nativeEventModule) {
   try {
-    eventEmitter = new NativeEventEmitter(MunimBluetoothEventEmitter)
+    eventEmitter = new NativeEventEmitter(nativeEventModule)
     console.log('[munim-bluetooth] Event emitter initialized successfully')
   } catch (error) {
     console.error(
