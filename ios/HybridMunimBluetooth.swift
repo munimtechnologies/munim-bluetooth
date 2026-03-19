@@ -10,6 +10,82 @@ import CoreBluetooth
 import NitroModules
 import React
 
+private final class PeripheralManagerDelegateProxy: NSObject, CBPeripheralManagerDelegate {
+    weak var owner: HybridMunimBluetooth?
+    
+    init(owner: HybridMunimBluetooth) {
+        self.owner = owner
+    }
+    
+    func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
+        owner?.handlePeripheralManagerDidUpdateState(peripheral)
+    }
+    
+    func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
+        owner?.handlePeripheralManagerDidStartAdvertising(peripheral, error: error)
+    }
+    
+    func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
+        owner?.handlePeripheralManagerDidAddService(peripheral, service: service, error: error)
+    }
+}
+
+private final class CentralManagerDelegateProxy: NSObject, CBCentralManagerDelegate {
+    weak var owner: HybridMunimBluetooth?
+    
+    init(owner: HybridMunimBluetooth) {
+        self.owner = owner
+    }
+    
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        owner?.handleCentralManagerDidUpdateState(central)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
+        owner?.handleCentralManagerDidDiscover(central, peripheral: peripheral, advertisementData: advertisementData, rssi: RSSI)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        owner?.handleCentralManagerDidConnect(central, peripheral: peripheral)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        owner?.handleCentralManagerDidDisconnectPeripheral(central, peripheral: peripheral, error: error)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        owner?.handleCentralManagerDidFailToConnect(central, peripheral: peripheral, error: error)
+    }
+}
+
+private final class PeripheralDelegateProxy: NSObject, CBPeripheralDelegate {
+    weak var owner: HybridMunimBluetooth?
+    
+    init(owner: HybridMunimBluetooth) {
+        self.owner = owner
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        owner?.handlePeripheralDidDiscoverServices(peripheral, error: error)
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        owner?.handlePeripheralDidDiscoverCharacteristics(peripheral, service: service, error: error)
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        owner?.handlePeripheralDidUpdateValue(peripheral, characteristic: characteristic, error: error)
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        owner?.handlePeripheralDidWriteValue(peripheral, characteristic: characteristic, error: error)
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
+        owner?.handlePeripheralDidReadRSSI(peripheral, rssi: RSSI, error: error)
+    }
+}
+
 class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // Peripheral Manager
     private var peripheralManager: CBPeripheralManager?
@@ -23,11 +99,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private var peripheralCharacteristics: [String: [CBCharacteristic]] = [:]
     private var scanOptions: ScanOptions?
     private var isScanning = false
+    private lazy var peripheralManagerDelegateProxy = PeripheralManagerDelegateProxy(owner: self)
+    private lazy var centralManagerDelegateProxy = CentralManagerDelegateProxy(owner: self)
+    private lazy var peripheralDelegateProxy = PeripheralDelegateProxy(owner: self)
     
     override init() {
         super.init()
-        peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        peripheralManager = CBPeripheralManager(delegate: peripheralManagerDelegateProxy, queue: nil)
+        centralManager = CBCentralManager(delegate: centralManagerDelegateProxy, queue: nil)
     }
     
     // MARK: - Event Emission
@@ -406,15 +485,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             advertisingData[CBAdvertisementDataTxPowerLevelKey] = txPowerLevel
         }
     }
-}
 
-// MARK: - CBPeripheralManagerDelegate Implementation
-extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
-    func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
+    // MARK: - CoreBluetooth Delegate Forwarding
+    
+    func handlePeripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         // Handle state updates
     }
     
-    func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
+    func handlePeripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
         if let error = error {
             NSLog("Bluetooth event")
         } else {
@@ -422,23 +500,20 @@ extension HybridMunimBluetooth: CBPeripheralManagerDelegate {
         }
     }
     
-    func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
+    func handlePeripheralManagerDidAddService(_ peripheral: CBPeripheralManager, service: CBService, error: Error?) {
         if let error = error {
             NSLog("Bluetooth event")
         } else {
             NSLog("Bluetooth event")
         }
     }
-}
-
-// MARK: - CBCentralManagerDelegate Implementation
-extension HybridMunimBluetooth: CBCentralManagerDelegate {
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+    
+    func handleCentralManagerDidUpdateState(_ central: CBCentralManager) {
         let state = central.state
         NSLog("Bluetooth event")
     }
     
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
+    func handleCentralManagerDidDiscover(_ central: CBCentralManager, peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
         let deviceId = peripheral.identifier.uuidString
         discoveredPeripherals[deviceId] = peripheral
         
@@ -448,15 +523,15 @@ extension HybridMunimBluetooth: CBCentralManagerDelegate {
         NSLog("Bluetooth: deviceFound - %@", deviceId)
     }
     
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+    func handleCentralManagerDidConnect(_ central: CBCentralManager, peripheral: CBPeripheral) {
         let deviceId = peripheral.identifier.uuidString
         connectedPeripherals[deviceId] = peripheral
-        peripheral.delegate = self
+        peripheral.delegate = peripheralDelegateProxy
         
         NSLog("Bluetooth event")
     }
     
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+    func handleCentralManagerDidDisconnectPeripheral(_ central: CBCentralManager, peripheral: CBPeripheral, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         connectedPeripherals.removeValue(forKey: deviceId)
         peripheralCharacteristics.removeValue(forKey: deviceId)
@@ -464,15 +539,12 @@ extension HybridMunimBluetooth: CBCentralManagerDelegate {
         NSLog("Bluetooth event")
     }
     
-    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+    func handleCentralManagerDidFailToConnect(_ central: CBCentralManager, peripheral: CBPeripheral, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         NSLog("Bluetooth: connectionFailed")
     }
-}
-
-// MARK: - CBPeripheralDelegate Implementation
-extension HybridMunimBluetooth: CBPeripheralDelegate {
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+    
+    func handlePeripheralDidDiscoverServices(_ peripheral: CBPeripheral, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         
         guard let services = peripheral.services else { return }
@@ -484,7 +556,7 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
         NSLog("Bluetooth event")
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+    func handlePeripheralDidDiscoverCharacteristics(_ peripheral: CBPeripheral, service: CBService, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         
         guard let characteristics = service.characteristics else { return }
@@ -497,7 +569,7 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
         NSLog("Bluetooth event")
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+    func handlePeripheralDidUpdateValue(_ peripheral: CBPeripheral, characteristic: CBCharacteristic, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         
         guard let data = characteristic.value else { return }
@@ -507,7 +579,7 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
         NSLog("Bluetooth: characteristicValueChanged")
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+    func handlePeripheralDidWriteValue(_ peripheral: CBPeripheral, characteristic: CBCharacteristic, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         
         if let error = error {
@@ -517,7 +589,7 @@ extension HybridMunimBluetooth: CBPeripheralDelegate {
         }
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
+    func handlePeripheralDidReadRSSI(_ peripheral: CBPeripheral, rssi RSSI: NSNumber, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
         
         if let error = error {
