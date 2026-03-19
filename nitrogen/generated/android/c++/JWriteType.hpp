@@ -19,7 +19,7 @@ namespace margelo::nitro::munimbluetooth {
    */
   struct JWriteType final: public jni::JavaClass<JWriteType> {
   public:
-    static auto constexpr kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/WriteType;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/WriteType;";
 
   public:
     /**

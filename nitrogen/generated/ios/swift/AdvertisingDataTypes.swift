@@ -5,7 +5,6 @@
 /// Copyright © Marc Rousavy @ Margelo
 ///
 
-import Foundation
 import NitroModules
 
 /**
@@ -205,7 +204,14 @@ public extension AdvertisingDataTypes {
 
   @inline(__always)
   var flags: Double? {
-    return self.__flags.value
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__flags) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__flags)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)
@@ -306,7 +312,14 @@ public extension AdvertisingDataTypes {
   
   @inline(__always)
   var txPowerLevel: Double? {
-    return self.__txPowerLevel.value
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__txPowerLevel) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__txPowerLevel)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)
@@ -371,7 +384,14 @@ public extension AdvertisingDataTypes {
   
   @inline(__always)
   var appearance: Double? {
-    return self.__appearance.value
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__appearance) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__appearance)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)

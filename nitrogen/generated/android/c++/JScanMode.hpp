@@ -19,7 +19,7 @@ namespace margelo::nitro::munimbluetooth {
    */
   struct JScanMode final: public jni::JavaClass<JScanMode> {
   public:
-    static auto constexpr kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/ScanMode;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/ScanMode;";
 
   public:
     /**

@@ -21,7 +21,7 @@ namespace margelo::nitro::munimbluetooth {
    */
   struct JServiceDataEntry final: public jni::JavaClass<JServiceDataEntry> {
   public:
-    static auto constexpr kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/ServiceDataEntry;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/ServiceDataEntry;";
 
   public:
     /**

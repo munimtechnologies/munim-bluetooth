@@ -80,7 +80,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline std::string get_std__optional_std__string_(const std::optional<std::string>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::optional<double>
@@ -95,7 +95,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline double get_std__optional_double_(const std::optional<double>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::optional<std::vector<std::string>>
@@ -110,7 +110,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline std::vector<std::string> get_std__optional_std__vector_std__string__(const std::optional<std::vector<std::string>>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::vector<ServiceDataEntry>
@@ -136,7 +136,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline std::vector<ServiceDataEntry> get_std__optional_std__vector_ServiceDataEntry__(const std::optional<std::vector<ServiceDataEntry>>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::optional<AdvertisingDataTypes>
@@ -151,7 +151,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline AdvertisingDataTypes get_std__optional_AdvertisingDataTypes_(const std::optional<AdvertisingDataTypes>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::shared_ptr<Promise<AdvertisingDataTypes>>
@@ -278,7 +278,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline bool get_std__optional_bool_(const std::optional<bool>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::optional<ScanMode>
@@ -293,7 +293,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline ScanMode get_std__optional_ScanMode_(const std::optional<ScanMode>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::optional<ScanOptions>
@@ -308,7 +308,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline ScanOptions get_std__optional_ScanOptions_(const std::optional<ScanOptions>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::shared_ptr<Promise<void>>
@@ -425,7 +425,7 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline WriteType get_std__optional_WriteType_(const std::optional<WriteType>& optional) noexcept {
-    return *optional;
+    return optional.value();
   }
   
   // pragma MARK: std::shared_ptr<Promise<std::vector<std::string>>>

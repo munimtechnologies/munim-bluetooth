@@ -23,7 +23,7 @@ namespace margelo::nitro::munimbluetooth {
    */
   struct JGATTCharacteristic final: public jni::JavaClass<JGATTCharacteristic> {
   public:
-    static auto constexpr kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/GATTCharacteristic;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/GATTCharacteristic;";
 
   public:
     /**

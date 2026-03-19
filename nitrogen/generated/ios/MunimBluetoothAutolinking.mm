@@ -24,7 +24,7 @@
   HybridObjectRegistry::registerHybridObjectConstructor(
     "MunimBluetooth",
     []() -> std::shared_ptr<HybridObject> {
-      std::shared_ptr<HybridMunimBluetoothSpec> hybridObject = MunimBluetooth::MunimBluetoothAutolinking::AutolinkedMunimBluetooth::create();
+      std::shared_ptr<HybridMunimBluetoothSpec> hybridObject = MunimBluetooth::MunimBluetoothAutolinking::createMunimBluetooth();
       return hybridObject;
     }
   );

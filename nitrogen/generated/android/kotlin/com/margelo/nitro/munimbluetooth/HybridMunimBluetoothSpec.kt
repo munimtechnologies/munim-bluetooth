@@ -26,7 +26,7 @@ import com.margelo.nitro.core.HybridObject
 )
 abstract class HybridMunimBluetoothSpec: HybridObject() {
   // Properties
-
+  
 
   // Methods
   @DoNotStrip

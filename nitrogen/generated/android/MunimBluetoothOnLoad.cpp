@@ -21,24 +21,34 @@
 namespace margelo::nitro::munimbluetooth {
 
 int initialize(JavaVM* vm) {
+  return facebook::jni::initialize(vm, []() {
+    ::margelo::nitro::munimbluetooth::registerAllNatives();
+  });
+}
+
+struct JHybridMunimBluetoothSpecImpl: public jni::JavaClass<JHybridMunimBluetoothSpecImpl, JHybridMunimBluetoothSpec::JavaPart> {
+  static constexpr auto kJavaDescriptor = "Lcom/munimbluetooth/HybridMunimBluetooth;";
+  static std::shared_ptr<JHybridMunimBluetoothSpec> create() {
+    static const auto constructorFn = javaClassStatic()->getConstructor<JHybridMunimBluetoothSpecImpl::javaobject()>();
+    jni::local_ref<JHybridMunimBluetoothSpec::JavaPart> javaPart = javaClassStatic()->newObject(constructorFn);
+    return javaPart->getJHybridMunimBluetoothSpec();
+  }
+};
+
+void registerAllNatives() {
   using namespace margelo::nitro;
   using namespace margelo::nitro::munimbluetooth;
-  using namespace facebook;
 
-  return facebook::jni::initialize(vm, [] {
-    // Register native JNI methods
-    margelo::nitro::munimbluetooth::JHybridMunimBluetoothSpec::registerNatives();
+  // Register native JNI methods
+  margelo::nitro::munimbluetooth::JHybridMunimBluetoothSpec::CxxPart::registerNatives();
 
-    // Register Nitro Hybrid Objects
-    HybridObjectRegistry::registerHybridObjectConstructor(
-      "MunimBluetooth",
-      []() -> std::shared_ptr<HybridObject> {
-        static DefaultConstructableObject<JHybridMunimBluetoothSpec::javaobject> object("com/munimbluetooth/HybridMunimBluetooth");
-        auto instance = object.create();
-        return instance->cthis()->shared();
-      }
-    );
-  });
+  // Register Nitro Hybrid Objects
+  HybridObjectRegistry::registerHybridObjectConstructor(
+    "MunimBluetooth",
+    []() -> std::shared_ptr<HybridObject> {
+      return JHybridMunimBluetoothSpecImpl::create();
+    }
+  );
 }
 
 } // namespace margelo::nitro::munimbluetooth

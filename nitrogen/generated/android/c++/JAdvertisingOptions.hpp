@@ -27,7 +27,7 @@ namespace margelo::nitro::munimbluetooth {
    */
   struct JAdvertisingOptions final: public jni::JavaClass<JAdvertisingOptions> {
   public:
-    static auto constexpr kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/AdvertisingOptions;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/AdvertisingOptions;";
 
   public:
     /**

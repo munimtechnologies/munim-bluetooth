@@ -21,7 +21,7 @@ namespace margelo::nitro::munimbluetooth {
    */
   struct JCharacteristicValue final: public jni::JavaClass<JCharacteristicValue> {
   public:
-    static auto constexpr kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/CharacteristicValue;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/munimbluetooth/CharacteristicValue;";
 
   public:
     /**
