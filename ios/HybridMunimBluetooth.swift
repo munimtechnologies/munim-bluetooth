@@ -786,12 +786,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     
     func handlePeripheralDidUpdateValue(_ peripheral: CBPeripheral, characteristic: CBCharacteristic, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
+        let serviceUUID = characteristic.service?.uuid.uuidString ?? ""
 
         if let error = error {
             pendingReadPromises.removeValue(
                 forKey: characteristicKey(
                     deviceId: deviceId,
-                    serviceUUID: characteristic.service.uuid.uuidString,
+                    serviceUUID: serviceUUID,
                     characteristicUUID: characteristic.uuid.uuidString
                 )
             )?.reject(withError: error)
@@ -804,13 +805,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         pendingReadPromises.removeValue(
             forKey: characteristicKey(
                 deviceId: deviceId,
-                serviceUUID: characteristic.service.uuid.uuidString,
+                serviceUUID: serviceUUID,
                 characteristicUUID: characteristic.uuid.uuidString
             )
         )?.resolve(
             withResult: CharacteristicValue(
                 value: hexString,
-                serviceUUID: characteristic.service.uuid.uuidString,
+                serviceUUID: serviceUUID,
                 characteristicUUID: characteristic.uuid.uuidString
             )
         )
