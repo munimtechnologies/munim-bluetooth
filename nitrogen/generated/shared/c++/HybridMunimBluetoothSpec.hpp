@@ -25,6 +25,8 @@ namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
+// Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
 
 #include "AdvertisingOptions.hpp"
 #include "AdvertisingDataTypes.hpp"
@@ -36,6 +38,7 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include <string>
 #include "CharacteristicValue.hpp"
 #include "WriteType.hpp"
+#include "BackgroundSessionOptions.hpp"
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -86,6 +89,8 @@ namespace margelo::nitro::munimbluetooth {
       virtual void unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
       virtual std::shared_ptr<Promise<std::vector<std::string>>> getConnectedDevices() = 0;
       virtual std::shared_ptr<Promise<double>> readRSSI(const std::string& deviceId) = 0;
+      virtual void startBackgroundSession(const BackgroundSessionOptions& options) = 0;
+      virtual void stopBackgroundSession() = 0;
       virtual void addListener(const std::string& eventName) = 0;
       virtual void removeListeners(double count) = 0;
 

@@ -22,6 +22,7 @@ import android.bluetooth.le.ScanRecord
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
@@ -33,6 +34,7 @@ import com.margelo.nitro.NitroModules
 import com.margelo.nitro.core.Promise
 import com.margelo.nitro.munimbluetooth.AdvertisingDataTypes
 import com.margelo.nitro.munimbluetooth.AdvertisingOptions
+import com.margelo.nitro.munimbluetooth.BackgroundSessionOptions
 import com.margelo.nitro.munimbluetooth.CharacteristicValue
 import com.margelo.nitro.munimbluetooth.GATTCharacteristic
 import com.margelo.nitro.munimbluetooth.GATTService
@@ -61,6 +63,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private var currentServiceUUIDs: Array<String> = emptyArray()
     private var currentLocalName: String? = null
     private var currentManufacturerData: String? = null
+    private var previousAdapterName: String? = null
     private var bluetoothManager: BluetoothManager? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
 
@@ -111,6 +114,17 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             options.manufacturerData
         )
 
+        if (!currentLocalName.isNullOrBlank() && previousAdapterName == null) {
+            previousAdapterName = adapter.name
+        }
+        if (!currentLocalName.isNullOrBlank()) {
+            try {
+                adapter.name = currentLocalName
+            } catch (error: SecurityException) {
+                Log.w(TAG, "Unable to apply custom localName to Bluetooth adapter", error)
+            }
+        }
+
         if (!gattServerReady) {
             setServicesFromOptions(options.serviceUUIDs)
         }
@@ -143,6 +157,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         currentServiceUUIDs = emptyArray()
         currentLocalName = null
         currentManufacturerData = null
+        restoreAdapterName()
     }
 
     override fun setServices(services: Array<GATTService>) {
@@ -430,6 +445,67 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             return Promise.rejected(IllegalStateException("Failed to start RSSI read"))
         }
         return promise
+    }
+
+    override fun startBackgroundSession(options: BackgroundSessionOptions) {
+        val context = NitroModules.applicationContext ?: run {
+            Log.w(TAG, "Unable to start background BLE session: application context unavailable")
+            return
+        }
+
+        val intent = Intent(context, MunimBluetoothBackgroundService::class.java).apply {
+            action = MunimBluetoothBackgroundService.ACTION_START
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_SERVICE_UUIDS,
+                options.serviceUUIDs
+            )
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_LOCAL_NAME,
+                options.localName
+            )
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_ALLOW_DUPLICATES,
+                options.allowDuplicates ?: false
+            )
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_SCAN_MODE,
+                options.scanMode?.name ?: ScanMode.LOWPOWER.name
+            )
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_NOTIFICATION_CHANNEL_ID,
+                options.androidNotificationChannelId
+                    ?: MunimBluetoothBackgroundService.DEFAULT_CHANNEL_ID
+            )
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_NOTIFICATION_CHANNEL_NAME,
+                options.androidNotificationChannelName
+                    ?: MunimBluetoothBackgroundService.DEFAULT_CHANNEL_NAME
+            )
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_NOTIFICATION_TITLE,
+                options.androidNotificationTitle
+                    ?: MunimBluetoothBackgroundService.DEFAULT_NOTIFICATION_TITLE
+            )
+            putExtra(
+                MunimBluetoothBackgroundService.EXTRA_NOTIFICATION_TEXT,
+                options.androidNotificationText
+                    ?: MunimBluetoothBackgroundService.DEFAULT_NOTIFICATION_TEXT
+            )
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    override fun stopBackgroundSession() {
+        val context = NitroModules.applicationContext ?: return
+        val intent = Intent(context, MunimBluetoothBackgroundService::class.java).apply {
+            action = MunimBluetoothBackgroundService.ACTION_STOP
+        }
+        context.startService(intent)
     }
 
     override fun addListener(eventName: String) {
@@ -936,6 +1012,17 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
 
         gattServerReady = true
+    }
+
+    private fun restoreAdapterName() {
+        val adapter = bluetoothAdapter ?: return
+        val originalName = previousAdapterName ?: return
+        try {
+            adapter.name = originalName
+        } catch (error: SecurityException) {
+            Log.w(TAG, "Unable to restore Bluetooth adapter name", error)
+        }
+        previousAdapterName = null
     }
 
     companion object {

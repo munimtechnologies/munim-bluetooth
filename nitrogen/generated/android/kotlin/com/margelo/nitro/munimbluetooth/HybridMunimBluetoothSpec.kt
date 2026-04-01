@@ -26,85 +26,93 @@ import com.margelo.nitro.core.HybridObject
 )
 abstract class HybridMunimBluetoothSpec: HybridObject() {
   // Properties
-  
+
 
   // Methods
   @DoNotStrip
   @Keep
   abstract fun startAdvertising(options: AdvertisingOptions): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun updateAdvertisingData(advertisingData: AdvertisingDataTypes): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun getAdvertisingData(): Promise<AdvertisingDataTypes>
-  
+
   @DoNotStrip
   @Keep
   abstract fun stopAdvertising(): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun setServices(services: Array<GATTService>): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun isBluetoothEnabled(): Promise<Boolean>
-  
+
   @DoNotStrip
   @Keep
   abstract fun requestBluetoothPermission(): Promise<Boolean>
-  
+
   @DoNotStrip
   @Keep
   abstract fun startScan(options: ScanOptions?): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun stopScan(): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun connect(deviceId: String): Promise<Unit>
-  
+
   @DoNotStrip
   @Keep
   abstract fun disconnect(deviceId: String): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun discoverServices(deviceId: String): Promise<Array<GATTService>>
-  
+
   @DoNotStrip
   @Keep
   abstract fun readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Promise<CharacteristicValue>
-  
+
   @DoNotStrip
   @Keep
   abstract fun writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?): Promise<Unit>
-  
+
   @DoNotStrip
   @Keep
   abstract fun subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun getConnectedDevices(): Promise<Array<String>>
-  
+
   @DoNotStrip
   @Keep
   abstract fun readRSSI(deviceId: String): Promise<Double>
-  
+
+  @DoNotStrip
+  @Keep
+  abstract fun startBackgroundSession(options: BackgroundSessionOptions): Unit
+
+  @DoNotStrip
+  @Keep
+  abstract fun stopBackgroundSession(): Unit
+
   @DoNotStrip
   @Keep
   abstract fun addListener(eventName: String): Unit
-  
+
   @DoNotStrip
   @Keep
   abstract fun removeListeners(count: Double): Unit

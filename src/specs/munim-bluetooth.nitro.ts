@@ -96,6 +96,17 @@ export interface AdvertisingOptions {
   advertisingData?: AdvertisingDataTypes
 }
 
+export interface BackgroundSessionOptions {
+  serviceUUIDs: string[]
+  localName?: string
+  allowDuplicates?: boolean
+  scanMode?: ScanMode
+  androidNotificationChannelId?: string
+  androidNotificationChannelName?: string
+  androidNotificationTitle?: string
+  androidNotificationText?: string
+}
+
 export interface MunimBluetooth
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
   // ========== Peripheral Features ==========
@@ -254,10 +265,24 @@ export interface MunimBluetooth
   /**
    * Read RSSI (signal strength) for a connected device.
    *
-   * @param deviceId - The unique identifier of the connected device.
-   * @returns Promise resolving to RSSI value in dBm.
-   */
+  * @param deviceId - The unique identifier of the connected device.
+  * @returns Promise resolving to RSSI value in dBm.
+  */
   readRSSI(deviceId: string): Promise<number>
+
+  /**
+   * Start a best-effort background BLE session.
+   *
+   * Android uses a foreground service so BLE can continue after the app leaves the foreground.
+   * iOS keeps the central/peripheral managers running and relies on the host app's Bluetooth
+   * background modes for best-effort background operation.
+   */
+  startBackgroundSession(options: BackgroundSessionOptions): void
+
+  /**
+   * Stop the active background BLE session.
+   */
+  stopBackgroundSession(): void
 
   // ========== Event Management ==========
 

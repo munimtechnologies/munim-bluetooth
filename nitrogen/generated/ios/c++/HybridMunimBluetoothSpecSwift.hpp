@@ -30,6 +30,8 @@ namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
+// Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
 
 #include "AdvertisingOptions.hpp"
 #include <string>
@@ -44,6 +46,7 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include "ScanMode.hpp"
 #include "CharacteristicValue.hpp"
 #include "WriteType.hpp"
+#include "BackgroundSessionOptions.hpp"
 
 #include "MunimBluetooth-Swift-Cxx-Umbrella.hpp"
 
@@ -220,6 +223,18 @@ namespace margelo::nitro::munimbluetooth {
       }
       auto __value = std::move(__result.value());
       return __value;
+    }
+    inline void startBackgroundSession(const BackgroundSessionOptions& options) override {
+      auto __result = _swiftPart.startBackgroundSession(std::forward<decltype(options)>(options));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+    }
+    inline void stopBackgroundSession() override {
+      auto __result = _swiftPart.stopBackgroundSession();
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
     }
     inline void addListener(const std::string& eventName) override {
       auto __result = _swiftPart.addListener(eventName);

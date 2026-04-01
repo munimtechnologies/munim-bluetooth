@@ -10,6 +10,9 @@ import CoreBluetooth
 import NitroModules
 import React
 
+private let centralRestoreIdentifier = "com.munimbluetooth.central"
+private let peripheralRestoreIdentifier = "com.munimbluetooth.peripheral"
+
 private final class PeripheralManagerDelegateProxy: NSObject, CBPeripheralManagerDelegate {
     weak var owner: HybridMunimBluetooth?
     
@@ -28,6 +31,10 @@ private final class PeripheralManagerDelegateProxy: NSObject, CBPeripheralManage
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         owner?.handlePeripheralManagerDidAddService(peripheral, service: service, error: error)
     }
+
+    func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState dict: [String : Any]) {
+        owner?.handlePeripheralManagerWillRestoreState(peripheral, state: dict)
+    }
 }
 
 private final class CentralManagerDelegateProxy: NSObject, CBCentralManagerDelegate {
@@ -39,6 +46,10 @@ private final class CentralManagerDelegateProxy: NSObject, CBCentralManagerDeleg
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         owner?.handleCentralManagerDidUpdateState(central)
+    }
+
+    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
+        owner?.handleCentralManagerWillRestoreState(central, state: dict)
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
@@ -99,14 +110,27 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private var peripheralCharacteristics: [String: [CBCharacteristic]] = [:]
     private var scanOptions: ScanOptions?
     private var isScanning = false
+    private var isBackgroundSessionActive = false
     private lazy var peripheralManagerDelegateProxy = PeripheralManagerDelegateProxy(owner: self)
     private lazy var centralManagerDelegateProxy = CentralManagerDelegateProxy(owner: self)
     private lazy var peripheralDelegateProxy = PeripheralDelegateProxy(owner: self)
     
     override init() {
         super.init()
-        peripheralManager = CBPeripheralManager(delegate: peripheralManagerDelegateProxy, queue: nil)
-        centralManager = CBCentralManager(delegate: centralManagerDelegateProxy, queue: nil)
+        peripheralManager = CBPeripheralManager(
+            delegate: peripheralManagerDelegateProxy,
+            queue: nil,
+            options: [
+                CBPeripheralManagerOptionRestoreIdentifierKey: peripheralRestoreIdentifier
+            ]
+        )
+        centralManager = CBCentralManager(
+            delegate: centralManagerDelegateProxy,
+            queue: nil,
+            options: [
+                CBCentralManagerOptionRestoreIdentifierKey: centralRestoreIdentifier
+            ]
+        )
     }
     
     // MARK: - Event Emission
@@ -366,8 +390,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         if let options = options {
             scanOptions[CBCentralManagerScanOptionAllowDuplicatesKey] = options.allowDuplicates ?? false
         }
-        
-        centralManager.scanForPeripherals(withServices: nil, options: scanOptions as [String : Any])
+
+        let serviceUUIDs = options?.serviceUUIDs?.map { CBUUID(string: $0) }
+        centralManager.scanForPeripherals(
+            withServices: serviceUUIDs?.isEmpty == false ? serviceUUIDs : nil,
+            options: scanOptions as [String : Any]
+        )
     }
     
     func stopScan() throws {
@@ -443,6 +471,32 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         promise.resolve(withResult: 0)
         return promise
     }
+
+    func startBackgroundSession(options: BackgroundSessionOptions) throws {
+        isBackgroundSessionActive = true
+
+        let advertisingOptions = AdvertisingOptions(
+            serviceUUIDs: options.serviceUUIDs,
+            localName: options.localName,
+            manufacturerData: nil,
+            advertisingData: nil
+        )
+
+        try startAdvertising(options: advertisingOptions)
+        try startScan(
+            options: ScanOptions(
+                serviceUUIDs: options.serviceUUIDs,
+                allowDuplicates: options.allowDuplicates,
+                scanMode: options.scanMode
+            )
+        )
+    }
+
+    func stopBackgroundSession() throws {
+        isBackgroundSessionActive = false
+        try stopScan()
+        try stopAdvertising()
+    }
     
     func addListener(eventName: String) throws {
         // Event management
@@ -491,6 +545,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     func handlePeripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         // Handle state updates
     }
+
+    func handlePeripheralManagerWillRestoreState(_ peripheral: CBPeripheralManager, state: [String: Any]) {
+        if peripheral.isAdvertising {
+            isBackgroundSessionActive = true
+        }
+    }
     
     func handlePeripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
         if let error = error {
@@ -511,6 +571,18 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     func handleCentralManagerDidUpdateState(_ central: CBCentralManager) {
         let state = central.state
         NSLog("Bluetooth event")
+    }
+
+    func handleCentralManagerWillRestoreState(_ central: CBCentralManager, state: [String: Any]) {
+        if let scanServices = state[CBCentralManagerRestoredStateScanServicesKey] as? [CBUUID] {
+            scanOptions = ScanOptions(
+                serviceUUIDs: scanServices.map { $0.uuidString },
+                allowDuplicates: nil,
+                scanMode: nil
+            )
+            isScanning = true
+            isBackgroundSessionActive = true
+        }
     }
     
     func handleCentralManagerDidDiscover(_ central: CBCentralManager, peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {

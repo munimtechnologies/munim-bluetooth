@@ -25,6 +25,8 @@ namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
+// Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
 
 #include "AdvertisingDataTypes.hpp"
 #include <NitroModules/Promise.hpp>
@@ -50,6 +52,8 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include "JScanMode.hpp"
 #include "WriteType.hpp"
 #include "JWriteType.hpp"
+#include "BackgroundSessionOptions.hpp"
+#include "JBackgroundSessionOptions.hpp"
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -288,6 +292,14 @@ namespace margelo::nitro::munimbluetooth {
       });
       return __promise;
     }();
+  }
+  void JHybridMunimBluetoothSpec::startBackgroundSession(const BackgroundSessionOptions& options) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JBackgroundSessionOptions> /* options */)>("startBackgroundSession");
+    method(_javaPart, JBackgroundSessionOptions::fromCpp(options));
+  }
+  void JHybridMunimBluetoothSpec::stopBackgroundSession() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopBackgroundSession");
+    method(_javaPart);
   }
   void JHybridMunimBluetoothSpec::addListener(const std::string& eventName) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* eventName */)>("addListener");

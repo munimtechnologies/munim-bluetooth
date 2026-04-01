@@ -84,7 +84,7 @@ open class HybridMunimBluetoothSpec_cxx {
     }
   }
 
-  
+
 
   /**
    * Get the memory size of the Swift class (plus size of any other allocations)
@@ -121,7 +121,7 @@ open class HybridMunimBluetoothSpec_cxx {
   }
 
   // Properties
-  
+
 
   // Methods
   @inline(__always)
@@ -134,7 +134,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func updateAdvertisingData(advertisingData: AdvertisingDataTypes) -> bridge.Result_void_ {
     do {
@@ -145,7 +145,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func getAdvertisingData() -> bridge.Result_std__shared_ptr_Promise_AdvertisingDataTypes___ {
     do {
@@ -164,7 +164,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_AdvertisingDataTypes___(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func stopAdvertising() -> bridge.Result_void_ {
     do {
@@ -175,7 +175,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func setServices(services: bridge.std__vector_GATTService_) -> bridge.Result_void_ {
     do {
@@ -186,7 +186,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func isBluetoothEnabled() -> bridge.Result_std__shared_ptr_Promise_bool___ {
     do {
@@ -205,7 +205,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_bool___(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func requestBluetoothPermission() -> bridge.Result_std__shared_ptr_Promise_bool___ {
     do {
@@ -224,7 +224,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_bool___(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func startScan(options: bridge.std__optional_ScanOptions_) -> bridge.Result_void_ {
     do {
@@ -235,7 +235,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func stopScan() -> bridge.Result_void_ {
     do {
@@ -246,7 +246,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func connect(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
@@ -265,7 +265,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func disconnect(deviceId: std.string) -> bridge.Result_void_ {
     do {
@@ -276,7 +276,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func discoverServices(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_std__vector_GATTService____ {
     do {
@@ -301,7 +301,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_std__vector_GATTService____(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func readCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string) -> bridge.Result_std__shared_ptr_Promise_CharacteristicValue___ {
     do {
@@ -320,7 +320,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_CharacteristicValue___(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func writeCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string, value: std.string, writeType: bridge.std__optional_WriteType_) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
@@ -339,7 +339,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func subscribeToCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string) -> bridge.Result_void_ {
     do {
@@ -350,7 +350,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func unsubscribeFromCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string) -> bridge.Result_void_ {
     do {
@@ -361,7 +361,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func getConnectedDevices() -> bridge.Result_std__shared_ptr_Promise_std__vector_std__string____ {
     do {
@@ -386,7 +386,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_std__vector_std__string____(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func readRSSI(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_double___ {
     do {
@@ -405,7 +405,29 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_double___(__exceptionPtr)
     }
   }
-  
+
+  @inline(__always)
+  public final func startBackgroundSession(options: BackgroundSessionOptions) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.startBackgroundSession(options: options)
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+
+  @inline(__always)
+  public final func stopBackgroundSession() -> bridge.Result_void_ {
+    do {
+      try self.__implementation.stopBackgroundSession()
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+
   @inline(__always)
   public final func addListener(eventName: std.string) -> bridge.Result_void_ {
     do {
@@ -416,7 +438,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-  
+
   @inline(__always)
   public final func removeListeners(count: Double) -> bridge.Result_void_ {
     do {

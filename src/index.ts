@@ -9,6 +9,7 @@ import type {
   MunimBluetooth as MunimBluetoothSpec,
   AdvertisingDataTypes,
   BLEDevice,
+  BackgroundSessionOptions,
   ScanOptions,
   GATTService,
   CharacteristicValue,
@@ -281,6 +282,25 @@ export function readRSSI(deviceId: string): Promise<number> {
   return MunimBluetooth.readRSSI(deviceId)
 }
 
+/**
+ * Start a best-effort background BLE session.
+ *
+ * Android uses a foreground service. iOS relies on the host app's Bluetooth
+ * background modes and state restoration.
+ */
+export function startBackgroundSession(
+  options: BackgroundSessionOptions
+): void {
+  return MunimBluetooth.startBackgroundSession(options)
+}
+
+/**
+ * Stop the active background BLE session.
+ */
+export function stopBackgroundSession(): void {
+  return MunimBluetooth.stopBackgroundSession()
+}
+
 // ========== Event Management ==========
 
 /**
@@ -348,6 +368,7 @@ export function removeListeners(count: number): void {
 export type {
   AdvertisingDataTypes,
   BLEDevice,
+  BackgroundSessionOptions,
   ScanOptions,
   GATTService,
   CharacteristicValue,
@@ -375,6 +396,8 @@ export default {
   unsubscribeFromCharacteristic,
   getConnectedDevices,
   readRSSI,
+  startBackgroundSession,
+  stopBackgroundSession,
   // Events
   addDeviceFoundListener,
   addEventListener,
