@@ -23,6 +23,7 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
@@ -30,6 +31,8 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.facebook.react.modules.core.PermissionAwareActivity
+import com.facebook.react.modules.core.PermissionListener
 import com.margelo.nitro.NitroModules
 import com.margelo.nitro.core.Promise
 import com.margelo.nitro.munimbluetooth.AdvertisingDataTypes
@@ -80,6 +83,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val lastCharacteristicValues = mutableMapOf<String, CharacteristicValue>()
     private val lastRssiValues = mutableMapOf<String, Double>()
     private val eventEmitter = NitroEventEmitter(TAG)
+    private var nextPermissionRequestCode = BLUETOOTH_PERMISSION_REQUEST_CODE
 
     private fun getBluetoothManager(): BluetoothManager? {
         val context = NitroModules.applicationContext ?: return null
@@ -93,7 +97,35 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
     }
 
+    private fun hasRequiredBluetoothPermissions(): Boolean {
+        val context = NitroModules.applicationContext ?: return false
+        return BluetoothPermissionUtils.hasRequiredPermissions(context)
+    }
+
+    private fun ensureBluetoothPermissions(operationName: String): Boolean {
+        val context = NitroModules.applicationContext
+        if (context == null) {
+            Log.w(TAG, "Unable to $operationName: React context unavailable")
+            return false
+        }
+
+        val missingPermissions = BluetoothPermissionUtils.missingPermissions(context)
+        if (missingPermissions.isNotEmpty()) {
+            Log.w(
+                TAG,
+                "Unable to $operationName: missing Bluetooth permissions (${missingPermissions.joinToString()})"
+            )
+            return false
+        }
+
+        return true
+    }
+
     override fun startAdvertising(options: AdvertisingOptions) {
+        if (!ensureBluetoothPermissions("start advertising")) {
+            return
+        }
+
         ensureBluetoothManager()
         val adapter = bluetoothAdapter
         if (adapter == null || !adapter.isEnabled) {
@@ -115,7 +147,12 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         )
 
         if (!currentLocalName.isNullOrBlank() && previousAdapterName == null) {
-            previousAdapterName = adapter.name
+            previousAdapterName = try {
+                adapter.name
+            } catch (error: SecurityException) {
+                Log.w(TAG, "Unable to read Bluetooth adapter name", error)
+                null
+            }
         }
         if (!currentLocalName.isNullOrBlank()) {
             try {
@@ -161,6 +198,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun setServices(services: Array<GATTService>) {
+        if (!ensureBluetoothPermissions("set GATT services")) {
+            return
+        }
+
         ensureBluetoothManager()
         gattServerReady = false
 
@@ -197,15 +238,63 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun isBluetoothEnabled(): Promise<Boolean> {
+        if (!hasRequiredBluetoothPermissions()) {
+            return Promise.resolved(false)
+        }
+
         ensureBluetoothManager()
         return Promise.resolved(bluetoothAdapter?.isEnabled == true)
     }
 
     override fun requestBluetoothPermission(): Promise<Boolean> {
-        return Promise.resolved(true)
+        val context = NitroModules.applicationContext ?: run {
+            Log.w(TAG, "Unable to request Bluetooth permissions: React context unavailable")
+            return Promise.resolved(false)
+        }
+
+        val missingPermissions = BluetoothPermissionUtils.missingPermissions(context)
+        if (missingPermissions.isEmpty()) {
+            return Promise.resolved(true)
+        }
+
+        val activity = context.currentActivity as? PermissionAwareActivity
+        if (activity == null) {
+            Log.w(TAG, "Unable to request Bluetooth permissions: current activity unavailable")
+            return Promise.resolved(false)
+        }
+
+        val requestCode = nextPermissionRequestCode++
+        val promise = Promise<Boolean>()
+
+        try {
+            activity.requestPermissions(
+                missingPermissions,
+                requestCode,
+                PermissionListener { callbackRequestCode, _, grantResults ->
+                    if (callbackRequestCode != requestCode) {
+                        return@PermissionListener false
+                    }
+
+                    val isGranted =
+                        grantResults.isNotEmpty() &&
+                            grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+                    promise.resolve(isGranted)
+                    true
+                }
+            )
+        } catch (error: IllegalStateException) {
+            Log.w(TAG, "Unable to request Bluetooth permissions", error)
+            promise.resolve(false)
+        }
+
+        return promise
     }
 
     override fun startScan(options: ScanOptions?) {
+        if (!ensureBluetoothPermissions("start scanning")) {
+            return
+        }
+
         ensureBluetoothManager()
         val adapter = bluetoothAdapter
         if (adapter == null || !adapter.isEnabled) {
@@ -278,6 +367,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun connect(deviceId: String): Promise<Unit> {
+        if (!ensureBluetoothPermissions("connect to BLE device")) {
+            return Promise.rejected(IllegalStateException("Bluetooth permissions not granted"))
+        }
+
         ensureBluetoothManager()
         connectedDevices[deviceId]?.let { existingGatt ->
             if (existingGatt.services != null) {
@@ -453,6 +546,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             return
         }
 
+        if (!ensureBluetoothPermissions("start background BLE session")) {
+            return
+        }
+
         val intent = Intent(context, MunimBluetoothBackgroundService::class.java).apply {
             action = MunimBluetoothBackgroundService.ACTION_START
             putExtra(
@@ -517,6 +614,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     private fun restartAdvertising(delayMs: Long) {
+        if (!ensureBluetoothPermissions("restart advertising")) {
+            return
+        }
+
         ensureBluetoothManager()
         val adapter = bluetoothAdapter
         if (adapter == null || !adapter.isEnabled) {
@@ -1027,6 +1128,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
     companion object {
         private const val TAG = "HybridMunimBluetooth"
+        private const val BLUETOOTH_PERMISSION_REQUEST_CODE = 9137
         private val CLIENT_CHARACTERISTIC_CONFIG_UUID =
             UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }

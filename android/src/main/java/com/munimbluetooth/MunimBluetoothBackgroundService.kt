@@ -100,19 +100,38 @@ class MunimBluetoothBackgroundService : Service() {
         allowDuplicates: Boolean,
         scanMode: ScanMode
     ) {
+        if (!BluetoothPermissionUtils.hasRequiredPermissions(applicationContext)) {
+            Log.w(TAG, "Unable to start background BLE session: missing runtime permissions")
+            stopSelf()
+            return
+        }
+
         bluetoothManager =
             applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         bluetoothAdapter = bluetoothManager?.adapter
 
         val adapter = bluetoothAdapter
-        if (adapter == null || !adapter.isEnabled) {
+        val isEnabled = try {
+            adapter?.isEnabled == true
+        } catch (error: SecurityException) {
+            Log.w(TAG, "Unable to inspect Bluetooth adapter state for background session", error)
+            false
+        }
+
+        if (adapter == null || !isEnabled) {
             Log.w(TAG, "Unable to start background BLE session: Bluetooth unavailable")
             stopSelf()
             return
         }
 
         if (!localName.isNullOrBlank() && previousAdapterName == null) {
-            previousAdapterName = adapter.name
+            previousAdapterName = try {
+                adapter.name
+            } catch (error: SecurityException) {
+                Log.w(TAG, "Unable to read adapter name for background advertising", error)
+                null
+            }
+
             try {
                 adapter.name = localName
             } catch (error: SecurityException) {
@@ -193,7 +212,11 @@ class MunimBluetoothBackgroundService : Service() {
             }
         }
 
-        activeAdvertiser.startAdvertising(settings, data.build(), advertiseCallback)
+        try {
+            activeAdvertiser.startAdvertising(settings, data.build(), advertiseCallback)
+        } catch (error: SecurityException) {
+            Log.w(TAG, "Unable to start background advertising", error)
+        }
     }
 
     private fun startScan(
@@ -242,7 +265,11 @@ class MunimBluetoothBackgroundService : Service() {
             }
         }
 
-        activeScanner.startScan(filters, settingsBuilder.build(), scanCallback)
+        try {
+            activeScanner.startScan(filters, settingsBuilder.build(), scanCallback)
+        } catch (error: SecurityException) {
+            Log.w(TAG, "Unable to start background scan", error)
+        }
     }
 
     private fun handleScanResult(result: ScanResult, allowDuplicates: Boolean) {
