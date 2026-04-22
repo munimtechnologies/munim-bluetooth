@@ -117,6 +117,8 @@ npx expo install munim-bluetooth react-native-nitro-modules
 ```
 
 > **Note**: This library requires Expo SDK 50+ and works with both managed and bare workflows. To support Nitro modules, you need React Native version v0.78.0 or higher.
+>
+> **Important**: This package requires a native development build in Expo. It does not work in Expo Go. After installing, run `npx expo run:ios`, `npx expo run:android`, or create a development build with EAS.
 
 ### iOS Setup
 
@@ -214,6 +216,9 @@ stopAdvertising()
 
 ```typescript
 import {
+  addDeviceFoundListener,
+  isBluetoothEnabled,
+  requestBluetoothPermission,
   startScan,
   stopScan,
   connect,
@@ -222,24 +227,35 @@ import {
   subscribeToCharacteristic,
 } from 'munim-bluetooth'
 
-// Start scanning
+const hasPermission = await requestBluetoothPermission()
+if (!hasPermission) {
+  throw new Error('Bluetooth permission was not granted')
+}
+
+const enabled = await isBluetoothEnabled()
+if (!enabled) {
+  throw new Error('Bluetooth is turned off')
+}
+
+const removeDeviceFoundListener = addDeviceFoundListener((device) => {
+  console.log('Found device:', device.id, device.name)
+})
+
 startScan({
   serviceUUIDs: ['180D'],
   allowDuplicates: false,
   scanMode: 'balanced',
 })
 
-// Connect to a device (deviceId from deviceFound event)
+// Later, after choosing a discovered device ID:
 await connect('device-id-here')
-
-// Discover services
 const services = await discoverServices('device-id-here')
-
-// Read a characteristic
 const value = await readCharacteristic('device-id-here', '180D', '2A37')
-
-// Subscribe to notifications
 subscribeToCharacteristic('device-id-here', '180D', '2A37')
+
+// Cleanup when finished scanning
+stopScan()
+removeDeviceFoundListener()
 ```
 
 ### Advanced Usage with Supported Advertising Data Types
@@ -623,12 +639,11 @@ updateAdvertisingData({
 
 ```js
 import React, { useEffect } from 'react'
+import { Text } from 'react-native'
 import {
   startAdvertising,
   stopAdvertising,
   setServices,
-  addListener,
-  removeListeners,
 } from 'munim-bluetooth'
 
 const MyPeripheral = () => {
@@ -670,7 +685,6 @@ const MyPeripheral = () => {
     // Cleanup on unmount
     return () => {
       stopAdvertising()
-      removeListeners('connectionStateChanged')
     }
   }, [])
 
@@ -682,14 +696,19 @@ const MyPeripheral = () => {
 
 ```js
 import React, { useState, useEffect } from 'react'
+import { Text, View } from 'react-native'
 import {
+  addDeviceFoundListener,
+  addEventListener,
+  disconnect,
+  isBluetoothEnabled,
+  requestBluetoothPermission,
   startScan,
   stopScan,
   connect,
   discoverServices,
   readCharacteristic,
   subscribeToCharacteristic,
-  addListener,
 } from 'munim-bluetooth'
 
 const DeviceScanner = () => {
@@ -697,25 +716,61 @@ const DeviceScanner = () => {
   const [connectedDevice, setConnectedDevice] = useState(null)
 
   useEffect(() => {
-    // Start scanning
-    startScan({
-      serviceUUIDs: ['180D'], // Filter by Heart Rate service
-      allowDuplicates: false,
-      scanMode: 'balanced',
-    })
+    let removeDeviceFoundListener = () => {}
+    let removeCharacteristicListener = () => {}
 
-    // Listen for discovered devices
-    addListener('deviceFound')
-    // Handle deviceFound events to update devices state
+    const start = async () => {
+      const hasPermission = await requestBluetoothPermission()
+      if (!hasPermission) {
+        return
+      }
+
+      const enabled = await isBluetoothEnabled()
+      if (!enabled) {
+        return
+      }
+
+      removeDeviceFoundListener = addDeviceFoundListener((device) => {
+        setDevices((currentDevices) => {
+          const alreadyExists = currentDevices.some(
+            (currentDevice) => currentDevice.id === device.id
+          )
+
+          if (alreadyExists) {
+            return currentDevices
+          }
+
+          return [...currentDevices, device]
+        })
+      })
+
+      removeCharacteristicListener = addEventListener(
+        'characteristicValueChanged',
+        (event) => {
+          console.log('Characteristic changed:', event)
+        }
+      )
+
+      startScan({
+        serviceUUIDs: ['180D'], // Filter by Heart Rate service
+        allowDuplicates: false,
+        scanMode: 'balanced',
+      })
+    }
+
+    void start()
 
     // Cleanup
     return () => {
       stopScan()
+      removeDeviceFoundListener()
+      removeCharacteristicListener()
+
       if (connectedDevice) {
         disconnect(connectedDevice)
       }
     }
-  }, [])
+  }, [connectedDevice])
 
   const handleConnect = async (deviceId) => {
     await connect(deviceId)
@@ -731,9 +786,6 @@ const DeviceScanner = () => {
 
     // Subscribe to notifications
     subscribeToCharacteristic(deviceId, '180D', '2A37')
-
-    // Listen for value changes
-    addListener('characteristicValueChanged')
   }
 
   return (
@@ -757,7 +809,7 @@ const DeviceScanner = () => {
 
 ### Expo-Specific Issues
 
-1. **Development Build Required**: This library requires a development build in Expo. Use `npx expo run:ios` or `npx expo run:android`
+1. **Development Build Required**: This library requires a development build in Expo. Use `npx expo run:ios`, `npx expo run:android`, or an EAS development build. Expo Go is not supported.
 2. **Permissions Not Working**: Make sure you've added the permissions to your `app.json` as shown in the setup section
 3. **Build Errors**: Ensure you're using Expo SDK 50+ and have the latest Expo CLI
 4. **Nitro Modules**: Make sure you have `react-native-nitro-modules` installed and configured
