@@ -1,3 +1,14 @@
+## [0.4.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.0...v0.4.1) (2026-05-16)
+
+### 📚 Documentation
+
+* move installation near platform matrix ([875128b](https://github.com/munimtechnologies/munim-bluetooth/commit/875128b01f19b4b78a4b269c230836ac4582ce35))
+
+### 🛠️ Other changes
+
+* publish Apache license metadata ([f3741b7](https://github.com/munimtechnologies/munim-bluetooth/commit/f3741b7407514982f4d8b7d2c18941b9e225104a))
+* remove dependabot ([b77743f](https://github.com/munimtechnologies/munim-bluetooth/commit/b77743ff3290c35bac25b2334fa5b5249f270c14))
+
 ## [0.4.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.3.27...v0.4.0) (2026-05-16)
 
 ### ✨ Features
