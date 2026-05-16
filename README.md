@@ -57,7 +57,10 @@
 
 - [📚 Documentation](#-documentation)
 - [🚀 Features](#-features)
+- [Platform Support Matrix](#platform-support-matrix)
 - [📦 Installation](#-installation)
+- [Device-to-Device Messaging](#device-to-device-messaging)
+- [Background and Terminated Behavior](#background-and-terminated-behavior)
 - [⚡ Quick Start](#-quick-start)
 - [🔧 API Reference](#-api-reference)
 - [📖 Usage Examples](#-usage-examples)
@@ -128,97 +131,6 @@
 | Apple Multipeer Connectivity | ✅ | ❌ | iOS/iPadOS devices can discover peers, auto-invite/accept sessions, and exchange encrypted messages. Android cannot join Apple's Multipeer sessions; use BLE/GATT for iOS-to-Android. |
 
 Call `getCapabilities()` at runtime when you need optional behavior. Platform support can still vary by OS version, hardware, permissions, and app background state.
-
-## Device-to-Device Messaging
-
-For phone-to-phone apps, treat advertising as discovery and GATT as the reliable message channel:
-
-- A peripheral advertises one or more service UUIDs, defines writable/readable/notifiable characteristics with `setServices()`, and listens for `peripheralReadRequest`, `peripheralWriteRequest`, `peripheralSubscribed`, and `peripheralUnsubscribed`.
-- A central scans for that service, connects, discovers services, reads or writes the characteristic, and subscribes for notifications through `characteristicValueChanged`.
-- Multiple nearby centrals can connect, write, and subscribe at the same time. Track peers by `deviceId` on the central side and `centralId` on the peripheral side.
-
-Advertising payload caveat: Android can advertise manufacturer data, service data, TX power, appearance, and related fields subject to BLE payload size and hardware limits. iOS public CoreBluetooth peripheral advertising only exposes local name and service UUIDs, so arbitrary relay bytes should go in a GATT characteristic for iOS-to-iOS and iOS-to-Android communication. If you need a tiny discovery hint on iOS, encode it into your advertised service UUID choice or local name with the normal privacy and size tradeoffs.
-
-### Apple Multipeer Connectivity
-
-For iOS-to-iOS or iPadOS-to-iOS communication, `startMultipeerSession()` exposes Apple's Multipeer Connectivity as a higher-level peer transport. It advertises and browses using a Bonjour service type, auto-invites discovered peers by default, accepts incoming invitations by default, and sends hex-encoded payloads to one peer or all connected peers.
-
-```typescript
-import {
-  addEventListener,
-  sendMultipeerMessage,
-  startMultipeerSession,
-  stopMultipeerSession,
-} from 'munim-bluetooth'
-
-startMultipeerSession({
-  serviceType: 'munim-mesh',
-  displayName: 'Sheehan iPhone',
-  discoveryInfo: [{ key: 'role', value: 'wallet-peer' }],
-  autoInvite: true,
-  autoAcceptInvitations: true,
-  encryptionPreference: 'required',
-})
-
-addEventListener('multipeerPeerStateChanged', async (peer) => {
-  if (peer.state === 'connected') {
-    await sendMultipeerMessage('68656c6c6f', [peer.id], true)
-  }
-})
-
-addEventListener('multipeerMessageReceived', ({ displayName, value }) => {
-  console.log('message from', displayName, value)
-})
-
-// Later:
-stopMultipeerSession()
-```
-
-Multipeer service types must be 1-15 lowercase letters/numbers/hyphens, and the matching Bonjour entry must be declared in iOS `Info.plist` as `_<serviceType>._tcp` (for example `_munim-mesh._tcp`). The Expo config plugin adds `_munim-mesh._tcp` by default and accepts a `multipeerServiceTypes` option for custom service types.
-
-## Background and Terminated Behavior
-
-`startBackgroundSession()` starts a best-effort BLE session for apps that need nearby communication after the user leaves the app.
-
-| State | iOS | Android |
-| --- | --- | --- |
-| App in background or suspended | Supported when `UIBackgroundModes` includes `bluetooth-central` and/or `bluetooth-peripheral`. The Expo config plugin adds both by default. | Supported through a foreground service with `connectedDevice` service type and a user-visible notification. |
-| App terminated by the system | Best-effort CoreBluetooth state restoration is enabled when background modes are present. The package uses restoration identifiers and emits `backgroundSessionRestored` when CoreBluetooth restores central/peripheral state. On iOS 26 and later, Apple's Bluetooth relaunch rules require AccessorySetupKit eligibility for background relaunch, so arbitrary phone-to-phone BLE mesh apps should not depend on terminated-state relaunch. | The foreground service persists its session config and uses `START_STICKY`; if the process is recreated, it restores scan, advertising, and a native GATT characteristic store from the services configured with `setServices()`. |
-| User force-quits / force-stops the app | Not supported by iOS for ongoing app-owned BLE work. The user has explicitly stopped the app. | Not supported after Android force stop. The OS prevents the app from running again until the user opens it or another allowed user/system action starts it. |
-
-Background sessions are for keeping discovery and small GATT messages alive. They do not make JavaScript execute indefinitely. If the process is alive, normal JS events such as `peripheralWriteRequest` and `characteristicValueChanged` continue. After a system restart, iOS may relaunch the app only when Apple's current CoreBluetooth restoration rules allow it; Android restores native scan/advertise/GATT state in the foreground service, and app-specific business logic should reconcile state when the app opens again.
-
-```typescript
-import {
-  setServices,
-  startBackgroundSession,
-  stopBackgroundSession,
-} from 'munim-bluetooth'
-
-setServices([
-  {
-    uuid: SERVICE_UUID,
-    characteristics: [
-      {
-        uuid: CHARACTERISTIC_UUID,
-        properties: ['read', 'write', 'writeWithoutResponse', 'notify'],
-        value: '70696e67',
-      },
-    ],
-  },
-])
-
-startBackgroundSession({
-  serviceUUIDs: [SERVICE_UUID],
-  localName: 'MunimPeer',
-  scanMode: 'lowPower',
-  androidNotificationTitle: 'Nearby mode',
-  androidNotificationText: 'Keeping Bluetooth available nearby',
-})
-
-// Later:
-stopBackgroundSession()
-```
 
 ## 📦 Installation
 
@@ -324,6 +236,97 @@ For Android, add the following permissions to your `AndroidManifest.xml`:
     }
   }
 }
+```
+
+## Device-to-Device Messaging
+
+For phone-to-phone apps, treat advertising as discovery and GATT as the reliable message channel:
+
+- A peripheral advertises one or more service UUIDs, defines writable/readable/notifiable characteristics with `setServices()`, and listens for `peripheralReadRequest`, `peripheralWriteRequest`, `peripheralSubscribed`, and `peripheralUnsubscribed`.
+- A central scans for that service, connects, discovers services, reads or writes the characteristic, and subscribes for notifications through `characteristicValueChanged`.
+- Multiple nearby centrals can connect, write, and subscribe at the same time. Track peers by `deviceId` on the central side and `centralId` on the peripheral side.
+
+Advertising payload caveat: Android can advertise manufacturer data, service data, TX power, appearance, and related fields subject to BLE payload size and hardware limits. iOS public CoreBluetooth peripheral advertising only exposes local name and service UUIDs, so arbitrary relay bytes should go in a GATT characteristic for iOS-to-iOS and iOS-to-Android communication. If you need a tiny discovery hint on iOS, encode it into your advertised service UUID choice or local name with the normal privacy and size tradeoffs.
+
+### Apple Multipeer Connectivity
+
+For iOS-to-iOS or iPadOS-to-iOS communication, `startMultipeerSession()` exposes Apple's Multipeer Connectivity as a higher-level peer transport. It advertises and browses using a Bonjour service type, auto-invites discovered peers by default, accepts incoming invitations by default, and sends hex-encoded payloads to one peer or all connected peers.
+
+```typescript
+import {
+  addEventListener,
+  sendMultipeerMessage,
+  startMultipeerSession,
+  stopMultipeerSession,
+} from 'munim-bluetooth'
+
+startMultipeerSession({
+  serviceType: 'munim-mesh',
+  displayName: 'Sheehan iPhone',
+  discoveryInfo: [{ key: 'role', value: 'wallet-peer' }],
+  autoInvite: true,
+  autoAcceptInvitations: true,
+  encryptionPreference: 'required',
+})
+
+addEventListener('multipeerPeerStateChanged', async (peer) => {
+  if (peer.state === 'connected') {
+    await sendMultipeerMessage('68656c6c6f', [peer.id], true)
+  }
+})
+
+addEventListener('multipeerMessageReceived', ({ displayName, value }) => {
+  console.log('message from', displayName, value)
+})
+
+// Later:
+stopMultipeerSession()
+```
+
+Multipeer service types must be 1-15 lowercase letters/numbers/hyphens, and the matching Bonjour entry must be declared in iOS `Info.plist` as `_<serviceType>._tcp` (for example `_munim-mesh._tcp`). The Expo config plugin adds `_munim-mesh._tcp` by default and accepts a `multipeerServiceTypes` option for custom service types.
+
+## Background and Terminated Behavior
+
+`startBackgroundSession()` starts a best-effort BLE session for apps that need nearby communication after the user leaves the app.
+
+| State | iOS | Android |
+| --- | --- | --- |
+| App in background or suspended | Supported when `UIBackgroundModes` includes `bluetooth-central` and/or `bluetooth-peripheral`. The Expo config plugin adds both by default. | Supported through a foreground service with `connectedDevice` service type and a user-visible notification. |
+| App terminated by the system | Best-effort CoreBluetooth state restoration is enabled when background modes are present. The package uses restoration identifiers and emits `backgroundSessionRestored` when CoreBluetooth restores central/peripheral state. On iOS 26 and later, Apple's Bluetooth relaunch rules require AccessorySetupKit eligibility for background relaunch, so arbitrary phone-to-phone BLE mesh apps should not depend on terminated-state relaunch. | The foreground service persists its session config and uses `START_STICKY`; if the process is recreated, it restores scan, advertising, and a native GATT characteristic store from the services configured with `setServices()`. |
+| User force-quits / force-stops the app | Not supported by iOS for ongoing app-owned BLE work. The user has explicitly stopped the app. | Not supported after Android force stop. The OS prevents the app from running again until the user opens it or another allowed user/system action starts it. |
+
+Background sessions are for keeping discovery and small GATT messages alive. They do not make JavaScript execute indefinitely. If the process is alive, normal JS events such as `peripheralWriteRequest` and `characteristicValueChanged` continue. After a system restart, iOS may relaunch the app only when Apple's current CoreBluetooth restoration rules allow it; Android restores native scan/advertise/GATT state in the foreground service, and app-specific business logic should reconcile state when the app opens again.
+
+```typescript
+import {
+  setServices,
+  startBackgroundSession,
+  stopBackgroundSession,
+} from 'munim-bluetooth'
+
+setServices([
+  {
+    uuid: SERVICE_UUID,
+    characteristics: [
+      {
+        uuid: CHARACTERISTIC_UUID,
+        properties: ['read', 'write', 'writeWithoutResponse', 'notify'],
+        value: '70696e67',
+      },
+    ],
+  },
+])
+
+startBackgroundSession({
+  serviceUUIDs: [SERVICE_UUID],
+  localName: 'MunimPeer',
+  scanMode: 'lowPower',
+  androidNotificationTitle: 'Nearby mode',
+  androidNotificationText: 'Keeping Bluetooth available nearby',
+})
+
+// Later:
+stopBackgroundSession()
 ```
 
 ## ⚡ Quick Start
