@@ -64,7 +64,7 @@
     "url": "git+https://github.com/munimtechnologies/munim-bluetooth.git"
   },
   "author": "sheehanmunim <support@munimtech.com> (https://github.com/sheehanmunim)",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/munimtechnologies/munim-bluetooth/issues"
   },

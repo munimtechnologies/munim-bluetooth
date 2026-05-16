@@ -12,7 +12,7 @@
     <img alt="Package version" src="https://img.shields.io/npm/v/munim-bluetooth.svg?style=flat-square&label=Version&labelColor=000000&color=0066CC" />
   </a>
   <a aria-label="Package is free to use" href="https://github.com/munimtechnologies/munim-bluetooth/blob/main/LICENSE" target="_blank">
-    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-success.svg?style=flat-square&color=33CC12" target="_blank" />
+    <img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache%202.0-success.svg?style=flat-square&color=33CC12" target="_blank" />
   </a>
   <a aria-label="package downloads" href="https://www.npmtrends.com/munim-bluetooth" target="_blank">
     <img alt="Downloads" src="https://img.shields.io/npm/dm/munim-bluetooth.svg?style=flat-square&labelColor=gray&color=33CC12&label=Downloads" />
@@ -1181,7 +1181,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 
