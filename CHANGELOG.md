@@ -1,3 +1,9 @@
+## [0.4.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.3.27...v0.4.0) (2026-05-16)
+
+### ✨ Features
+
+* add complete device bluetooth transports ([f48cf6b](https://github.com/munimtechnologies/munim-bluetooth/commit/f48cf6bbb4a725543a45639e2202618911bf3aa4))
+
 # Changelog
 
 ## 0.4.0
