@@ -73,130 +73,130 @@ namespace margelo::nitro::munimbluetooth {
       jni::local_ref<jni::JString> manufacturerData = this->getFieldValue(fieldManufacturerData);
       return AdvertisingDataTypes(
         flags != nullptr ? std::make_optional(flags->value()) : std::nullopt,
-        incompleteServiceUUIDs16 != nullptr ? std::make_optional([&]() {
-          size_t __size = incompleteServiceUUIDs16->size();
+        incompleteServiceUUIDs16 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = incompleteServiceUUIDs16->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
-        completeServiceUUIDs16 != nullptr ? std::make_optional([&]() {
-          size_t __size = completeServiceUUIDs16->size();
+        }(incompleteServiceUUIDs16)) : std::nullopt,
+        completeServiceUUIDs16 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = completeServiceUUIDs16->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
-        incompleteServiceUUIDs32 != nullptr ? std::make_optional([&]() {
-          size_t __size = incompleteServiceUUIDs32->size();
+        }(completeServiceUUIDs16)) : std::nullopt,
+        incompleteServiceUUIDs32 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = incompleteServiceUUIDs32->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
-        completeServiceUUIDs32 != nullptr ? std::make_optional([&]() {
-          size_t __size = completeServiceUUIDs32->size();
+        }(incompleteServiceUUIDs32)) : std::nullopt,
+        completeServiceUUIDs32 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = completeServiceUUIDs32->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
-        incompleteServiceUUIDs128 != nullptr ? std::make_optional([&]() {
-          size_t __size = incompleteServiceUUIDs128->size();
+        }(completeServiceUUIDs32)) : std::nullopt,
+        incompleteServiceUUIDs128 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = incompleteServiceUUIDs128->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
-        completeServiceUUIDs128 != nullptr ? std::make_optional([&]() {
-          size_t __size = completeServiceUUIDs128->size();
+        }(incompleteServiceUUIDs128)) : std::nullopt,
+        completeServiceUUIDs128 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = completeServiceUUIDs128->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
+        }(completeServiceUUIDs128)) : std::nullopt,
         shortenedLocalName != nullptr ? std::make_optional(shortenedLocalName->toStdString()) : std::nullopt,
         completeLocalName != nullptr ? std::make_optional(completeLocalName->toStdString()) : std::nullopt,
         txPowerLevel != nullptr ? std::make_optional(txPowerLevel->value()) : std::nullopt,
-        serviceSolicitationUUIDs16 != nullptr ? std::make_optional([&]() {
-          size_t __size = serviceSolicitationUUIDs16->size();
+        serviceSolicitationUUIDs16 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceSolicitationUUIDs16->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
-        serviceSolicitationUUIDs128 != nullptr ? std::make_optional([&]() {
-          size_t __size = serviceSolicitationUUIDs128->size();
+        }(serviceSolicitationUUIDs16)) : std::nullopt,
+        serviceSolicitationUUIDs128 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceSolicitationUUIDs128->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
-        serviceData16 != nullptr ? std::make_optional([&]() {
-          size_t __size = serviceData16->size();
+        }(serviceSolicitationUUIDs128)) : std::nullopt,
+        serviceData16 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<ServiceDataEntry> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceData16->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toCpp());
           }
           return __vector;
-        }()) : std::nullopt,
-        serviceData32 != nullptr ? std::make_optional([&]() {
-          size_t __size = serviceData32->size();
+        }(serviceData16)) : std::nullopt,
+        serviceData32 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<ServiceDataEntry> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceData32->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toCpp());
           }
           return __vector;
-        }()) : std::nullopt,
-        serviceData128 != nullptr ? std::make_optional([&]() {
-          size_t __size = serviceData128->size();
+        }(serviceData32)) : std::nullopt,
+        serviceData128 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<ServiceDataEntry> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceData128->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toCpp());
           }
           return __vector;
-        }()) : std::nullopt,
+        }(serviceData128)) : std::nullopt,
         appearance != nullptr ? std::make_optional(appearance->value()) : std::nullopt,
-        serviceSolicitationUUIDs32 != nullptr ? std::make_optional([&]() {
-          size_t __size = serviceSolicitationUUIDs32->size();
+        serviceSolicitationUUIDs32 != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceSolicitationUUIDs32->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
+        }(serviceSolicitationUUIDs32)) : std::nullopt,
         manufacturerData != nullptr ? std::make_optional(manufacturerData->toStdString()) : std::nullopt
       );
     }
@@ -213,130 +213,130 @@ namespace margelo::nitro::munimbluetooth {
       return create(
         clazz,
         value.flags.has_value() ? jni::JDouble::valueOf(value.flags.value()) : nullptr,
-        value.incompleteServiceUUIDs16.has_value() ? [&]() {
-          size_t __size = value.incompleteServiceUUIDs16.value().size();
+        value.incompleteServiceUUIDs16.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.incompleteServiceUUIDs16.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.completeServiceUUIDs16.has_value() ? [&]() {
-          size_t __size = value.completeServiceUUIDs16.value().size();
+        }(value.incompleteServiceUUIDs16.value()) : nullptr,
+        value.completeServiceUUIDs16.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.completeServiceUUIDs16.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.incompleteServiceUUIDs32.has_value() ? [&]() {
-          size_t __size = value.incompleteServiceUUIDs32.value().size();
+        }(value.completeServiceUUIDs16.value()) : nullptr,
+        value.incompleteServiceUUIDs32.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.incompleteServiceUUIDs32.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.completeServiceUUIDs32.has_value() ? [&]() {
-          size_t __size = value.completeServiceUUIDs32.value().size();
+        }(value.incompleteServiceUUIDs32.value()) : nullptr,
+        value.completeServiceUUIDs32.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.completeServiceUUIDs32.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.incompleteServiceUUIDs128.has_value() ? [&]() {
-          size_t __size = value.incompleteServiceUUIDs128.value().size();
+        }(value.completeServiceUUIDs32.value()) : nullptr,
+        value.incompleteServiceUUIDs128.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.incompleteServiceUUIDs128.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.completeServiceUUIDs128.has_value() ? [&]() {
-          size_t __size = value.completeServiceUUIDs128.value().size();
+        }(value.incompleteServiceUUIDs128.value()) : nullptr,
+        value.completeServiceUUIDs128.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.completeServiceUUIDs128.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
+        }(value.completeServiceUUIDs128.value()) : nullptr,
         value.shortenedLocalName.has_value() ? jni::make_jstring(value.shortenedLocalName.value()) : nullptr,
         value.completeLocalName.has_value() ? jni::make_jstring(value.completeLocalName.value()) : nullptr,
         value.txPowerLevel.has_value() ? jni::JDouble::valueOf(value.txPowerLevel.value()) : nullptr,
-        value.serviceSolicitationUUIDs16.has_value() ? [&]() {
-          size_t __size = value.serviceSolicitationUUIDs16.value().size();
+        value.serviceSolicitationUUIDs16.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceSolicitationUUIDs16.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.serviceSolicitationUUIDs128.has_value() ? [&]() {
-          size_t __size = value.serviceSolicitationUUIDs128.value().size();
+        }(value.serviceSolicitationUUIDs16.value()) : nullptr,
+        value.serviceSolicitationUUIDs128.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceSolicitationUUIDs128.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.serviceData16.has_value() ? [&]() {
-          size_t __size = value.serviceData16.value().size();
+        }(value.serviceSolicitationUUIDs128.value()) : nullptr,
+        value.serviceData16.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<JServiceDataEntry>> __array = jni::JArrayClass<JServiceDataEntry>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceData16.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = JServiceDataEntry::fromCpp(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.serviceData32.has_value() ? [&]() {
-          size_t __size = value.serviceData32.value().size();
+        }(value.serviceData16.value()) : nullptr,
+        value.serviceData32.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<JServiceDataEntry>> __array = jni::JArrayClass<JServiceDataEntry>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceData32.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = JServiceDataEntry::fromCpp(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
-        value.serviceData128.has_value() ? [&]() {
-          size_t __size = value.serviceData128.value().size();
+        }(value.serviceData32.value()) : nullptr,
+        value.serviceData128.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<JServiceDataEntry>> __array = jni::JArrayClass<JServiceDataEntry>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceData128.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = JServiceDataEntry::fromCpp(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
+        }(value.serviceData128.value()) : nullptr,
         value.appearance.has_value() ? jni::JDouble::valueOf(value.appearance.value()) : nullptr,
-        value.serviceSolicitationUUIDs32.has_value() ? [&]() {
-          size_t __size = value.serviceSolicitationUUIDs32.value().size();
+        value.serviceSolicitationUUIDs32.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceSolicitationUUIDs32.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
+        }(value.serviceSolicitationUUIDs32.value()) : nullptr,
         value.manufacturerData.has_value() ? jni::make_jstring(value.manufacturerData.value()) : nullptr
       );
     }

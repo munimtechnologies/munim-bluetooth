@@ -9,6 +9,7 @@ package com.margelo.nitro.munimbluetooth
 
 import androidx.annotation.Keep
 import com.facebook.proguard.annotations.DoNotStrip
+import java.util.Objects
 
 
 /**
@@ -43,6 +44,32 @@ data class BackgroundSessionOptions(
   val androidNotificationText: String?
 ) {
   /* primary constructor */
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is BackgroundSessionOptions) return false
+    return Objects.deepEquals(this.serviceUUIDs, other.serviceUUIDs)
+      && Objects.deepEquals(this.localName, other.localName)
+      && Objects.deepEquals(this.allowDuplicates, other.allowDuplicates)
+      && Objects.deepEquals(this.scanMode, other.scanMode)
+      && Objects.deepEquals(this.androidNotificationChannelId, other.androidNotificationChannelId)
+      && Objects.deepEquals(this.androidNotificationChannelName, other.androidNotificationChannelName)
+      && Objects.deepEquals(this.androidNotificationTitle, other.androidNotificationTitle)
+      && Objects.deepEquals(this.androidNotificationText, other.androidNotificationText)
+  }
+
+  override fun hashCode(): Int {
+    return arrayOf(
+      serviceUUIDs,
+      localName,
+      allowDuplicates,
+      scanMode,
+      androidNotificationChannelId,
+      androidNotificationChannelName,
+      androidNotificationTitle,
+      androidNotificationText
+    ).contentDeepHashCode()
+  }
 
   companion object {
     /**

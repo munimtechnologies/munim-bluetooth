@@ -9,6 +9,7 @@ package com.margelo.nitro.munimbluetooth
 
 import androidx.annotation.Keep
 import com.facebook.proguard.annotations.DoNotStrip
+import java.util.Objects
 
 
 /**
@@ -25,6 +26,20 @@ data class ServiceDataEntry(
   val data: String
 ) {
   /* primary constructor */
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is ServiceDataEntry) return false
+    return Objects.deepEquals(this.uuid, other.uuid)
+      && Objects.deepEquals(this.data, other.data)
+  }
+
+  override fun hashCode(): Int {
+    return arrayOf(
+      uuid,
+      data
+    ).contentDeepHashCode()
+  }
 
   companion object {
     /**

@@ -30,6 +30,14 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     };
   }
   
+  // pragma MARK: std::function<void()>
+  Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)]() mutable -> void {
+      swiftClosure.call();
+    };
+  }
+  
   // pragma MARK: std::function<void(bool /* result */)>
   Func_void_bool create_Func_void_bool(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = MunimBluetooth::Func_void_bool::fromUnsafe(swiftClosureWrapper);
@@ -38,11 +46,11 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     };
   }
   
-  // pragma MARK: std::function<void()>
-  Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = MunimBluetooth::Func_void::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)]() mutable -> void {
-      swiftClosure.call();
+  // pragma MARK: std::function<void(const BluetoothCapabilities& /* result */)>
+  Func_void_BluetoothCapabilities create_Func_void_BluetoothCapabilities(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_BluetoothCapabilities::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const BluetoothCapabilities& result) mutable -> void {
+      swiftClosure.call(result);
     };
   }
   
@@ -62,6 +70,14 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     };
   }
   
+  // pragma MARK: std::function<void(const DescriptorValue& /* result */)>
+  Func_void_DescriptorValue create_Func_void_DescriptorValue(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_DescriptorValue::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const DescriptorValue& result) mutable -> void {
+      swiftClosure.call(result);
+    };
+  }
+  
   // pragma MARK: std::function<void(const std::vector<std::string>& /* result */)>
   Func_void_std__vector_std__string_ create_Func_void_std__vector_std__string_(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = MunimBluetooth::Func_void_std__vector_std__string_::fromUnsafe(swiftClosureWrapper);
@@ -74,6 +90,46 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   Func_void_double create_Func_void_double(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = MunimBluetooth::Func_void_double::fromUnsafe(swiftClosureWrapper);
     return [swiftClosure = std::move(swiftClosure)](double result) mutable -> void {
+      swiftClosure.call(result);
+    };
+  }
+  
+  // pragma MARK: std::function<void(const PhyStatus& /* result */)>
+  Func_void_PhyStatus create_Func_void_PhyStatus(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_PhyStatus::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const PhyStatus& result) mutable -> void {
+      swiftClosure.call(result);
+    };
+  }
+  
+  // pragma MARK: std::function<void(BondState /* result */)>
+  Func_void_BondState create_Func_void_BondState(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_BondState::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](BondState result) mutable -> void {
+      swiftClosure.call(static_cast<int>(result));
+    };
+  }
+  
+  // pragma MARK: std::function<void(const std::string& /* result */)>
+  Func_void_std__string create_Func_void_std__string(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_std__string::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const std::string& result) mutable -> void {
+      swiftClosure.call(result);
+    };
+  }
+  
+  // pragma MARK: std::function<void(const L2CAPChannel& /* result */)>
+  Func_void_L2CAPChannel create_Func_void_L2CAPChannel(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_L2CAPChannel::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const L2CAPChannel& result) mutable -> void {
+      swiftClosure.call(result);
+    };
+  }
+  
+  // pragma MARK: std::function<void(const std::vector<MultipeerPeer>& /* result */)>
+  Func_void_std__vector_MultipeerPeer_ create_Func_void_std__vector_MultipeerPeer_(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_std__vector_MultipeerPeer_::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const std::vector<MultipeerPeer>& result) mutable -> void {
       swiftClosure.call(result);
     };
   }

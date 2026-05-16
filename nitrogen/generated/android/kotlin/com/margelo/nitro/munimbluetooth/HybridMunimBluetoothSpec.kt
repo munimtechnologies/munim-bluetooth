@@ -26,93 +26,209 @@ import com.margelo.nitro.core.HybridObject
 )
 abstract class HybridMunimBluetoothSpec: HybridObject() {
   // Properties
-
+  
 
   // Methods
   @DoNotStrip
   @Keep
   abstract fun startAdvertising(options: AdvertisingOptions): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun updateAdvertisingData(advertisingData: AdvertisingDataTypes): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun getAdvertisingData(): Promise<AdvertisingDataTypes>
-
+  
   @DoNotStrip
   @Keep
   abstract fun stopAdvertising(): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun setServices(services: Array<GATTService>): Unit
-
+  
+  @DoNotStrip
+  @Keep
+  abstract fun updateCharacteristicValue(serviceUUID: String, characteristicUUID: String, value: String, notify: Boolean?): Promise<Unit>
+  
   @DoNotStrip
   @Keep
   abstract fun isBluetoothEnabled(): Promise<Boolean>
-
+  
   @DoNotStrip
   @Keep
   abstract fun requestBluetoothPermission(): Promise<Boolean>
-
+  
+  @DoNotStrip
+  @Keep
+  abstract fun getCapabilities(): Promise<BluetoothCapabilities>
+  
   @DoNotStrip
   @Keep
   abstract fun startScan(options: ScanOptions?): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun stopScan(): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun connect(deviceId: String): Promise<Unit>
-
+  
   @DoNotStrip
   @Keep
   abstract fun disconnect(deviceId: String): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun discoverServices(deviceId: String): Promise<Array<GATTService>>
-
+  
   @DoNotStrip
   @Keep
   abstract fun readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Promise<CharacteristicValue>
-
+  
+  @DoNotStrip
+  @Keep
+  abstract fun readDescriptor(deviceId: String, serviceUUID: String, characteristicUUID: String, descriptorUUID: String): Promise<DescriptorValue>
+  
   @DoNotStrip
   @Keep
   abstract fun writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?): Promise<Unit>
-
+  
+  @DoNotStrip
+  @Keep
+  abstract fun writeDescriptor(deviceId: String, serviceUUID: String, characteristicUUID: String, descriptorUUID: String, value: String): Promise<Unit>
+  
   @DoNotStrip
   @Keep
   abstract fun subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun getConnectedDevices(): Promise<Array<String>>
-
+  
   @DoNotStrip
   @Keep
   abstract fun readRSSI(deviceId: String): Promise<Double>
-
+  
+  @DoNotStrip
+  @Keep
+  abstract fun requestMTU(deviceId: String, mtu: Double): Promise<Double>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun readPhy(deviceId: String): Promise<PhyStatus>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun getBondState(deviceId: String): Promise<BondState>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun createBond(deviceId: String): Promise<BondState>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun removeBond(deviceId: String): Promise<BondState>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun startExtendedAdvertising(options: ExtendedAdvertisingOptions): Promise<String>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun stopExtendedAdvertising(advertisingId: String): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun publishL2CAPChannel(encryptionRequired: Boolean?): Promise<L2CAPChannel>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun unpublishL2CAPChannel(psm: Double): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun openL2CAPChannel(deviceId: String, psm: Double): Promise<L2CAPChannel>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun closeL2CAPChannel(channelId: String): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun sendL2CAPData(channelId: String, value: String): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun startClassicScan(): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun stopClassicScan(): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun connectClassic(deviceId: String, serviceUUID: String?): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun startClassicServer(serviceUUID: String?, serviceName: String?): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun stopClassicServer(serviceUUID: String?): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun disconnectClassic(deviceId: String): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun writeClassic(deviceId: String, value: String): Promise<Unit>
+  
   @DoNotStrip
   @Keep
   abstract fun startBackgroundSession(options: BackgroundSessionOptions): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun stopBackgroundSession(): Unit
-
+  
+  @DoNotStrip
+  @Keep
+  abstract fun startMultipeerSession(options: MultipeerSessionOptions): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun stopMultipeerSession(): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun inviteMultipeerPeer(peerId: String): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun getMultipeerPeers(): Promise<Array<MultipeerPeer>>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun sendMultipeerMessage(value: String, peerIds: Array<String>?, reliable: Boolean?): Promise<Unit>
+  
   @DoNotStrip
   @Keep
   abstract fun addListener(eventName: String): Unit
-
+  
   @DoNotStrip
   @Keep
   abstract fun removeListeners(count: Double): Unit

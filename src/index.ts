@@ -10,10 +10,104 @@ import type {
   AdvertisingDataTypes,
   BLEDevice,
   BackgroundSessionOptions,
+  MultipeerSessionOptions,
+  MultipeerPeer,
+  MultipeerDiscoveryInfoEntry,
+  MultipeerEncryptionPreference,
+  MultipeerPeerState,
   ScanOptions,
   GATTService,
+  GATTDescriptor,
   CharacteristicValue,
+  DescriptorValue,
+  BluetoothCapabilities,
+  BluetoothPhy,
+  BluetoothPhyOption,
+  BondState,
+  PhyStatus,
+  ExtendedAdvertisingOptions,
+  L2CAPChannel,
 } from './specs/munim-bluetooth.nitro'
+
+export type BluetoothEventMap = {
+  deviceFound: BLEDevice
+  onDeviceFound: BLEDevice
+  scanResult: BLEDevice
+  scanFailed: { errorCode: number; message: string }
+  advertisingStarted: Record<string, never>
+  advertisingStartFailed: { error?: string; errorCode?: number; message?: string }
+  classicDeviceFound: BLEDevice & { bondState?: string }
+  classicScanFailed: { message: string }
+  classicScanFinished: Record<string, never>
+  classicConnected: { deviceId: string }
+  classicDisconnected: { deviceId: string }
+  classicConnectionReceived: { deviceId: string }
+  classicServerStarted: { serviceUUID: string; serviceName: string }
+  classicServerStopped: { serviceUUID: string }
+  classicDataReceived: { deviceId: string; value: string }
+  deviceConnected: { deviceId: string }
+  deviceDisconnected: { deviceId: string }
+  servicesDiscovered: { deviceId: string; services: GATTService[] }
+  characteristicValueChanged: CharacteristicValue & { deviceId: string }
+  l2capChannelPublished: { channelId: string; psm: number }
+  l2capChannelPublishFailed: { psm?: number; error: string }
+  l2capChannelUnpublished: { psm: number; error?: string }
+  l2capChannelOpened: { channelId: string; psm: number; deviceId?: string }
+  l2capChannelOpenFailed: { deviceId?: string; error: string }
+  l2capChannelClosed: { channelId: string; psm?: number; deviceId?: string }
+  l2capDataReceived: {
+    channelId: string
+    psm?: number
+    deviceId?: string
+    value: string
+  }
+  peripheralReadRequest: CharacteristicValue & { centralId: string }
+  peripheralWriteRequest: CharacteristicValue & { centralId: string }
+  peripheralSubscribed: {
+    centralId: string
+    serviceUUID: string
+    characteristicUUID: string
+  }
+  peripheralUnsubscribed: {
+    centralId: string
+    serviceUUID: string
+    characteristicUUID: string
+  }
+  rssiUpdated: { deviceId: string; rssi: number }
+  backgroundSessionStarted: {
+    platform: string
+    serviceUUIDs?: string[]
+    localName?: string | null
+  }
+  backgroundSessionStopped: { platform: string }
+  backgroundSessionRestored: {
+    platform: string
+    role?: 'central' | 'peripheral'
+    isScanning?: boolean
+    isAdvertising?: boolean
+    serviceUUIDs?: string[]
+    deviceIds?: string[]
+  }
+  backgroundSessionStartFailed: { platform: string; error: string }
+  multipeerStarted: {
+    platform: string
+    serviceType: string
+    peerId: string
+    displayName: string
+  }
+  multipeerStopped: { platform: string }
+  multipeerStartFailed: { platform: string; error: string }
+  multipeerPeerFound: MultipeerPeer
+  multipeerPeerLost: { peerId: string }
+  multipeerPeerStateChanged: MultipeerPeer
+  multipeerMessageReceived: {
+    peerId: string
+    displayName: string
+    value: string
+  }
+}
+
+export type BluetoothEventName = keyof BluetoothEventMap
 
 const MunimBluetooth =
   NitroModules.createHybridObject<MunimBluetoothSpec>('MunimBluetooth')
@@ -23,51 +117,28 @@ const MunimBluetooth =
 const nativeEventModule =
   Platform.OS === 'ios' ? NativeModules.MunimBluetoothEventEmitter : null
 
-console.log(
-  '[munim-bluetooth] Checking for event emitter...',
-  Platform.OS === 'android'
-    ? 'USING_DEVICE_EVENT_EMITTER'
-    : nativeEventModule
-      ? 'FOUND'
-      : 'NOT FOUND'
-)
-console.log(
-  '[munim-bluetooth] Available NativeModules:',
-  Object.keys(NativeModules).filter(
-    (key) => key.includes('Bluetooth') || key.includes('Munim')
-  )
-)
-
 let eventEmitter: Pick<NativeEventEmitter, 'addListener'> | null = null
 
 if (Platform.OS === 'android') {
   eventEmitter = DeviceEventEmitter
-  console.log('[munim-bluetooth] Using DeviceEventEmitter on Android')
 } else if (nativeEventModule) {
   try {
     eventEmitter = new NativeEventEmitter(nativeEventModule)
-    console.log('[munim-bluetooth] Event emitter initialized successfully')
   } catch (error) {
     console.error(
       '[munim-bluetooth] Failed to initialize event emitter:',
       error
     )
   }
-} else {
-  console.warn(
-    '[munim-bluetooth] Event emitter module not found in NativeModules - device discovery events will not work'
-  )
-  console.warn(
-    '[munim-bluetooth] This usually means the native module was not linked properly or needs a rebuild'
-  )
 }
 
 // ========== Peripheral Features ==========
 
 /**
- * Start advertising as a Bluetooth peripheral with supported advertising data.
+ * Start advertising as a Bluetooth peripheral with platform-aware advertising data.
  *
- * @param options - An object with serviceUUIDs (string[]) and supported advertising data types.
+ * @param options - An object with serviceUUIDs (string[]) and advertising data types.
+ *                  iOS only advertises local name and service UUIDs.
  */
 export function startAdvertising(options: {
   serviceUUIDs: string[]
@@ -114,6 +185,24 @@ export function setServices(services: GATTService[]): void {
   return MunimBluetooth.setServices(services)
 }
 
+/**
+ * Update a local peripheral characteristic value and optionally notify/indicate
+ * subscribed centrals.
+ */
+export function updateCharacteristicValue(
+  serviceUUID: string,
+  characteristicUUID: string,
+  value: string,
+  notify?: boolean
+): Promise<void> {
+  return MunimBluetooth.updateCharacteristicValue(
+    serviceUUID,
+    characteristicUUID,
+    value,
+    notify
+  )
+}
+
 // ========== Central/Manager Features ==========
 
 /**
@@ -132,6 +221,13 @@ export function isBluetoothEnabled(): Promise<boolean> {
  */
 export function requestBluetoothPermission(): Promise<boolean> {
   return MunimBluetooth.requestBluetoothPermission()
+}
+
+/**
+ * Return the Bluetooth feature set supported by the current platform/device.
+ */
+export function getCapabilities(): Promise<BluetoothCapabilities> {
+  return MunimBluetooth.getCapabilities()
 }
 
 /**
@@ -200,6 +296,23 @@ export function readCharacteristic(
 }
 
 /**
+ * Read a descriptor value from a connected device.
+ */
+export function readDescriptor(
+  deviceId: string,
+  serviceUUID: string,
+  characteristicUUID: string,
+  descriptorUUID: string
+): Promise<DescriptorValue> {
+  return MunimBluetooth.readDescriptor(
+    deviceId,
+    serviceUUID,
+    characteristicUUID,
+    descriptorUUID
+  )
+}
+
+/**
  * Write a value to a characteristic on a connected device.
  *
  * @param deviceId - The unique identifier of the connected device.
@@ -222,6 +335,25 @@ export function writeCharacteristic(
     characteristicUUID,
     value,
     writeType
+  )
+}
+
+/**
+ * Write a descriptor value to a connected device.
+ */
+export function writeDescriptor(
+  deviceId: string,
+  serviceUUID: string,
+  characteristicUUID: string,
+  descriptorUUID: string,
+  value: string
+): Promise<void> {
+  return MunimBluetooth.writeDescriptor(
+    deviceId,
+    serviceUUID,
+    characteristicUUID,
+    descriptorUUID,
+    value
   )
 }
 
@@ -283,10 +415,177 @@ export function readRSSI(deviceId: string): Promise<number> {
 }
 
 /**
+ * Request an ATT MTU. Android supports this directly; iOS rejects with unsupported.
+ */
+export function requestMTU(deviceId: string, mtu: number): Promise<number> {
+  return MunimBluetooth.requestMTU(deviceId, mtu)
+}
+
+/**
+ * Set preferred BLE PHY. Android 8+ supports this when hardware allows it.
+ */
+export function setPreferredPhy(
+  deviceId: string,
+  txPhy: BluetoothPhy,
+  rxPhy: BluetoothPhy,
+  phyOption?: BluetoothPhyOption
+): Promise<void> {
+  return MunimBluetooth.setPreferredPhy(deviceId, txPhy, rxPhy, phyOption)
+}
+
+/**
+ * Read current BLE PHY. Android 8+ supports this when hardware allows it.
+ */
+export function readPhy(deviceId: string): Promise<PhyStatus> {
+  return MunimBluetooth.readPhy(deviceId)
+}
+
+/**
+ * Return current platform bond state for a device.
+ */
+export function getBondState(deviceId: string): Promise<BondState> {
+  return MunimBluetooth.getBondState(deviceId)
+}
+
+/**
+ * Start platform pairing/bonding for a device.
+ */
+export function createBond(deviceId: string): Promise<BondState> {
+  return MunimBluetooth.createBond(deviceId)
+}
+
+/**
+ * Remove a platform bond where supported.
+ */
+export function removeBond(deviceId: string): Promise<BondState> {
+  return MunimBluetooth.removeBond(deviceId)
+}
+
+/**
+ * Start BLE extended advertising where supported.
+ */
+export function startExtendedAdvertising(
+  options: ExtendedAdvertisingOptions
+): Promise<string> {
+  return MunimBluetooth.startExtendedAdvertising(options)
+}
+
+/**
+ * Stop a BLE extended advertising set.
+ */
+export function stopExtendedAdvertising(advertisingId: string): void {
+  return MunimBluetooth.stopExtendedAdvertising(advertisingId)
+}
+
+/**
+ * Publish a local BLE L2CAP channel where supported.
+ */
+export function publishL2CAPChannel(
+  encryptionRequired?: boolean
+): Promise<L2CAPChannel> {
+  return MunimBluetooth.publishL2CAPChannel(encryptionRequired)
+}
+
+/**
+ * Stop a local BLE L2CAP channel.
+ */
+export function unpublishL2CAPChannel(psm: number): void {
+  return MunimBluetooth.unpublishL2CAPChannel(psm)
+}
+
+/**
+ * Open an outbound BLE L2CAP channel.
+ */
+export function openL2CAPChannel(
+  deviceId: string,
+  psm: number
+): Promise<L2CAPChannel> {
+  return MunimBluetooth.openL2CAPChannel(deviceId, psm)
+}
+
+/**
+ * Close an L2CAP channel.
+ */
+export function closeL2CAPChannel(channelId: string): void {
+  return MunimBluetooth.closeL2CAPChannel(channelId)
+}
+
+/**
+ * Send hex data over an open L2CAP channel.
+ */
+export function sendL2CAPData(
+  channelId: string,
+  value: string
+): Promise<void> {
+  return MunimBluetooth.sendL2CAPData(channelId, value)
+}
+
+/**
+ * Start Classic Bluetooth discovery where supported.
+ */
+export function startClassicScan(): void {
+  return MunimBluetooth.startClassicScan()
+}
+
+/**
+ * Stop Classic Bluetooth discovery.
+ */
+export function stopClassicScan(): void {
+  return MunimBluetooth.stopClassicScan()
+}
+
+/**
+ * Connect to a Classic Bluetooth RFCOMM service where supported.
+ */
+export function connectClassic(
+  deviceId: string,
+  serviceUUID?: string
+): Promise<void> {
+  return MunimBluetooth.connectClassic(deviceId, serviceUUID)
+}
+
+/**
+ * Listen for incoming Classic Bluetooth RFCOMM connections on Android.
+ */
+export function startClassicServer(
+  serviceUUID?: string,
+  serviceName?: string
+): Promise<void> {
+  return MunimBluetooth.startClassicServer(serviceUUID, serviceName)
+}
+
+/**
+ * Stop a Classic Bluetooth RFCOMM listener on Android.
+ */
+export function stopClassicServer(serviceUUID?: string): void {
+  return MunimBluetooth.stopClassicServer(serviceUUID)
+}
+
+/**
+ * Disconnect a Classic Bluetooth device.
+ */
+export function disconnectClassic(deviceId: string): void {
+  return MunimBluetooth.disconnectClassic(deviceId)
+}
+
+/**
+ * Write hex data to a Classic Bluetooth RFCOMM connection.
+ */
+export function writeClassic(
+  deviceId: string,
+  value: string
+): Promise<void> {
+  return MunimBluetooth.writeClassic(deviceId, value)
+}
+
+/**
  * Start a best-effort background BLE session.
  *
- * Android uses a foreground service. iOS relies on the host app's Bluetooth
- * background modes and state restoration.
+ * Android uses a foreground service and restores scan/advertising/configured
+ * GATT services after normal service process recreation. iOS relies on the host
+ * app's Bluetooth background modes and CoreBluetooth state restoration, with
+ * terminated-state relaunch still limited by Apple's current relaunch rules.
+ * User force-quit/force-stop is controlled by the OS and cannot be bypassed.
  */
 export function startBackgroundSession(
   options: BackgroundSessionOptions
@@ -299,6 +598,49 @@ export function startBackgroundSession(
  */
 export function stopBackgroundSession(): void {
   return MunimBluetooth.stopBackgroundSession()
+}
+
+/**
+ * Start Apple Multipeer Connectivity transport. This is iOS/iPadOS/macOS/tvOS
+ * only; Android cannot join Apple Multipeer sessions.
+ */
+export function startMultipeerSession(
+  options: MultipeerSessionOptions
+): void {
+  return MunimBluetooth.startMultipeerSession(options)
+}
+
+/**
+ * Stop the active Apple Multipeer Connectivity session.
+ */
+export function stopMultipeerSession(): void {
+  return MunimBluetooth.stopMultipeerSession()
+}
+
+/**
+ * Invite a discovered Multipeer peer by runtime peer id.
+ */
+export function inviteMultipeerPeer(peerId: string): void {
+  return MunimBluetooth.inviteMultipeerPeer(peerId)
+}
+
+/**
+ * Return discovered/connected Apple Multipeer peers.
+ */
+export function getMultipeerPeers(): Promise<MultipeerPeer[]> {
+  return MunimBluetooth.getMultipeerPeers()
+}
+
+/**
+ * Send hex data over Apple Multipeer Connectivity. Omit peerIds to broadcast
+ * to all connected peers.
+ */
+export function sendMultipeerMessage(
+  value: string,
+  peerIds?: string[],
+  reliable?: boolean
+): Promise<void> {
+  return MunimBluetooth.sendMultipeerMessage(value, peerIds, reliable)
 }
 
 // ========== Event Management ==========
@@ -330,9 +672,9 @@ export function addDeviceFoundListener(
  * @param callback - The callback to invoke when the event occurs.
  * @returns A function to remove the listener
  */
-export function addEventListener(
-  eventName: string,
-  callback: (data: any) => void
+export function addEventListener<EventName extends BluetoothEventName>(
+  eventName: EventName,
+  callback: (data: BluetoothEventMap[EventName]) => void
 ): () => void {
   if (!eventEmitter) {
     console.warn(
@@ -369,9 +711,23 @@ export type {
   AdvertisingDataTypes,
   BLEDevice,
   BackgroundSessionOptions,
+  MultipeerSessionOptions,
+  MultipeerPeer,
+  MultipeerDiscoveryInfoEntry,
+  MultipeerEncryptionPreference,
+  MultipeerPeerState,
   ScanOptions,
   GATTService,
+  GATTDescriptor,
   CharacteristicValue,
+  DescriptorValue,
+  BluetoothCapabilities,
+  BluetoothPhy,
+  BluetoothPhyOption,
+  BondState,
+  PhyStatus,
+  ExtendedAdvertisingOptions,
+  L2CAPChannel,
 }
 
 // Default export for convenience
@@ -382,22 +738,51 @@ export default {
   updateAdvertisingData,
   getAdvertisingData,
   setServices,
+  updateCharacteristicValue,
   // Central
   isBluetoothEnabled,
   requestBluetoothPermission,
+  getCapabilities,
   startScan,
   stopScan,
   connect,
   disconnect,
   discoverServices,
   readCharacteristic,
+  readDescriptor,
   writeCharacteristic,
+  writeDescriptor,
   subscribeToCharacteristic,
   unsubscribeFromCharacteristic,
   getConnectedDevices,
   readRSSI,
+  requestMTU,
+  setPreferredPhy,
+  readPhy,
+  getBondState,
+  createBond,
+  removeBond,
+  startExtendedAdvertising,
+  stopExtendedAdvertising,
+  publishL2CAPChannel,
+  unpublishL2CAPChannel,
+  openL2CAPChannel,
+  closeL2CAPChannel,
+  sendL2CAPData,
+  startClassicScan,
+  stopClassicScan,
+  connectClassic,
+  startClassicServer,
+  stopClassicServer,
+  disconnectClassic,
+  writeClassic,
   startBackgroundSession,
   stopBackgroundSession,
+  startMultipeerSession,
+  stopMultipeerSession,
+  inviteMultipeerPeer,
+  getMultipeerPeers,
+  sendMultipeerMessage,
   // Events
   addDeviceFoundListener,
   addEventListener,

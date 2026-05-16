@@ -34,6 +34,7 @@ namespace margelo::nitro::munimbluetooth { struct GATTCharacteristic; }
 #include <string>
 #include "GATTCharacteristic.hpp"
 #include <vector>
+#include <optional>
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -44,10 +45,11 @@ namespace margelo::nitro::munimbluetooth {
   public:
     std::string uuid     SWIFT_PRIVATE;
     std::vector<GATTCharacteristic> characteristics     SWIFT_PRIVATE;
+    std::optional<std::vector<std::string>> includedServices     SWIFT_PRIVATE;
 
   public:
     GATTService() = default;
-    explicit GATTService(std::string uuid, std::vector<GATTCharacteristic> characteristics): uuid(uuid), characteristics(characteristics) {}
+    explicit GATTService(std::string uuid, std::vector<GATTCharacteristic> characteristics, std::optional<std::vector<std::string>> includedServices): uuid(uuid), characteristics(characteristics), includedServices(includedServices) {}
 
   public:
     friend bool operator==(const GATTService& lhs, const GATTService& rhs) = default;
@@ -64,13 +66,15 @@ namespace margelo::nitro {
       jsi::Object obj = arg.asObject(runtime);
       return margelo::nitro::munimbluetooth::GATTService(
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "uuid"))),
-        JSIConverter<std::vector<margelo::nitro::munimbluetooth::GATTCharacteristic>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "characteristics")))
+        JSIConverter<std::vector<margelo::nitro::munimbluetooth::GATTCharacteristic>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "characteristics"))),
+        JSIConverter<std::optional<std::vector<std::string>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "includedServices")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::munimbluetooth::GATTService& arg) {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "uuid"), JSIConverter<std::string>::toJSI(runtime, arg.uuid));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "characteristics"), JSIConverter<std::vector<margelo::nitro::munimbluetooth::GATTCharacteristic>>::toJSI(runtime, arg.characteristics));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "includedServices"), JSIConverter<std::optional<std::vector<std::string>>>::toJSI(runtime, arg.includedServices));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -83,6 +87,7 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "uuid")))) return false;
       if (!JSIConverter<std::vector<margelo::nitro::munimbluetooth::GATTCharacteristic>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "characteristics")))) return false;
+      if (!JSIConverter<std::optional<std::vector<std::string>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "includedServices")))) return false;
       return true;
     }
   };

@@ -10,14 +10,38 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `AdvertisingDataTypes` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
+// Forward declaration of `BluetoothCapabilities` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
+// Forward declaration of `BluetoothPhyOption` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
+// Forward declaration of `BluetoothPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
+// Forward declaration of `BondState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BondState; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
+// Forward declaration of `DescriptorValue` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
 // Forward declaration of `GATTCharacteristic` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTCharacteristic; }
+// Forward declaration of `GATTDescriptor` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct GATTDescriptor; }
 // Forward declaration of `GATTService` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTService; }
 // Forward declaration of `HybridMunimBluetoothSpec` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { class HybridMunimBluetoothSpec; }
+// Forward declaration of `L2CAPChannel` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
+// Forward declaration of `MultipeerDiscoveryInfoEntry` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerDiscoveryInfoEntry; }
+// Forward declaration of `MultipeerEncryptionPreference` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPreference; }
+// Forward declaration of `MultipeerPeerState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
+// Forward declaration of `MultipeerPeer` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
+// Forward declaration of `PhyStatus` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
@@ -33,10 +57,22 @@ namespace MunimBluetooth { class HybridMunimBluetoothSpec_cxx; }
 
 // Include C++ defined types
 #include "AdvertisingDataTypes.hpp"
+#include "BluetoothCapabilities.hpp"
+#include "BluetoothPhy.hpp"
+#include "BluetoothPhyOption.hpp"
+#include "BondState.hpp"
 #include "CharacteristicValue.hpp"
+#include "DescriptorValue.hpp"
 #include "GATTCharacteristic.hpp"
+#include "GATTDescriptor.hpp"
 #include "GATTService.hpp"
 #include "HybridMunimBluetoothSpec.hpp"
+#include "L2CAPChannel.hpp"
+#include "MultipeerDiscoveryInfoEntry.hpp"
+#include "MultipeerEncryptionPreference.hpp"
+#include "MultipeerPeer.hpp"
+#include "MultipeerPeerState.hpp"
+#include "PhyStatus.hpp"
 #include "ScanMode.hpp"
 #include "ScanOptions.hpp"
 #include "ServiceDataEntry.hpp"
@@ -210,6 +246,32 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Func_void_std__exception_ptr_Wrapper(std::move(value));
   }
   
+  // pragma MARK: std::vector<GATTDescriptor>
+  /**
+   * Specialized version of `std::vector<GATTDescriptor>`.
+   */
+  using std__vector_GATTDescriptor_ = std::vector<GATTDescriptor>;
+  inline std::vector<GATTDescriptor> create_std__vector_GATTDescriptor_(size_t size) noexcept {
+    std::vector<GATTDescriptor> vector;
+    vector.reserve(size);
+    return vector;
+  }
+  
+  // pragma MARK: std::optional<std::vector<GATTDescriptor>>
+  /**
+   * Specialized version of `std::optional<std::vector<GATTDescriptor>>`.
+   */
+  using std__optional_std__vector_GATTDescriptor__ = std::optional<std::vector<GATTDescriptor>>;
+  inline std::optional<std::vector<GATTDescriptor>> create_std__optional_std__vector_GATTDescriptor__(const std::vector<GATTDescriptor>& value) noexcept {
+    return std::optional<std::vector<GATTDescriptor>>(value);
+  }
+  inline bool has_value_std__optional_std__vector_GATTDescriptor__(const std::optional<std::vector<GATTDescriptor>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::vector<GATTDescriptor> get_std__optional_std__vector_GATTDescriptor__(const std::optional<std::vector<GATTDescriptor>>& optional) noexcept {
+    return optional.value();
+  }
+  
   // pragma MARK: std::vector<GATTCharacteristic>
   /**
    * Specialized version of `std::vector<GATTCharacteristic>`.
@@ -230,6 +292,55 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     std::vector<GATTService> vector;
     vector.reserve(size);
     return vector;
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<void>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<void>>`.
+   */
+  using std__shared_ptr_Promise_void__ = std::shared_ptr<Promise<void>>;
+  inline std::shared_ptr<Promise<void>> create_std__shared_ptr_Promise_void__() noexcept {
+    return Promise<void>::create();
+  }
+  inline PromiseHolder<void> wrap_std__shared_ptr_Promise_void__(std::shared_ptr<Promise<void>> promise) noexcept {
+    return PromiseHolder<void>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void()>
+  /**
+   * Specialized version of `std::function<void()>`.
+   */
+  using Func_void = std::function<void()>;
+  /**
+   * Wrapper class for a `std::function<void()>`, this can be used from Swift.
+   */
+  class Func_void_Wrapper final {
+  public:
+    explicit Func_void_Wrapper(std::function<void()>&& func): _function(std::make_unique<std::function<void()>>(std::move(func))) {}
+    inline void call() const noexcept {
+      _function->operator()();
+    }
+  private:
+    std::unique_ptr<std::function<void()>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_Wrapper wrap_Func_void(Func_void value) noexcept {
+    return Func_void_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::optional<bool>
+  /**
+   * Specialized version of `std::optional<bool>`.
+   */
+  using std__optional_bool_ = std::optional<bool>;
+  inline std::optional<bool> create_std__optional_bool_(const bool& value) noexcept {
+    return std::optional<bool>(value);
+  }
+  inline bool has_value_std__optional_bool_(const std::optional<bool>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline bool get_std__optional_bool_(const std::optional<bool>& optional) noexcept {
+    return optional.value();
   }
   
   // pragma MARK: std::shared_ptr<Promise<bool>>
@@ -266,19 +377,38 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Func_void_bool_Wrapper(std::move(value));
   }
   
-  // pragma MARK: std::optional<bool>
+  // pragma MARK: std::shared_ptr<Promise<BluetoothCapabilities>>
   /**
-   * Specialized version of `std::optional<bool>`.
+   * Specialized version of `std::shared_ptr<Promise<BluetoothCapabilities>>`.
    */
-  using std__optional_bool_ = std::optional<bool>;
-  inline std::optional<bool> create_std__optional_bool_(const bool& value) noexcept {
-    return std::optional<bool>(value);
+  using std__shared_ptr_Promise_BluetoothCapabilities__ = std::shared_ptr<Promise<BluetoothCapabilities>>;
+  inline std::shared_ptr<Promise<BluetoothCapabilities>> create_std__shared_ptr_Promise_BluetoothCapabilities__() noexcept {
+    return Promise<BluetoothCapabilities>::create();
   }
-  inline bool has_value_std__optional_bool_(const std::optional<bool>& optional) noexcept {
-    return optional.has_value();
+  inline PromiseHolder<BluetoothCapabilities> wrap_std__shared_ptr_Promise_BluetoothCapabilities__(std::shared_ptr<Promise<BluetoothCapabilities>> promise) noexcept {
+    return PromiseHolder<BluetoothCapabilities>(std::move(promise));
   }
-  inline bool get_std__optional_bool_(const std::optional<bool>& optional) noexcept {
-    return optional.value();
+  
+  // pragma MARK: std::function<void(const BluetoothCapabilities& /* result */)>
+  /**
+   * Specialized version of `std::function<void(const BluetoothCapabilities&)>`.
+   */
+  using Func_void_BluetoothCapabilities = std::function<void(const BluetoothCapabilities& /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(const BluetoothCapabilities& / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_BluetoothCapabilities_Wrapper final {
+  public:
+    explicit Func_void_BluetoothCapabilities_Wrapper(std::function<void(const BluetoothCapabilities& /* result */)>&& func): _function(std::make_unique<std::function<void(const BluetoothCapabilities& /* result */)>>(std::move(func))) {}
+    inline void call(BluetoothCapabilities result) const noexcept {
+      _function->operator()(result);
+    }
+  private:
+    std::unique_ptr<std::function<void(const BluetoothCapabilities& /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_BluetoothCapabilities create_Func_void_BluetoothCapabilities(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_BluetoothCapabilities_Wrapper wrap_Func_void_BluetoothCapabilities(Func_void_BluetoothCapabilities value) noexcept {
+    return Func_void_BluetoothCapabilities_Wrapper(std::move(value));
   }
   
   // pragma MARK: std::optional<ScanMode>
@@ -309,40 +439,6 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   }
   inline ScanOptions get_std__optional_ScanOptions_(const std::optional<ScanOptions>& optional) noexcept {
     return optional.value();
-  }
-  
-  // pragma MARK: std::shared_ptr<Promise<void>>
-  /**
-   * Specialized version of `std::shared_ptr<Promise<void>>`.
-   */
-  using std__shared_ptr_Promise_void__ = std::shared_ptr<Promise<void>>;
-  inline std::shared_ptr<Promise<void>> create_std__shared_ptr_Promise_void__() noexcept {
-    return Promise<void>::create();
-  }
-  inline PromiseHolder<void> wrap_std__shared_ptr_Promise_void__(std::shared_ptr<Promise<void>> promise) noexcept {
-    return PromiseHolder<void>(std::move(promise));
-  }
-  
-  // pragma MARK: std::function<void()>
-  /**
-   * Specialized version of `std::function<void()>`.
-   */
-  using Func_void = std::function<void()>;
-  /**
-   * Wrapper class for a `std::function<void()>`, this can be used from Swift.
-   */
-  class Func_void_Wrapper final {
-  public:
-    explicit Func_void_Wrapper(std::function<void()>&& func): _function(std::make_unique<std::function<void()>>(std::move(func))) {}
-    inline void call() const noexcept {
-      _function->operator()();
-    }
-  private:
-    std::unique_ptr<std::function<void()>> _function;
-  } SWIFT_NONCOPYABLE;
-  Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept;
-  inline Func_void_Wrapper wrap_Func_void(Func_void value) noexcept {
-    return Func_void_Wrapper(std::move(value));
   }
   
   // pragma MARK: std::shared_ptr<Promise<std::vector<GATTService>>>
@@ -411,6 +507,40 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   Func_void_CharacteristicValue create_Func_void_CharacteristicValue(void* NON_NULL swiftClosureWrapper) noexcept;
   inline Func_void_CharacteristicValue_Wrapper wrap_Func_void_CharacteristicValue(Func_void_CharacteristicValue value) noexcept {
     return Func_void_CharacteristicValue_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<DescriptorValue>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<DescriptorValue>>`.
+   */
+  using std__shared_ptr_Promise_DescriptorValue__ = std::shared_ptr<Promise<DescriptorValue>>;
+  inline std::shared_ptr<Promise<DescriptorValue>> create_std__shared_ptr_Promise_DescriptorValue__() noexcept {
+    return Promise<DescriptorValue>::create();
+  }
+  inline PromiseHolder<DescriptorValue> wrap_std__shared_ptr_Promise_DescriptorValue__(std::shared_ptr<Promise<DescriptorValue>> promise) noexcept {
+    return PromiseHolder<DescriptorValue>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(const DescriptorValue& /* result */)>
+  /**
+   * Specialized version of `std::function<void(const DescriptorValue&)>`.
+   */
+  using Func_void_DescriptorValue = std::function<void(const DescriptorValue& /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(const DescriptorValue& / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_DescriptorValue_Wrapper final {
+  public:
+    explicit Func_void_DescriptorValue_Wrapper(std::function<void(const DescriptorValue& /* result */)>&& func): _function(std::make_unique<std::function<void(const DescriptorValue& /* result */)>>(std::move(func))) {}
+    inline void call(DescriptorValue result) const noexcept {
+      _function->operator()(result);
+    }
+  private:
+    std::unique_ptr<std::function<void(const DescriptorValue& /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_DescriptorValue create_Func_void_DescriptorValue(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_DescriptorValue_Wrapper wrap_Func_void_DescriptorValue(Func_void_DescriptorValue value) noexcept {
+    return Func_void_DescriptorValue_Wrapper(std::move(value));
   }
   
   // pragma MARK: std::optional<WriteType>
@@ -496,6 +626,258 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Func_void_double_Wrapper(std::move(value));
   }
   
+  // pragma MARK: std::optional<BluetoothPhyOption>
+  /**
+   * Specialized version of `std::optional<BluetoothPhyOption>`.
+   */
+  using std__optional_BluetoothPhyOption_ = std::optional<BluetoothPhyOption>;
+  inline std::optional<BluetoothPhyOption> create_std__optional_BluetoothPhyOption_(const BluetoothPhyOption& value) noexcept {
+    return std::optional<BluetoothPhyOption>(value);
+  }
+  inline bool has_value_std__optional_BluetoothPhyOption_(const std::optional<BluetoothPhyOption>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline BluetoothPhyOption get_std__optional_BluetoothPhyOption_(const std::optional<BluetoothPhyOption>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<PhyStatus>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<PhyStatus>>`.
+   */
+  using std__shared_ptr_Promise_PhyStatus__ = std::shared_ptr<Promise<PhyStatus>>;
+  inline std::shared_ptr<Promise<PhyStatus>> create_std__shared_ptr_Promise_PhyStatus__() noexcept {
+    return Promise<PhyStatus>::create();
+  }
+  inline PromiseHolder<PhyStatus> wrap_std__shared_ptr_Promise_PhyStatus__(std::shared_ptr<Promise<PhyStatus>> promise) noexcept {
+    return PromiseHolder<PhyStatus>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(const PhyStatus& /* result */)>
+  /**
+   * Specialized version of `std::function<void(const PhyStatus&)>`.
+   */
+  using Func_void_PhyStatus = std::function<void(const PhyStatus& /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(const PhyStatus& / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_PhyStatus_Wrapper final {
+  public:
+    explicit Func_void_PhyStatus_Wrapper(std::function<void(const PhyStatus& /* result */)>&& func): _function(std::make_unique<std::function<void(const PhyStatus& /* result */)>>(std::move(func))) {}
+    inline void call(PhyStatus result) const noexcept {
+      _function->operator()(result);
+    }
+  private:
+    std::unique_ptr<std::function<void(const PhyStatus& /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_PhyStatus create_Func_void_PhyStatus(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_PhyStatus_Wrapper wrap_Func_void_PhyStatus(Func_void_PhyStatus value) noexcept {
+    return Func_void_PhyStatus_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<BondState>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<BondState>>`.
+   */
+  using std__shared_ptr_Promise_BondState__ = std::shared_ptr<Promise<BondState>>;
+  inline std::shared_ptr<Promise<BondState>> create_std__shared_ptr_Promise_BondState__() noexcept {
+    return Promise<BondState>::create();
+  }
+  inline PromiseHolder<BondState> wrap_std__shared_ptr_Promise_BondState__(std::shared_ptr<Promise<BondState>> promise) noexcept {
+    return PromiseHolder<BondState>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(BondState /* result */)>
+  /**
+   * Specialized version of `std::function<void(BondState)>`.
+   */
+  using Func_void_BondState = std::function<void(BondState /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(BondState / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_BondState_Wrapper final {
+  public:
+    explicit Func_void_BondState_Wrapper(std::function<void(BondState /* result */)>&& func): _function(std::make_unique<std::function<void(BondState /* result */)>>(std::move(func))) {}
+    inline void call(int result) const noexcept {
+      _function->operator()(static_cast<BondState>(result));
+    }
+  private:
+    std::unique_ptr<std::function<void(BondState /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_BondState create_Func_void_BondState(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_BondState_Wrapper wrap_Func_void_BondState(Func_void_BondState value) noexcept {
+    return Func_void_BondState_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<std::string>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<std::string>>`.
+   */
+  using std__shared_ptr_Promise_std__string__ = std::shared_ptr<Promise<std::string>>;
+  inline std::shared_ptr<Promise<std::string>> create_std__shared_ptr_Promise_std__string__() noexcept {
+    return Promise<std::string>::create();
+  }
+  inline PromiseHolder<std::string> wrap_std__shared_ptr_Promise_std__string__(std::shared_ptr<Promise<std::string>> promise) noexcept {
+    return PromiseHolder<std::string>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(const std::string& /* result */)>
+  /**
+   * Specialized version of `std::function<void(const std::string&)>`.
+   */
+  using Func_void_std__string = std::function<void(const std::string& /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(const std::string& / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_std__string_Wrapper final {
+  public:
+    explicit Func_void_std__string_Wrapper(std::function<void(const std::string& /* result */)>&& func): _function(std::make_unique<std::function<void(const std::string& /* result */)>>(std::move(func))) {}
+    inline void call(std::string result) const noexcept {
+      _function->operator()(result);
+    }
+  private:
+    std::unique_ptr<std::function<void(const std::string& /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_std__string create_Func_void_std__string(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_std__string_Wrapper wrap_Func_void_std__string(Func_void_std__string value) noexcept {
+    return Func_void_std__string_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::optional<BluetoothPhy>
+  /**
+   * Specialized version of `std::optional<BluetoothPhy>`.
+   */
+  using std__optional_BluetoothPhy_ = std::optional<BluetoothPhy>;
+  inline std::optional<BluetoothPhy> create_std__optional_BluetoothPhy_(const BluetoothPhy& value) noexcept {
+    return std::optional<BluetoothPhy>(value);
+  }
+  inline bool has_value_std__optional_BluetoothPhy_(const std::optional<BluetoothPhy>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline BluetoothPhy get_std__optional_BluetoothPhy_(const std::optional<BluetoothPhy>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<L2CAPChannel>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<L2CAPChannel>>`.
+   */
+  using std__shared_ptr_Promise_L2CAPChannel__ = std::shared_ptr<Promise<L2CAPChannel>>;
+  inline std::shared_ptr<Promise<L2CAPChannel>> create_std__shared_ptr_Promise_L2CAPChannel__() noexcept {
+    return Promise<L2CAPChannel>::create();
+  }
+  inline PromiseHolder<L2CAPChannel> wrap_std__shared_ptr_Promise_L2CAPChannel__(std::shared_ptr<Promise<L2CAPChannel>> promise) noexcept {
+    return PromiseHolder<L2CAPChannel>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(const L2CAPChannel& /* result */)>
+  /**
+   * Specialized version of `std::function<void(const L2CAPChannel&)>`.
+   */
+  using Func_void_L2CAPChannel = std::function<void(const L2CAPChannel& /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(const L2CAPChannel& / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_L2CAPChannel_Wrapper final {
+  public:
+    explicit Func_void_L2CAPChannel_Wrapper(std::function<void(const L2CAPChannel& /* result */)>&& func): _function(std::make_unique<std::function<void(const L2CAPChannel& /* result */)>>(std::move(func))) {}
+    inline void call(L2CAPChannel result) const noexcept {
+      _function->operator()(result);
+    }
+  private:
+    std::unique_ptr<std::function<void(const L2CAPChannel& /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_L2CAPChannel create_Func_void_L2CAPChannel(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_L2CAPChannel_Wrapper wrap_Func_void_L2CAPChannel(Func_void_L2CAPChannel value) noexcept {
+    return Func_void_L2CAPChannel_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::vector<MultipeerDiscoveryInfoEntry>
+  /**
+   * Specialized version of `std::vector<MultipeerDiscoveryInfoEntry>`.
+   */
+  using std__vector_MultipeerDiscoveryInfoEntry_ = std::vector<MultipeerDiscoveryInfoEntry>;
+  inline std::vector<MultipeerDiscoveryInfoEntry> create_std__vector_MultipeerDiscoveryInfoEntry_(size_t size) noexcept {
+    std::vector<MultipeerDiscoveryInfoEntry> vector;
+    vector.reserve(size);
+    return vector;
+  }
+  
+  // pragma MARK: std::optional<std::vector<MultipeerDiscoveryInfoEntry>>
+  /**
+   * Specialized version of `std::optional<std::vector<MultipeerDiscoveryInfoEntry>>`.
+   */
+  using std__optional_std__vector_MultipeerDiscoveryInfoEntry__ = std::optional<std::vector<MultipeerDiscoveryInfoEntry>>;
+  inline std::optional<std::vector<MultipeerDiscoveryInfoEntry>> create_std__optional_std__vector_MultipeerDiscoveryInfoEntry__(const std::vector<MultipeerDiscoveryInfoEntry>& value) noexcept {
+    return std::optional<std::vector<MultipeerDiscoveryInfoEntry>>(value);
+  }
+  inline bool has_value_std__optional_std__vector_MultipeerDiscoveryInfoEntry__(const std::optional<std::vector<MultipeerDiscoveryInfoEntry>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::vector<MultipeerDiscoveryInfoEntry> get_std__optional_std__vector_MultipeerDiscoveryInfoEntry__(const std::optional<std::vector<MultipeerDiscoveryInfoEntry>>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<MultipeerEncryptionPreference>
+  /**
+   * Specialized version of `std::optional<MultipeerEncryptionPreference>`.
+   */
+  using std__optional_MultipeerEncryptionPreference_ = std::optional<MultipeerEncryptionPreference>;
+  inline std::optional<MultipeerEncryptionPreference> create_std__optional_MultipeerEncryptionPreference_(const MultipeerEncryptionPreference& value) noexcept {
+    return std::optional<MultipeerEncryptionPreference>(value);
+  }
+  inline bool has_value_std__optional_MultipeerEncryptionPreference_(const std::optional<MultipeerEncryptionPreference>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline MultipeerEncryptionPreference get_std__optional_MultipeerEncryptionPreference_(const std::optional<MultipeerEncryptionPreference>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::vector<MultipeerPeer>
+  /**
+   * Specialized version of `std::vector<MultipeerPeer>`.
+   */
+  using std__vector_MultipeerPeer_ = std::vector<MultipeerPeer>;
+  inline std::vector<MultipeerPeer> create_std__vector_MultipeerPeer_(size_t size) noexcept {
+    std::vector<MultipeerPeer> vector;
+    vector.reserve(size);
+    return vector;
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<std::vector<MultipeerPeer>>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<std::vector<MultipeerPeer>>>`.
+   */
+  using std__shared_ptr_Promise_std__vector_MultipeerPeer___ = std::shared_ptr<Promise<std::vector<MultipeerPeer>>>;
+  inline std::shared_ptr<Promise<std::vector<MultipeerPeer>>> create_std__shared_ptr_Promise_std__vector_MultipeerPeer___() noexcept {
+    return Promise<std::vector<MultipeerPeer>>::create();
+  }
+  inline PromiseHolder<std::vector<MultipeerPeer>> wrap_std__shared_ptr_Promise_std__vector_MultipeerPeer___(std::shared_ptr<Promise<std::vector<MultipeerPeer>>> promise) noexcept {
+    return PromiseHolder<std::vector<MultipeerPeer>>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(const std::vector<MultipeerPeer>& /* result */)>
+  /**
+   * Specialized version of `std::function<void(const std::vector<MultipeerPeer>&)>`.
+   */
+  using Func_void_std__vector_MultipeerPeer_ = std::function<void(const std::vector<MultipeerPeer>& /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(const std::vector<MultipeerPeer>& / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_std__vector_MultipeerPeer__Wrapper final {
+  public:
+    explicit Func_void_std__vector_MultipeerPeer__Wrapper(std::function<void(const std::vector<MultipeerPeer>& /* result */)>&& func): _function(std::make_unique<std::function<void(const std::vector<MultipeerPeer>& /* result */)>>(std::move(func))) {}
+    inline void call(std::vector<MultipeerPeer> result) const noexcept {
+      _function->operator()(result);
+    }
+  private:
+    std::unique_ptr<std::function<void(const std::vector<MultipeerPeer>& /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_std__vector_MultipeerPeer_ create_Func_void_std__vector_MultipeerPeer_(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_std__vector_MultipeerPeer__Wrapper wrap_Func_void_std__vector_MultipeerPeer_(Func_void_std__vector_MultipeerPeer_ value) noexcept {
+    return Func_void_std__vector_MultipeerPeer__Wrapper(std::move(value));
+  }
+  
   // pragma MARK: std::shared_ptr<HybridMunimBluetoothSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridMunimBluetoothSpec>`.
@@ -526,6 +908,15 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Result<std::shared_ptr<Promise<AdvertisingDataTypes>>>::withError(error);
   }
   
+  // pragma MARK: Result<std::shared_ptr<Promise<void>>>
+  using Result_std__shared_ptr_Promise_void___ = Result<std::shared_ptr<Promise<void>>>;
+  inline Result_std__shared_ptr_Promise_void___ create_Result_std__shared_ptr_Promise_void___(const std::shared_ptr<Promise<void>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<void>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_void___ create_Result_std__shared_ptr_Promise_void___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<void>>>::withError(error);
+  }
+  
   // pragma MARK: Result<std::shared_ptr<Promise<bool>>>
   using Result_std__shared_ptr_Promise_bool___ = Result<std::shared_ptr<Promise<bool>>>;
   inline Result_std__shared_ptr_Promise_bool___ create_Result_std__shared_ptr_Promise_bool___(const std::shared_ptr<Promise<bool>>& value) noexcept {
@@ -535,13 +926,13 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Result<std::shared_ptr<Promise<bool>>>::withError(error);
   }
   
-  // pragma MARK: Result<std::shared_ptr<Promise<void>>>
-  using Result_std__shared_ptr_Promise_void___ = Result<std::shared_ptr<Promise<void>>>;
-  inline Result_std__shared_ptr_Promise_void___ create_Result_std__shared_ptr_Promise_void___(const std::shared_ptr<Promise<void>>& value) noexcept {
-    return Result<std::shared_ptr<Promise<void>>>::withValue(value);
+  // pragma MARK: Result<std::shared_ptr<Promise<BluetoothCapabilities>>>
+  using Result_std__shared_ptr_Promise_BluetoothCapabilities___ = Result<std::shared_ptr<Promise<BluetoothCapabilities>>>;
+  inline Result_std__shared_ptr_Promise_BluetoothCapabilities___ create_Result_std__shared_ptr_Promise_BluetoothCapabilities___(const std::shared_ptr<Promise<BluetoothCapabilities>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<BluetoothCapabilities>>>::withValue(value);
   }
-  inline Result_std__shared_ptr_Promise_void___ create_Result_std__shared_ptr_Promise_void___(const std::exception_ptr& error) noexcept {
-    return Result<std::shared_ptr<Promise<void>>>::withError(error);
+  inline Result_std__shared_ptr_Promise_BluetoothCapabilities___ create_Result_std__shared_ptr_Promise_BluetoothCapabilities___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<BluetoothCapabilities>>>::withError(error);
   }
   
   // pragma MARK: Result<std::shared_ptr<Promise<std::vector<GATTService>>>>
@@ -562,6 +953,15 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Result<std::shared_ptr<Promise<CharacteristicValue>>>::withError(error);
   }
   
+  // pragma MARK: Result<std::shared_ptr<Promise<DescriptorValue>>>
+  using Result_std__shared_ptr_Promise_DescriptorValue___ = Result<std::shared_ptr<Promise<DescriptorValue>>>;
+  inline Result_std__shared_ptr_Promise_DescriptorValue___ create_Result_std__shared_ptr_Promise_DescriptorValue___(const std::shared_ptr<Promise<DescriptorValue>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<DescriptorValue>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_DescriptorValue___ create_Result_std__shared_ptr_Promise_DescriptorValue___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<DescriptorValue>>>::withError(error);
+  }
+  
   // pragma MARK: Result<std::shared_ptr<Promise<std::vector<std::string>>>>
   using Result_std__shared_ptr_Promise_std__vector_std__string____ = Result<std::shared_ptr<Promise<std::vector<std::string>>>>;
   inline Result_std__shared_ptr_Promise_std__vector_std__string____ create_Result_std__shared_ptr_Promise_std__vector_std__string____(const std::shared_ptr<Promise<std::vector<std::string>>>& value) noexcept {
@@ -578,6 +978,51 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   }
   inline Result_std__shared_ptr_Promise_double___ create_Result_std__shared_ptr_Promise_double___(const std::exception_ptr& error) noexcept {
     return Result<std::shared_ptr<Promise<double>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<Promise<PhyStatus>>>
+  using Result_std__shared_ptr_Promise_PhyStatus___ = Result<std::shared_ptr<Promise<PhyStatus>>>;
+  inline Result_std__shared_ptr_Promise_PhyStatus___ create_Result_std__shared_ptr_Promise_PhyStatus___(const std::shared_ptr<Promise<PhyStatus>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<PhyStatus>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_PhyStatus___ create_Result_std__shared_ptr_Promise_PhyStatus___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<PhyStatus>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<Promise<BondState>>>
+  using Result_std__shared_ptr_Promise_BondState___ = Result<std::shared_ptr<Promise<BondState>>>;
+  inline Result_std__shared_ptr_Promise_BondState___ create_Result_std__shared_ptr_Promise_BondState___(const std::shared_ptr<Promise<BondState>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<BondState>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_BondState___ create_Result_std__shared_ptr_Promise_BondState___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<BondState>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<Promise<std::string>>>
+  using Result_std__shared_ptr_Promise_std__string___ = Result<std::shared_ptr<Promise<std::string>>>;
+  inline Result_std__shared_ptr_Promise_std__string___ create_Result_std__shared_ptr_Promise_std__string___(const std::shared_ptr<Promise<std::string>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<std::string>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_std__string___ create_Result_std__shared_ptr_Promise_std__string___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<std::string>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<Promise<L2CAPChannel>>>
+  using Result_std__shared_ptr_Promise_L2CAPChannel___ = Result<std::shared_ptr<Promise<L2CAPChannel>>>;
+  inline Result_std__shared_ptr_Promise_L2CAPChannel___ create_Result_std__shared_ptr_Promise_L2CAPChannel___(const std::shared_ptr<Promise<L2CAPChannel>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<L2CAPChannel>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_L2CAPChannel___ create_Result_std__shared_ptr_Promise_L2CAPChannel___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<L2CAPChannel>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<Promise<std::vector<MultipeerPeer>>>>
+  using Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____ = Result<std::shared_ptr<Promise<std::vector<MultipeerPeer>>>>;
+  inline Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____ create_Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____(const std::shared_ptr<Promise<std::vector<MultipeerPeer>>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<std::vector<MultipeerPeer>>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____ create_Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<std::vector<MultipeerPeer>>>>::withError(error);
   }
 
 } // namespace margelo::nitro::munimbluetooth::bridge::swift

@@ -11,12 +11,32 @@
 namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
 // Forward declaration of `ServiceDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ServiceDataEntry; }
+// Forward declaration of `BluetoothCapabilities` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
 // Forward declaration of `GATTService` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTService; }
 // Forward declaration of `GATTCharacteristic` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTCharacteristic; }
+// Forward declaration of `GATTDescriptor` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct GATTDescriptor; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
+// Forward declaration of `DescriptorValue` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
+// Forward declaration of `PhyStatus` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
+// Forward declaration of `BluetoothPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
+// Forward declaration of `BondState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BondState; }
+// Forward declaration of `L2CAPChannel` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
+// Forward declaration of `MultipeerPeer` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
+// Forward declaration of `MultipeerPeerState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
+// Forward declaration of `MultipeerDiscoveryInfoEntry` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerDiscoveryInfoEntry; }
 // Forward declaration of `AdvertisingOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct AdvertisingOptions; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
@@ -25,8 +45,16 @@ namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
+// Forward declaration of `BluetoothPhyOption` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
+// Forward declaration of `ExtendedAdvertisingOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ExtendedAdvertisingOptions; }
 // Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
+// Forward declaration of `MultipeerSessionOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerSessionOptions; }
+// Forward declaration of `MultipeerEncryptionPreference` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPreference; }
 
 #include "AdvertisingDataTypes.hpp"
 #include <NitroModules/Promise.hpp>
@@ -38,12 +66,32 @@ namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
 #include "ServiceDataEntry.hpp"
 #include "JServiceDataEntry.hpp"
 #include <NitroModules/JUnit.hpp>
+#include "BluetoothCapabilities.hpp"
+#include "JBluetoothCapabilities.hpp"
 #include "GATTService.hpp"
 #include "JGATTService.hpp"
 #include "GATTCharacteristic.hpp"
 #include "JGATTCharacteristic.hpp"
+#include "GATTDescriptor.hpp"
+#include "JGATTDescriptor.hpp"
 #include "CharacteristicValue.hpp"
 #include "JCharacteristicValue.hpp"
+#include "DescriptorValue.hpp"
+#include "JDescriptorValue.hpp"
+#include "PhyStatus.hpp"
+#include "JPhyStatus.hpp"
+#include "BluetoothPhy.hpp"
+#include "JBluetoothPhy.hpp"
+#include "BondState.hpp"
+#include "JBondState.hpp"
+#include "L2CAPChannel.hpp"
+#include "JL2CAPChannel.hpp"
+#include "MultipeerPeer.hpp"
+#include "JMultipeerPeer.hpp"
+#include "MultipeerPeerState.hpp"
+#include "JMultipeerPeerState.hpp"
+#include "MultipeerDiscoveryInfoEntry.hpp"
+#include "JMultipeerDiscoveryInfoEntry.hpp"
 #include "AdvertisingOptions.hpp"
 #include "JAdvertisingOptions.hpp"
 #include "ScanOptions.hpp"
@@ -52,8 +100,16 @@ namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
 #include "JScanMode.hpp"
 #include "WriteType.hpp"
 #include "JWriteType.hpp"
+#include "BluetoothPhyOption.hpp"
+#include "JBluetoothPhyOption.hpp"
+#include "ExtendedAdvertisingOptions.hpp"
+#include "JExtendedAdvertisingOptions.hpp"
 #include "BackgroundSessionOptions.hpp"
 #include "JBackgroundSessionOptions.hpp"
+#include "MultipeerSessionOptions.hpp"
+#include "JMultipeerSessionOptions.hpp"
+#include "MultipeerEncryptionPreference.hpp"
+#include "JMultipeerEncryptionPreference.hpp"
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -118,16 +174,31 @@ namespace margelo::nitro::munimbluetooth {
   }
   void JHybridMunimBluetoothSpec::setServices(const std::vector<GATTService>& services) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JArrayClass<JGATTService>> /* services */)>("setServices");
-    method(_javaPart, [&]() {
-      size_t __size = services.size();
+    method(_javaPart, [&](auto&& __input) {
+      size_t __size = __input.size();
       jni::local_ref<jni::JArrayClass<JGATTService>> __array = jni::JArrayClass<JGATTService>::newArray(__size);
       for (size_t __i = 0; __i < __size; __i++) {
-        const auto& __element = services[__i];
+        const auto& __element = __input[__i];
         auto __elementJni = JGATTService::fromCpp(__element);
         __array->setElement(__i, *__elementJni);
       }
       return __array;
-    }());
+    }(services));
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::updateCharacteristicValue(const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<bool> notify) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* serviceUUID */, jni::alias_ref<jni::JString> /* characteristicUUID */, jni::alias_ref<jni::JString> /* value */, jni::alias_ref<jni::JBoolean> /* notify */)>("updateCharacteristicValue");
+    auto __result = method(_javaPart, jni::make_jstring(serviceUUID), jni::make_jstring(characteristicUUID), jni::make_jstring(value), notify.has_value() ? jni::JBoolean::valueOf(notify.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
   }
   std::shared_ptr<Promise<bool>> JHybridMunimBluetoothSpec::isBluetoothEnabled() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("isBluetoothEnabled");
@@ -153,6 +224,22 @@ namespace margelo::nitro::munimbluetooth {
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
         auto __result = jni::static_ref_cast<jni::JBoolean>(__boxedResult);
         __promise->resolve(static_cast<bool>(__result->value()));
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<BluetoothCapabilities>> JHybridMunimBluetoothSpec::getCapabilities() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("getCapabilities");
+    auto __result = method(_javaPart);
+    return [&]() {
+      auto __promise = Promise<BluetoothCapabilities>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JBluetoothCapabilities>(__boxedResult);
+        __promise->resolve(__result->toCpp());
       });
       __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
         jni::JniException __jniError(__throwable);
@@ -195,16 +282,16 @@ namespace margelo::nitro::munimbluetooth {
       auto __promise = Promise<std::vector<GATTService>>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
         auto __result = jni::static_ref_cast<jni::JArrayClass<JGATTService>>(__boxedResult);
-        __promise->resolve([&]() {
-          size_t __size = __result->size();
+        __promise->resolve([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<GATTService> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = __result->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toCpp());
           }
           return __vector;
-        }());
+        }(__result));
       });
       __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
         jni::JniException __jniError(__throwable);
@@ -229,9 +316,40 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
+  std::shared_ptr<Promise<DescriptorValue>> JHybridMunimBluetoothSpec::readDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<jni::JString> /* serviceUUID */, jni::alias_ref<jni::JString> /* characteristicUUID */, jni::alias_ref<jni::JString> /* descriptorUUID */)>("readDescriptor");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), jni::make_jstring(serviceUUID), jni::make_jstring(characteristicUUID), jni::make_jstring(descriptorUUID));
+    return [&]() {
+      auto __promise = Promise<DescriptorValue>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JDescriptorValue>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
   std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<WriteType> writeType) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<jni::JString> /* serviceUUID */, jni::alias_ref<jni::JString> /* characteristicUUID */, jni::alias_ref<jni::JString> /* value */, jni::alias_ref<JWriteType> /* writeType */)>("writeCharacteristic");
     auto __result = method(_javaPart, jni::make_jstring(deviceId), jni::make_jstring(serviceUUID), jni::make_jstring(characteristicUUID), jni::make_jstring(value), writeType.has_value() ? JWriteType::fromCpp(writeType.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::writeDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID, const std::string& value) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<jni::JString> /* serviceUUID */, jni::alias_ref<jni::JString> /* characteristicUUID */, jni::alias_ref<jni::JString> /* descriptorUUID */, jni::alias_ref<jni::JString> /* value */)>("writeDescriptor");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), jni::make_jstring(serviceUUID), jni::make_jstring(characteristicUUID), jni::make_jstring(descriptorUUID), jni::make_jstring(value));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
@@ -259,16 +377,16 @@ namespace margelo::nitro::munimbluetooth {
       auto __promise = Promise<std::vector<std::string>>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
         auto __result = jni::static_ref_cast<jni::JArrayClass<jni::JString>>(__boxedResult);
-        __promise->resolve([&]() {
-          size_t __size = __result->size();
+        __promise->resolve([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = __result->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }());
+        }(__result));
       });
       __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
         jni::JniException __jniError(__throwable);
@@ -293,6 +411,237 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
+  std::shared_ptr<Promise<double>> JHybridMunimBluetoothSpec::requestMTU(const std::string& deviceId, double mtu) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, double /* mtu */)>("requestMTU");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), mtu);
+    return [&]() {
+      auto __promise = Promise<double>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<jni::JDouble>(__boxedResult);
+        __promise->resolve(__result->value());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, std::optional<BluetoothPhyOption> phyOption) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<JBluetoothPhy> /* txPhy */, jni::alias_ref<JBluetoothPhy> /* rxPhy */, jni::alias_ref<JBluetoothPhyOption> /* phyOption */)>("setPreferredPhy");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), JBluetoothPhy::fromCpp(txPhy), JBluetoothPhy::fromCpp(rxPhy), phyOption.has_value() ? JBluetoothPhyOption::fromCpp(phyOption.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<PhyStatus>> JHybridMunimBluetoothSpec::readPhy(const std::string& deviceId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */)>("readPhy");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId));
+    return [&]() {
+      auto __promise = Promise<PhyStatus>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JPhyStatus>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<BondState>> JHybridMunimBluetoothSpec::getBondState(const std::string& deviceId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */)>("getBondState");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId));
+    return [&]() {
+      auto __promise = Promise<BondState>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JBondState>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<BondState>> JHybridMunimBluetoothSpec::createBond(const std::string& deviceId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */)>("createBond");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId));
+    return [&]() {
+      auto __promise = Promise<BondState>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JBondState>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<BondState>> JHybridMunimBluetoothSpec::removeBond(const std::string& deviceId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */)>("removeBond");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId));
+    return [&]() {
+      auto __promise = Promise<BondState>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JBondState>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<std::string>> JHybridMunimBluetoothSpec::startExtendedAdvertising(const ExtendedAdvertisingOptions& options) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<JExtendedAdvertisingOptions> /* options */)>("startExtendedAdvertising");
+    auto __result = method(_javaPart, JExtendedAdvertisingOptions::fromCpp(options));
+    return [&]() {
+      auto __promise = Promise<std::string>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<jni::JString>(__boxedResult);
+        __promise->resolve(__result->toStdString());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  void JHybridMunimBluetoothSpec::stopExtendedAdvertising(const std::string& advertisingId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* advertisingId */)>("stopExtendedAdvertising");
+    method(_javaPart, jni::make_jstring(advertisingId));
+  }
+  std::shared_ptr<Promise<L2CAPChannel>> JHybridMunimBluetoothSpec::publishL2CAPChannel(std::optional<bool> encryptionRequired) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JBoolean> /* encryptionRequired */)>("publishL2CAPChannel");
+    auto __result = method(_javaPart, encryptionRequired.has_value() ? jni::JBoolean::valueOf(encryptionRequired.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<L2CAPChannel>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JL2CAPChannel>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  void JHybridMunimBluetoothSpec::unpublishL2CAPChannel(double psm) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* psm */)>("unpublishL2CAPChannel");
+    method(_javaPart, psm);
+  }
+  std::shared_ptr<Promise<L2CAPChannel>> JHybridMunimBluetoothSpec::openL2CAPChannel(const std::string& deviceId, double psm) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, double /* psm */)>("openL2CAPChannel");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), psm);
+    return [&]() {
+      auto __promise = Promise<L2CAPChannel>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JL2CAPChannel>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  void JHybridMunimBluetoothSpec::closeL2CAPChannel(const std::string& channelId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* channelId */)>("closeL2CAPChannel");
+    method(_javaPart, jni::make_jstring(channelId));
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::sendL2CAPData(const std::string& channelId, const std::string& value) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* channelId */, jni::alias_ref<jni::JString> /* value */)>("sendL2CAPData");
+    auto __result = method(_javaPart, jni::make_jstring(channelId), jni::make_jstring(value));
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  void JHybridMunimBluetoothSpec::startClassicScan() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("startClassicScan");
+    method(_javaPart);
+  }
+  void JHybridMunimBluetoothSpec::stopClassicScan() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopClassicScan");
+    method(_javaPart);
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::connectClassic(const std::string& deviceId, const std::optional<std::string>& serviceUUID) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<jni::JString> /* serviceUUID */)>("connectClassic");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), serviceUUID.has_value() ? jni::make_jstring(serviceUUID.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::startClassicServer(const std::optional<std::string>& serviceUUID, const std::optional<std::string>& serviceName) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* serviceUUID */, jni::alias_ref<jni::JString> /* serviceName */)>("startClassicServer");
+    auto __result = method(_javaPart, serviceUUID.has_value() ? jni::make_jstring(serviceUUID.value()) : nullptr, serviceName.has_value() ? jni::make_jstring(serviceName.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  void JHybridMunimBluetoothSpec::stopClassicServer(const std::optional<std::string>& serviceUUID) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* serviceUUID */)>("stopClassicServer");
+    method(_javaPart, serviceUUID.has_value() ? jni::make_jstring(serviceUUID.value()) : nullptr);
+  }
+  void JHybridMunimBluetoothSpec::disconnectClassic(const std::string& deviceId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* deviceId */)>("disconnectClassic");
+    method(_javaPart, jni::make_jstring(deviceId));
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::writeClassic(const std::string& deviceId, const std::string& value) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<jni::JString> /* value */)>("writeClassic");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), jni::make_jstring(value));
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
   void JHybridMunimBluetoothSpec::startBackgroundSession(const BackgroundSessionOptions& options) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JBackgroundSessionOptions> /* options */)>("startBackgroundSession");
     method(_javaPart, JBackgroundSessionOptions::fromCpp(options));
@@ -300,6 +649,67 @@ namespace margelo::nitro::munimbluetooth {
   void JHybridMunimBluetoothSpec::stopBackgroundSession() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopBackgroundSession");
     method(_javaPart);
+  }
+  void JHybridMunimBluetoothSpec::startMultipeerSession(const MultipeerSessionOptions& options) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JMultipeerSessionOptions> /* options */)>("startMultipeerSession");
+    method(_javaPart, JMultipeerSessionOptions::fromCpp(options));
+  }
+  void JHybridMunimBluetoothSpec::stopMultipeerSession() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopMultipeerSession");
+    method(_javaPart);
+  }
+  void JHybridMunimBluetoothSpec::inviteMultipeerPeer(const std::string& peerId) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* peerId */)>("inviteMultipeerPeer");
+    method(_javaPart, jni::make_jstring(peerId));
+  }
+  std::shared_ptr<Promise<std::vector<MultipeerPeer>>> JHybridMunimBluetoothSpec::getMultipeerPeers() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("getMultipeerPeers");
+    auto __result = method(_javaPart);
+    return [&]() {
+      auto __promise = Promise<std::vector<MultipeerPeer>>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<jni::JArrayClass<JMultipeerPeer>>(__boxedResult);
+        __promise->resolve([&](auto&& __input) {
+          size_t __size = __input->size();
+          std::vector<MultipeerPeer> __vector;
+          __vector.reserve(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            auto __element = __input->getElement(__i);
+            __vector.push_back(__element->toCpp());
+          }
+          return __vector;
+        }(__result));
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::sendMultipeerMessage(const std::string& value, const std::optional<std::vector<std::string>>& peerIds, std::optional<bool> reliable) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* value */, jni::alias_ref<jni::JArrayClass<jni::JString>> /* peerIds */, jni::alias_ref<jni::JBoolean> /* reliable */)>("sendMultipeerMessage");
+    auto __result = method(_javaPart, jni::make_jstring(value), peerIds.has_value() ? [&](auto&& __input) {
+      size_t __size = __input.size();
+      jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
+      for (size_t __i = 0; __i < __size; __i++) {
+        const auto& __element = __input[__i];
+        auto __elementJni = jni::make_jstring(__element);
+        __array->setElement(__i, *__elementJni);
+      }
+      return __array;
+    }(peerIds.value()) : nullptr, reliable.has_value() ? jni::JBoolean::valueOf(reliable.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
   }
   void JHybridMunimBluetoothSpec::addListener(const std::string& eventName) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* eventName */)>("addListener");

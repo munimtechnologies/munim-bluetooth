@@ -14,8 +14,14 @@
   },
   "autolinking": {
     "MunimBluetooth": {
-      "swift": "HybridMunimBluetooth",
-      "kotlin": "HybridMunimBluetooth"
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridMunimBluetooth"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridMunimBluetooth"
+      }
     }
   },
   "ignorePaths": [

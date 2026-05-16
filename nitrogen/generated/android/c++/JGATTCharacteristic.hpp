@@ -10,6 +10,8 @@
 #include <fbjni/fbjni.h>
 #include "GATTCharacteristic.hpp"
 
+#include "GATTDescriptor.hpp"
+#include "JGATTDescriptor.hpp"
 #include <optional>
 #include <string>
 #include <vector>
@@ -39,19 +41,31 @@ namespace margelo::nitro::munimbluetooth {
       jni::local_ref<jni::JArrayClass<jni::JString>> properties = this->getFieldValue(fieldProperties);
       static const auto fieldValue = clazz->getField<jni::JString>("value");
       jni::local_ref<jni::JString> value = this->getFieldValue(fieldValue);
+      static const auto fieldDescriptors = clazz->getField<jni::JArrayClass<JGATTDescriptor>>("descriptors");
+      jni::local_ref<jni::JArrayClass<JGATTDescriptor>> descriptors = this->getFieldValue(fieldDescriptors);
       return GATTCharacteristic(
         uuid->toStdString(),
-        [&]() {
-          size_t __size = properties->size();
+        [&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = properties->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }(),
-        value != nullptr ? std::make_optional(value->toStdString()) : std::nullopt
+        }(properties),
+        value != nullptr ? std::make_optional(value->toStdString()) : std::nullopt,
+        descriptors != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
+          std::vector<GATTDescriptor> __vector;
+          __vector.reserve(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            auto __element = __input->getElement(__i);
+            __vector.push_back(__element->toCpp());
+          }
+          return __vector;
+        }(descriptors)) : std::nullopt
       );
     }
 
@@ -61,23 +75,33 @@ namespace margelo::nitro::munimbluetooth {
      */
     [[maybe_unused]]
     static jni::local_ref<JGATTCharacteristic::javaobject> fromCpp(const GATTCharacteristic& value) {
-      using JSignature = JGATTCharacteristic(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JString>);
+      using JSignature = JGATTCharacteristic(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<JGATTDescriptor>>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
         jni::make_jstring(value.uuid),
-        [&]() {
-          size_t __size = value.properties.size();
+        [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.properties[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }(),
-        value.value.has_value() ? jni::make_jstring(value.value.value()) : nullptr
+        }(value.properties),
+        value.value.has_value() ? jni::make_jstring(value.value.value()) : nullptr,
+        value.descriptors.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
+          jni::local_ref<jni::JArrayClass<JGATTDescriptor>> __array = jni::JArrayClass<JGATTDescriptor>::newArray(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            const auto& __element = __input[__i];
+            auto __elementJni = JGATTDescriptor::fromCpp(__element);
+            __array->setElement(__i, *__elementJni);
+          }
+          return __array;
+        }(value.descriptors.value()) : nullptr
       );
     }
   };

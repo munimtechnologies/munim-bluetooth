@@ -52,16 +52,16 @@ namespace margelo::nitro::munimbluetooth {
       static const auto fieldAndroidNotificationText = clazz->getField<jni::JString>("androidNotificationText");
       jni::local_ref<jni::JString> androidNotificationText = this->getFieldValue(fieldAndroidNotificationText);
       return BackgroundSessionOptions(
-        [&]() {
-          size_t __size = serviceUUIDs->size();
+        [&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceUUIDs->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }(),
+        }(serviceUUIDs),
         localName != nullptr ? std::make_optional(localName->toStdString()) : std::nullopt,
         allowDuplicates != nullptr ? std::make_optional(static_cast<bool>(allowDuplicates->value())) : std::nullopt,
         scanMode != nullptr ? std::make_optional(scanMode->toCpp()) : std::nullopt,
@@ -83,16 +83,16 @@ namespace margelo::nitro::munimbluetooth {
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
-        [&]() {
-          size_t __size = value.serviceUUIDs.size();
+        [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceUUIDs[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }(),
+        }(value.serviceUUIDs),
         value.localName.has_value() ? jni::make_jstring(value.localName.value()) : nullptr,
         value.allowDuplicates.has_value() ? jni::JBoolean::valueOf(value.allowDuplicates.value()) : nullptr,
         value.scanMode.has_value() ? JScanMode::fromCpp(value.scanMode.value()) : nullptr,

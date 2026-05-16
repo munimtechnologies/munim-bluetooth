@@ -84,7 +84,7 @@ open class HybridMunimBluetoothSpec_cxx {
     }
   }
 
-
+  
 
   /**
    * Get the memory size of the Swift class (plus size of any other allocations)
@@ -121,7 +121,7 @@ open class HybridMunimBluetoothSpec_cxx {
   }
 
   // Properties
-
+  
 
   // Methods
   @inline(__always)
@@ -134,7 +134,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func updateAdvertisingData(advertisingData: AdvertisingDataTypes) -> bridge.Result_void_ {
     do {
@@ -145,7 +145,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func getAdvertisingData() -> bridge.Result_std__shared_ptr_Promise_AdvertisingDataTypes___ {
     do {
@@ -164,7 +164,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_AdvertisingDataTypes___(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func stopAdvertising() -> bridge.Result_void_ {
     do {
@@ -175,7 +175,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func setServices(services: bridge.std__vector_GATTService_) -> bridge.Result_void_ {
     do {
@@ -186,7 +186,33 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
+  @inline(__always)
+  public final func updateCharacteristicValue(serviceUUID: std.string, characteristicUUID: std.string, value: std.string, notify: bridge.std__optional_bool_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.updateCharacteristicValue(serviceUUID: String(serviceUUID), characteristicUUID: String(characteristicUUID), value: String(value), notify: { () -> Bool? in
+        if bridge.has_value_std__optional_bool_(notify) {
+          let __unwrapped = bridge.get_std__optional_bool_(notify)
+          return __unwrapped
+        } else {
+          return nil
+        }
+      }())
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
   @inline(__always)
   public final func isBluetoothEnabled() -> bridge.Result_std__shared_ptr_Promise_bool___ {
     do {
@@ -205,7 +231,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_bool___(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func requestBluetoothPermission() -> bridge.Result_std__shared_ptr_Promise_bool___ {
     do {
@@ -224,7 +250,26 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_bool___(__exceptionPtr)
     }
   }
-
+  
+  @inline(__always)
+  public final func getCapabilities() -> bridge.Result_std__shared_ptr_Promise_BluetoothCapabilities___ {
+    do {
+      let __result = try self.__implementation.getCapabilities()
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_BluetoothCapabilities__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_BluetoothCapabilities__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_BluetoothCapabilities__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_BluetoothCapabilities___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_BluetoothCapabilities___(__exceptionPtr)
+    }
+  }
+  
   @inline(__always)
   public final func startScan(options: bridge.std__optional_ScanOptions_) -> bridge.Result_void_ {
     do {
@@ -235,7 +280,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func stopScan() -> bridge.Result_void_ {
     do {
@@ -246,7 +291,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func connect(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
@@ -265,7 +310,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func disconnect(deviceId: std.string) -> bridge.Result_void_ {
     do {
@@ -276,7 +321,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func discoverServices(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_std__vector_GATTService____ {
     do {
@@ -301,7 +346,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_std__vector_GATTService____(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func readCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string) -> bridge.Result_std__shared_ptr_Promise_CharacteristicValue___ {
     do {
@@ -320,7 +365,26 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_CharacteristicValue___(__exceptionPtr)
     }
   }
-
+  
+  @inline(__always)
+  public final func readDescriptor(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string, descriptorUUID: std.string) -> bridge.Result_std__shared_ptr_Promise_DescriptorValue___ {
+    do {
+      let __result = try self.__implementation.readDescriptor(deviceId: String(deviceId), serviceUUID: String(serviceUUID), characteristicUUID: String(characteristicUUID), descriptorUUID: String(descriptorUUID))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_DescriptorValue__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_DescriptorValue__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_DescriptorValue__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_DescriptorValue___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_DescriptorValue___(__exceptionPtr)
+    }
+  }
+  
   @inline(__always)
   public final func writeCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string, value: std.string, writeType: bridge.std__optional_WriteType_) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
@@ -339,7 +403,26 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
     }
   }
-
+  
+  @inline(__always)
+  public final func writeDescriptor(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string, descriptorUUID: std.string, value: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.writeDescriptor(deviceId: String(deviceId), serviceUUID: String(serviceUUID), characteristicUUID: String(characteristicUUID), descriptorUUID: String(descriptorUUID), value: String(value))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
   @inline(__always)
   public final func subscribeToCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string) -> bridge.Result_void_ {
     do {
@@ -350,7 +433,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func unsubscribeFromCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string) -> bridge.Result_void_ {
     do {
@@ -361,7 +444,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func getConnectedDevices() -> bridge.Result_std__shared_ptr_Promise_std__vector_std__string____ {
     do {
@@ -386,7 +469,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_std__vector_std__string____(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func readRSSI(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_double___ {
     do {
@@ -405,7 +488,366 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_std__shared_ptr_Promise_double___(__exceptionPtr)
     }
   }
-
+  
+  @inline(__always)
+  public final func requestMTU(deviceId: std.string, mtu: Double) -> bridge.Result_std__shared_ptr_Promise_double___ {
+    do {
+      let __result = try self.__implementation.requestMTU(deviceId: String(deviceId), mtu: mtu)
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_double__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_double__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_double__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_double___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_double___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func setPreferredPhy(deviceId: std.string, txPhy: Int32, rxPhy: Int32, phyOption: bridge.std__optional_BluetoothPhyOption_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.setPreferredPhy(deviceId: String(deviceId), txPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: txPhy)!, rxPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: rxPhy)!, phyOption: phyOption.value)
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func readPhy(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_PhyStatus___ {
+    do {
+      let __result = try self.__implementation.readPhy(deviceId: String(deviceId))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_PhyStatus__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_PhyStatus__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_PhyStatus__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_PhyStatus___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_PhyStatus___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func getBondState(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_BondState___ {
+    do {
+      let __result = try self.__implementation.getBondState(deviceId: String(deviceId))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_BondState__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_BondState__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_BondState__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_BondState___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_BondState___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func createBond(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_BondState___ {
+    do {
+      let __result = try self.__implementation.createBond(deviceId: String(deviceId))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_BondState__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_BondState__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_BondState__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_BondState___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_BondState___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func removeBond(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_BondState___ {
+    do {
+      let __result = try self.__implementation.removeBond(deviceId: String(deviceId))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_BondState__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_BondState__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_BondState__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_BondState___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_BondState___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func startExtendedAdvertising(options: ExtendedAdvertisingOptions) -> bridge.Result_std__shared_ptr_Promise_std__string___ {
+    do {
+      let __result = try self.__implementation.startExtendedAdvertising(options: options)
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_std__string__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_std__string__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_std__string__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(std.string(__result)) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_std__string___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_std__string___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func stopExtendedAdvertising(advertisingId: std.string) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.stopExtendedAdvertising(advertisingId: String(advertisingId))
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func publishL2CAPChannel(encryptionRequired: bridge.std__optional_bool_) -> bridge.Result_std__shared_ptr_Promise_L2CAPChannel___ {
+    do {
+      let __result = try self.__implementation.publishL2CAPChannel(encryptionRequired: { () -> Bool? in
+        if bridge.has_value_std__optional_bool_(encryptionRequired) {
+          let __unwrapped = bridge.get_std__optional_bool_(encryptionRequired)
+          return __unwrapped
+        } else {
+          return nil
+        }
+      }())
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_L2CAPChannel__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_L2CAPChannel__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_L2CAPChannel__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_L2CAPChannel___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_L2CAPChannel___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func unpublishL2CAPChannel(psm: Double) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.unpublishL2CAPChannel(psm: psm)
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func openL2CAPChannel(deviceId: std.string, psm: Double) -> bridge.Result_std__shared_ptr_Promise_L2CAPChannel___ {
+    do {
+      let __result = try self.__implementation.openL2CAPChannel(deviceId: String(deviceId), psm: psm)
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_L2CAPChannel__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_L2CAPChannel__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_L2CAPChannel__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_L2CAPChannel___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_L2CAPChannel___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func closeL2CAPChannel(channelId: std.string) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.closeL2CAPChannel(channelId: String(channelId))
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func sendL2CAPData(channelId: std.string, value: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.sendL2CAPData(channelId: String(channelId), value: String(value))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func startClassicScan() -> bridge.Result_void_ {
+    do {
+      try self.__implementation.startClassicScan()
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func stopClassicScan() -> bridge.Result_void_ {
+    do {
+      try self.__implementation.stopClassicScan()
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func connectClassic(deviceId: std.string, serviceUUID: bridge.std__optional_std__string_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.connectClassic(deviceId: String(deviceId), serviceUUID: { () -> String? in
+        if bridge.has_value_std__optional_std__string_(serviceUUID) {
+          let __unwrapped = bridge.get_std__optional_std__string_(serviceUUID)
+          return String(__unwrapped)
+        } else {
+          return nil
+        }
+      }())
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func startClassicServer(serviceUUID: bridge.std__optional_std__string_, serviceName: bridge.std__optional_std__string_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.startClassicServer(serviceUUID: { () -> String? in
+        if bridge.has_value_std__optional_std__string_(serviceUUID) {
+          let __unwrapped = bridge.get_std__optional_std__string_(serviceUUID)
+          return String(__unwrapped)
+        } else {
+          return nil
+        }
+      }(), serviceName: { () -> String? in
+        if bridge.has_value_std__optional_std__string_(serviceName) {
+          let __unwrapped = bridge.get_std__optional_std__string_(serviceName)
+          return String(__unwrapped)
+        } else {
+          return nil
+        }
+      }())
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func stopClassicServer(serviceUUID: bridge.std__optional_std__string_) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.stopClassicServer(serviceUUID: { () -> String? in
+        if bridge.has_value_std__optional_std__string_(serviceUUID) {
+          let __unwrapped = bridge.get_std__optional_std__string_(serviceUUID)
+          return String(__unwrapped)
+        } else {
+          return nil
+        }
+      }())
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func disconnectClassic(deviceId: std.string) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.disconnectClassic(deviceId: String(deviceId))
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func writeClassic(deviceId: std.string, value: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.writeClassic(deviceId: String(deviceId), value: String(value))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
   @inline(__always)
   public final func startBackgroundSession(options: BackgroundSessionOptions) -> bridge.Result_void_ {
     do {
@@ -416,7 +858,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func stopBackgroundSession() -> bridge.Result_void_ {
     do {
@@ -427,7 +869,98 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
+  @inline(__always)
+  public final func startMultipeerSession(options: MultipeerSessionOptions) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.startMultipeerSession(options: options)
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func stopMultipeerSession() -> bridge.Result_void_ {
+    do {
+      try self.__implementation.stopMultipeerSession()
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func inviteMultipeerPeer(peerId: std.string) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.inviteMultipeerPeer(peerId: String(peerId))
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func getMultipeerPeers() -> bridge.Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____ {
+    do {
+      let __result = try self.__implementation.getMultipeerPeers()
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_std__vector_MultipeerPeer___ in
+        let __promise = bridge.create_std__shared_ptr_Promise_std__vector_MultipeerPeer___()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_std__vector_MultipeerPeer___(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve({ () -> bridge.std__vector_MultipeerPeer_ in
+              var __vector = bridge.create_std__vector_MultipeerPeer_(__result.count)
+              for __item in __result {
+                __vector.push_back(__item)
+              }
+              return __vector
+            }()) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_std__vector_MultipeerPeer____(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func sendMultipeerMessage(value: std.string, peerIds: bridge.std__optional_std__vector_std__string__, reliable: bridge.std__optional_bool_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.sendMultipeerMessage(value: String(value), peerIds: { () -> [String]? in
+        if bridge.has_value_std__optional_std__vector_std__string__(peerIds) {
+          let __unwrapped = bridge.get_std__optional_std__vector_std__string__(peerIds)
+          return __unwrapped.map({ __item in String(__item) })
+        } else {
+          return nil
+        }
+      }(), reliable: { () -> Bool? in
+        if bridge.has_value_std__optional_bool_(reliable) {
+          let __unwrapped = bridge.get_std__optional_bool_(reliable)
+          return __unwrapped
+        } else {
+          return nil
+        }
+      }())
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
   @inline(__always)
   public final func addListener(eventName: std.string) -> bridge.Result_void_ {
     do {
@@ -438,7 +971,7 @@ open class HybridMunimBluetoothSpec_cxx {
       return bridge.create_Result_void_(__exceptionPtr)
     }
   }
-
+  
   @inline(__always)
   public final func removeListeners(count: Double) -> bridge.Result_void_ {
     do {

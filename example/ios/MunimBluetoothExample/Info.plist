@@ -34,9 +34,24 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>This example uses location permission when scanning for nearby Bluetooth devices that may expose location-related metadata.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This example uses Bluetooth to scan for, connect to, and communicate with nearby devices.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>This example uses Bluetooth peripheral mode to advertise services and exchange data with nearby devices.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This example uses the local network to discover and communicate with nearby peer devices.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_munim-mesh._tcp</string>
+	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+		<string>bluetooth-peripheral</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

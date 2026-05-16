@@ -18,7 +18,7 @@ public extension GATTCharacteristic {
   /**
    * Create a new instance of `GATTCharacteristic`.
    */
-  init(uuid: String, properties: [String], value: String?) {
+  init(uuid: String, properties: [String], value: String?, descriptors: [GATTDescriptor]?) {
     self.init(std.string(uuid), { () -> bridge.std__vector_std__string_ in
       var __vector = bridge.create_std__vector_std__string_(properties.count)
       for __item in properties {
@@ -28,6 +28,18 @@ public extension GATTCharacteristic {
     }(), { () -> bridge.std__optional_std__string_ in
       if let __unwrappedValue = value {
         return bridge.create_std__optional_std__string_(std.string(__unwrappedValue))
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_std__vector_GATTDescriptor__ in
+      if let __unwrappedValue = descriptors {
+        return bridge.create_std__optional_std__vector_GATTDescriptor__({ () -> bridge.std__vector_GATTDescriptor_ in
+          var __vector = bridge.create_std__vector_GATTDescriptor_(__unwrappedValue.count)
+          for __item in __unwrappedValue {
+            __vector.push_back(__item)
+          }
+          return __vector
+        }())
       } else {
         return .init()
       }
@@ -50,6 +62,18 @@ public extension GATTCharacteristic {
       if bridge.has_value_std__optional_std__string_(self.__value) {
         let __unwrapped = bridge.get_std__optional_std__string_(self.__value)
         return String(__unwrapped)
+      } else {
+        return nil
+      }
+    }()
+  }
+  
+  @inline(__always)
+  var descriptors: [GATTDescriptor]? {
+    return { () -> [GATTDescriptor]? in
+      if bridge.has_value_std__optional_std__vector_GATTDescriptor__(self.__descriptors) {
+        let __unwrapped = bridge.get_std__optional_std__vector_GATTDescriptor__(self.__descriptors)
+        return __unwrapped.map({ __item in __item })
       } else {
         return nil
       }

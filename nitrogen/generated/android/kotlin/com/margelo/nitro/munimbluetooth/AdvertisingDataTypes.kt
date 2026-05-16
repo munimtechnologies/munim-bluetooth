@@ -9,6 +9,7 @@ package com.margelo.nitro.munimbluetooth
 
 import androidx.annotation.Keep
 import com.facebook.proguard.annotations.DoNotStrip
+import java.util.Objects
 
 
 /**
@@ -73,6 +74,52 @@ data class AdvertisingDataTypes(
   val manufacturerData: String?
 ) {
   /* primary constructor */
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is AdvertisingDataTypes) return false
+    return Objects.deepEquals(this.flags, other.flags)
+      && Objects.deepEquals(this.incompleteServiceUUIDs16, other.incompleteServiceUUIDs16)
+      && Objects.deepEquals(this.completeServiceUUIDs16, other.completeServiceUUIDs16)
+      && Objects.deepEquals(this.incompleteServiceUUIDs32, other.incompleteServiceUUIDs32)
+      && Objects.deepEquals(this.completeServiceUUIDs32, other.completeServiceUUIDs32)
+      && Objects.deepEquals(this.incompleteServiceUUIDs128, other.incompleteServiceUUIDs128)
+      && Objects.deepEquals(this.completeServiceUUIDs128, other.completeServiceUUIDs128)
+      && Objects.deepEquals(this.shortenedLocalName, other.shortenedLocalName)
+      && Objects.deepEquals(this.completeLocalName, other.completeLocalName)
+      && Objects.deepEquals(this.txPowerLevel, other.txPowerLevel)
+      && Objects.deepEquals(this.serviceSolicitationUUIDs16, other.serviceSolicitationUUIDs16)
+      && Objects.deepEquals(this.serviceSolicitationUUIDs128, other.serviceSolicitationUUIDs128)
+      && Objects.deepEquals(this.serviceData16, other.serviceData16)
+      && Objects.deepEquals(this.serviceData32, other.serviceData32)
+      && Objects.deepEquals(this.serviceData128, other.serviceData128)
+      && Objects.deepEquals(this.appearance, other.appearance)
+      && Objects.deepEquals(this.serviceSolicitationUUIDs32, other.serviceSolicitationUUIDs32)
+      && Objects.deepEquals(this.manufacturerData, other.manufacturerData)
+  }
+
+  override fun hashCode(): Int {
+    return arrayOf(
+      flags,
+      incompleteServiceUUIDs16,
+      completeServiceUUIDs16,
+      incompleteServiceUUIDs32,
+      completeServiceUUIDs32,
+      incompleteServiceUUIDs128,
+      completeServiceUUIDs128,
+      shortenedLocalName,
+      completeLocalName,
+      txPowerLevel,
+      serviceSolicitationUUIDs16,
+      serviceSolicitationUUIDs128,
+      serviceData16,
+      serviceData32,
+      serviceData128,
+      appearance,
+      serviceSolicitationUUIDs32,
+      manufacturerData
+    ).contentDeepHashCode()
+  }
 
   companion object {
     /**

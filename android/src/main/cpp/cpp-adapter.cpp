@@ -1,6 +1,9 @@
 #include <jni.h>
+#include <fbjni/fbjni.h>
 #include "MunimBluetoothOnLoad.hpp"
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
-  return margelo::nitro::munimbluetooth::initialize(vm);
+  return facebook::jni::initialize(vm, []() {
+    margelo::nitro::munimbluetooth::registerAllNatives();
+  });
 }

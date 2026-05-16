@@ -11,7 +11,7 @@
    <a aria-label="Package version" href="https://www.npmjs.com/package/munim-bluetooth" target="_blank">
     <img alt="Package version" src="https://img.shields.io/npm/v/munim-bluetooth.svg?style=flat-square&label=Version&labelColor=000000&color=0066CC" />
   </a>
-  <a aria-label="Package is free to use" href="https://github.com/munimtechnologies/munim-bluetooth/blob/main/LICENSE" target="_blank">
+  <a aria-label="Package is free to use" href="https://github.com/munimtechnologies/munim-bluetooth/blob/master/LICENSE" target="_blank">
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-success.svg?style=flat-square&color=33CC12" target="_blank" />
   </a>
   <a aria-label="package downloads" href="https://www.npmtrends.com/munim-bluetooth" target="_blank">
@@ -45,13 +45,13 @@
 
 ## Introduction
 
-**munim-bluetooth** is a comprehensive React Native library for all your Bluetooth Low Energy (BLE) needs, supporting both peripheral and central roles. This library allows your React Native app to act as a BLE peripheral (advertising services and characteristics) or as a BLE central (scanning, connecting, and communicating with devices).
+**munim-bluetooth** is a comprehensive React Native Bluetooth library for BLE central/peripheral work, Android-only Classic Bluetooth APIs, LE L2CAP channels where the OS exposes them, and Apple Multipeer Connectivity for iOS/iPadOS peer messaging. It lets your React Native app advertise services, scan, connect, read, write, subscribe, exchange nearby peer messages, and check platform capabilities before using optional APIs.
 
 **Fully compatible with Expo!** Works seamlessly with both Expo managed and bare workflows.
 
 **Built with React Native's Nitro modules architecture** for high performance and reliability.
 
-**Note**: This library focuses on reliability and platform compatibility. It supports the core BLE features that work consistently across both Android and iOS platforms.
+**Note**: Bluetooth is heavily platform-gated. This library exposes the features that iOS and Android make available to third-party apps, and it reports unsupported OS-level capabilities through `getCapabilities()` or explicit unsupported errors instead of silently pretending they work.
 
 ## Table of contents
 
@@ -81,7 +81,7 @@
 - 🔵 **BLE Peripheral Mode**: Transform your React Native app into a BLE peripheral device
 - 📡 **Service Advertising**: Advertise custom GATT services with multiple characteristics
 - 🔄 **Real-time Communication**: Support for read, write, and notify operations
-- ✅ **Platform-Supported BLE Advertising**: Support for core BLE advertising data types that work reliably on both platforms
+- ✅ **Platform-Aware BLE Advertising**: Use service UUIDs and local names cross-platform, plus Android advertising payload data where the OS allows it
 - 🔧 **Dynamic Updates**: Update advertising data while advertising is active
 
 ### Central Mode
@@ -95,10 +95,130 @@
 ### Additional Features
 
 - 📱 **Cross-platform**: Works on both iOS and Android
+- 🧭 **Capability Reporting**: `getCapabilities()` reports platform and hardware support before you call optional APIs
+- 🕸️ **Apple Multipeer Transport**: iOS/iPadOS devices can discover, invite, and message nearby peers with Apple's Multipeer Connectivity
+- 🧵 **LE L2CAP Channels**: Stream payloads over LE Credit Based Channels on supported iOS and Android versions
+- 🔌 **Android Classic Bluetooth**: Android RFCOMM client/server messaging for SPP-style devices
 - 🎯 **TypeScript Support**: Full TypeScript definitions included
 - ⚡ **High Performance**: Built with React Native's Nitro modules architecture
 - 🚀 **Expo Compatible**: Works seamlessly with Expo managed and bare workflows
 - 🔐 **Permission Handling**: Built-in permission request helpers
+
+## Platform Support Matrix
+
+| Capability | iOS | Android | Notes |
+| --- | --- | --- | --- |
+| Peripheral advertising | ✅ | ✅ | iOS only allows CoreBluetooth-supported advertising keys such as local name and service UUIDs. Android splits primary advertising data and scan response data to stay within BLE size limits. |
+| Peripheral GATT services | ✅ | ✅ | Read and write requests are handled natively on both platforms. Included services are wired when supplied in `setServices()`. |
+| Peripheral notify/indicate subscriptions | ✅ | ✅ | Subscribe/unsubscribe events are emitted when centrals change CCC state. |
+| Central scan | ✅ | ✅ | Android scan failures emit `scanFailed`. |
+| Central connect/disconnect | ✅ | ✅ | `connect()` has a native 15 second timeout. |
+| Central service discovery | ✅ | ✅ | Emits `servicesDiscovered` in addition to resolving the Promise. Native timeout rejects if callbacks do not arrive. |
+| Central characteristic read | ✅ | ✅ | Resolves with hex-encoded values. Native timeout rejects if callbacks do not arrive. |
+| Central characteristic write | ✅ | ✅ | Supports `write` and `writeWithoutResponse`. With-response writes have native timeout protection. |
+| Central descriptor read/write | ✅ | ✅ | Uses `readDescriptor()` and `writeDescriptor()` with hex-encoded values. Native timeout rejects if callbacks do not arrive. |
+| Central notify/indicate subscription | ✅ | ✅ | Values emit through `characteristicValueChanged`. |
+| RSSI read | ✅ | ✅ | Resolves with dBm. |
+| ATT MTU request | ❌ | ✅ | Android supports `requestMTU()`. iOS negotiates ATT MTU internally and does not expose a public setter. |
+| BLE PHY read/preference | ❌ | ✅ | Android 8+ supports `readPhy()` and `setPreferredPhy()` when hardware allows it. |
+| Pairing/bond state | ❌ | ✅ | Android supports bond state and starts/removes bonds. iOS handles pairing automatically and does not expose bond management through CoreBluetooth. |
+| Extended advertising | ❌ | ✅ | Android 8+ supports `startExtendedAdvertising()` on hardware with LE extended advertising. iOS does not expose BLE extended advertising. |
+| BLE L2CAP channel streams | ✅ | ✅ | iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+ for LE CoC sockets. |
+| Classic Bluetooth RFCOMM | ❌ | ✅ | Android supports discovery, SPP-style RFCOMM client connections, server/listener sockets, disconnect, write, and receive events. iOS apps cannot use public Classic Bluetooth RFCOMM APIs. |
+| Apple Multipeer Connectivity | ✅ | ❌ | iOS/iPadOS devices can discover peers, auto-invite/accept sessions, and exchange encrypted messages. Android cannot join Apple's Multipeer sessions; use BLE/GATT for iOS-to-Android. |
+
+Call `getCapabilities()` at runtime when you need optional behavior. Platform support can still vary by OS version, hardware, permissions, and app background state.
+
+## Device-to-Device Messaging
+
+For phone-to-phone apps, treat advertising as discovery and GATT as the reliable message channel:
+
+- A peripheral advertises one or more service UUIDs, defines writable/readable/notifiable characteristics with `setServices()`, and listens for `peripheralReadRequest`, `peripheralWriteRequest`, `peripheralSubscribed`, and `peripheralUnsubscribed`.
+- A central scans for that service, connects, discovers services, reads or writes the characteristic, and subscribes for notifications through `characteristicValueChanged`.
+- Multiple nearby centrals can connect, write, and subscribe at the same time. Track peers by `deviceId` on the central side and `centralId` on the peripheral side.
+
+Advertising payload caveat: Android can advertise manufacturer data, service data, TX power, appearance, and related fields subject to BLE payload size and hardware limits. iOS public CoreBluetooth peripheral advertising only exposes local name and service UUIDs, so arbitrary relay bytes should go in a GATT characteristic for iOS-to-iOS and iOS-to-Android communication. If you need a tiny discovery hint on iOS, encode it into your advertised service UUID choice or local name with the normal privacy and size tradeoffs.
+
+### Apple Multipeer Connectivity
+
+For iOS-to-iOS or iPadOS-to-iOS communication, `startMultipeerSession()` exposes Apple's Multipeer Connectivity as a higher-level peer transport. It advertises and browses using a Bonjour service type, auto-invites discovered peers by default, accepts incoming invitations by default, and sends hex-encoded payloads to one peer or all connected peers.
+
+```typescript
+import {
+  addEventListener,
+  sendMultipeerMessage,
+  startMultipeerSession,
+  stopMultipeerSession,
+} from 'munim-bluetooth'
+
+startMultipeerSession({
+  serviceType: 'munim-mesh',
+  displayName: 'Sheehan iPhone',
+  discoveryInfo: [{ key: 'role', value: 'wallet-peer' }],
+  autoInvite: true,
+  autoAcceptInvitations: true,
+  encryptionPreference: 'required',
+})
+
+addEventListener('multipeerPeerStateChanged', async (peer) => {
+  if (peer.state === 'connected') {
+    await sendMultipeerMessage('68656c6c6f', [peer.id], true)
+  }
+})
+
+addEventListener('multipeerMessageReceived', ({ displayName, value }) => {
+  console.log('message from', displayName, value)
+})
+
+// Later:
+stopMultipeerSession()
+```
+
+Multipeer service types must be 1-15 lowercase letters/numbers/hyphens, and the matching Bonjour entry must be declared in iOS `Info.plist` as `_<serviceType>._tcp` (for example `_munim-mesh._tcp`). The Expo config plugin adds `_munim-mesh._tcp` by default and accepts a `multipeerServiceTypes` option for custom service types.
+
+## Background and Terminated Behavior
+
+`startBackgroundSession()` starts a best-effort BLE session for apps that need nearby communication after the user leaves the app.
+
+| State | iOS | Android |
+| --- | --- | --- |
+| App in background or suspended | Supported when `UIBackgroundModes` includes `bluetooth-central` and/or `bluetooth-peripheral`. The Expo config plugin adds both by default. | Supported through a foreground service with `connectedDevice` service type and a user-visible notification. |
+| App terminated by the system | Best-effort CoreBluetooth state restoration is enabled when background modes are present. The package uses restoration identifiers and emits `backgroundSessionRestored` when CoreBluetooth restores central/peripheral state. On iOS 26 and later, Apple's Bluetooth relaunch rules require AccessorySetupKit eligibility for background relaunch, so arbitrary phone-to-phone BLE mesh apps should not depend on terminated-state relaunch. | The foreground service persists its session config and uses `START_STICKY`; if the process is recreated, it restores scan, advertising, and a native GATT characteristic store from the services configured with `setServices()`. |
+| User force-quits / force-stops the app | Not supported by iOS for ongoing app-owned BLE work. The user has explicitly stopped the app. | Not supported after Android force stop. The OS prevents the app from running again until the user opens it or another allowed user/system action starts it. |
+
+Background sessions are for keeping discovery and small GATT messages alive. They do not make JavaScript execute indefinitely. If the process is alive, normal JS events such as `peripheralWriteRequest` and `characteristicValueChanged` continue. After a system restart, iOS may relaunch the app only when Apple's current CoreBluetooth restoration rules allow it; Android restores native scan/advertise/GATT state in the foreground service, and app-specific business logic should reconcile state when the app opens again.
+
+```typescript
+import {
+  setServices,
+  startBackgroundSession,
+  stopBackgroundSession,
+} from 'munim-bluetooth'
+
+setServices([
+  {
+    uuid: SERVICE_UUID,
+    characteristics: [
+      {
+        uuid: CHARACTERISTIC_UUID,
+        properties: ['read', 'write', 'writeWithoutResponse', 'notify'],
+        value: '70696e67',
+      },
+    ],
+  },
+])
+
+startBackgroundSession({
+  serviceUUIDs: [SERVICE_UUID],
+  localName: 'MunimPeer',
+  scanMode: 'lowPower',
+  androidNotificationTitle: 'Nearby mode',
+  androidNotificationText: 'Keeping Bluetooth available nearby',
+})
+
+// Later:
+stopBackgroundSession()
+```
 
 ## 📦 Installation
 
@@ -129,6 +249,12 @@ For iOS, the library is automatically linked. However, you need to add the follo
 <string>This app uses Bluetooth for BLE communication</string>
 <key>NSBluetoothPeripheralUsageDescription</key>
 <string>This app uses Bluetooth to create a peripheral device</string>
+<key>NSLocalNetworkUsageDescription</key>
+<string>This app uses the local network to discover and communicate with nearby peer devices</string>
+<key>NSBonjourServices</key>
+<array>
+  <string>_munim-mesh._tcp</string>
+</array>
 ```
 
 **For Expo projects**, add these permissions to your `app.json`:
@@ -139,9 +265,29 @@ For iOS, the library is automatically linked. However, you need to add the follo
     "ios": {
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth for BLE communication",
-        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to create a peripheral device"
+        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to create a peripheral device",
+        "NSLocalNetworkUsageDescription": "This app uses the local network to discover and communicate with nearby peer devices",
+        "NSBonjourServices": ["_munim-mesh._tcp"]
       }
     }
+  }
+}
+```
+
+With the included Expo config plugin, the default `munim-mesh` Multipeer service is declared automatically. For custom service types:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "munim-bluetooth",
+        {
+          "multipeerServiceTypes": ["anonmesh", "munim-mesh"],
+          "localNetworkUsageDescription": "This app discovers nearby private wallet peers."
+        }
+      ]
+    ]
   }
 }
 ```
@@ -191,7 +337,6 @@ import { startAdvertising, stopAdvertising, setServices } from 'munim-bluetooth'
 startAdvertising({
   serviceUUIDs: ['180D', '180F'],
   localName: 'My Device',
-  manufacturerData: '0102030405',
 })
 
 // Set GATT services
@@ -201,8 +346,8 @@ setServices([
     characteristics: [
       {
         uuid: '2A37',
-        properties: ['read', 'notify'],
-        value: 'Hello World',
+        properties: ['read', 'write', 'writeWithoutResponse', 'notify'],
+        value: '48656c6c6f20576f726c64',
       },
     ],
   },
@@ -258,7 +403,49 @@ stopScan()
 removeDeviceFoundListener()
 ```
 
-### Advanced Usage with Supported Advertising Data Types
+### Peripheral Write and Subscribe Events
+
+```typescript
+import {
+  addEventListener,
+  setServices,
+  startAdvertising,
+  updateCharacteristicValue,
+} from 'munim-bluetooth'
+
+const SERVICE_UUID = '71f271d0-8f4c-4c4d-8a2d-6f3a9497b41d'
+const CHARACTERISTIC_UUID = '4ad4a6d2-3f4a-477c-9832-5e0d8f7654d8'
+
+setServices([
+  {
+    uuid: SERVICE_UUID,
+    characteristics: [
+      {
+        uuid: CHARACTERISTIC_UUID,
+        properties: ['read', 'write', 'writeWithoutResponse', 'notify'],
+        value: '70696e67',
+      },
+    ],
+  },
+])
+
+addEventListener('peripheralWriteRequest', ({ centralId, value }) => {
+  console.log('Peer wrote', centralId, value)
+  updateCharacteristicValue(SERVICE_UUID, CHARACTERISTIC_UUID, value, true)
+})
+
+addEventListener('peripheralSubscribed', ({ centralId }) => {
+  console.log('Peer subscribed', centralId)
+  updateCharacteristicValue(SERVICE_UUID, CHARACTERISTIC_UUID, '706f6e67', true)
+})
+
+startAdvertising({
+  serviceUUIDs: [SERVICE_UUID],
+  localName: 'MunimPeer',
+})
+```
+
+### Advanced Usage with Android Advertising Data Types
 
 ```typescript
 import {
@@ -268,27 +455,28 @@ import {
   type AdvertisingDataTypes,
 } from 'munim-bluetooth'
 
-// Platform-supported advertising data configuration
+// Android advertising data configuration. iOS peripheral advertising only
+// broadcasts service UUIDs/local name through public CoreBluetooth APIs.
 const advertisingData: AdvertisingDataTypes = {
   // 0x01 - Flags (LE General Discoverable Mode, BR/EDR Not Supported)
   flags: 0x06,
 
-  // 0x02-0x07 - Service UUIDs (fully supported)
+  // 0x02-0x07 - Service UUIDs
   completeServiceUUIDs16: ['180D', '180F'],
   incompleteServiceUUIDs128: ['0000180D-0000-1000-8000-00805F9B34FB'],
 
-  // 0x08-0x09 - Local Name (fully supported)
+  // 0x08-0x09 - Local Name
   completeLocalName: 'My Smart Device',
   shortenedLocalName: 'SmartDev',
 
-  // 0x0A - Tx Power Level (fully supported)
+  // 0x0A - Tx Power Level
   txPowerLevel: -12,
 
-  // 0x14-0x15 - Service Solicitation (fully supported)
+  // 0x14-0x15 - Service Solicitation
   serviceSolicitationUUIDs16: ['180D'],
   serviceSolicitationUUIDs128: ['0000180D-0000-1000-8000-00805F9B34FB'],
 
-  // 0x16, 0x20, 0x21 - Service Data (fully supported)
+  // 0x16, 0x20, 0x21 - Service Data
   serviceData16: [
     { uuid: '180D', data: '0102030405' },
     { uuid: '180F', data: '060708090A' },
@@ -300,14 +488,14 @@ const advertisingData: AdvertisingDataTypes = {
   // 0x19 - Appearance (partial support)
   appearance: 0x03c0, // Generic Watch
 
-  // 0x1F - Service Solicitation (32-bit) (fully supported)
+  // 0x1F - Service Solicitation (32-bit)
   serviceSolicitationUUIDs32: ['0000180D'],
 
-  // 0xFF - Manufacturer Specific Data (fully supported)
+  // 0xFF - Manufacturer Specific Data
   manufacturerData: '4C000215FDA50693A4E24FB1AFCFC6EB0764782500010001C5',
 }
 
-// Start advertising with supported data
+// Start advertising with Android payload data and cross-platform service UUIDs.
 startAdvertising({
   serviceUUIDs: ['180D', '180F'],
   advertisingData: advertisingData,
@@ -338,8 +526,8 @@ Starts BLE advertising with the specified options.
 - `options` (object):
   - `serviceUUIDs` (string[]): Array of service UUIDs to advertise
   - `localName?` (string): Device name (legacy support)
-  - `manufacturerData?` (string): Manufacturer data in hex format (legacy support)
-  - `advertisingData?` (AdvertisingDataTypes): Platform-supported advertising data
+  - `manufacturerData?` (string): Manufacturer data in hex format (legacy Android advertising support)
+  - `advertisingData?` (AdvertisingDataTypes): Platform-aware advertising data. Android can advertise payload fields; iOS advertises local name and service UUIDs.
 
 #### `updateAdvertisingData(advertisingData)`
 
@@ -367,6 +555,10 @@ Sets GATT services and characteristics.
 
 - `services` (array): Array of service objects
 
+#### `updateCharacteristicValue(serviceUUID, characteristicUUID, value, notify)`
+
+Updates a local peripheral characteristic value. When `notify` is `true`, the new hex-encoded value is pushed to subscribed centrals using notify/indicate where the characteristic supports it.
+
 ### Central Functions
 
 #### `isBluetoothEnabled()`
@@ -380,6 +572,58 @@ Checks if Bluetooth is enabled on the device.
 Requests Bluetooth permissions (Android) or checks authorization status (iOS).
 
 **Returns:** Promise<boolean>
+
+#### `getCapabilities()`
+
+Returns the platform/device Bluetooth feature set.
+
+**Returns:** Promise<BluetoothCapabilities>
+
+#### `startBackgroundSession(options)`
+
+Starts a best-effort background BLE session. Android starts a foreground service that restores scan, advertising, and configured GATT services after normal process recreation. iOS keeps CoreBluetooth managers configured with state restoration identifiers when Bluetooth background modes are present; terminated-state relaunch is still subject to Apple's CoreBluetooth relaunch rules, including the iOS 26 AccessorySetupKit restriction.
+
+**Parameters:**
+
+- `serviceUUIDs` (string[]): Service UUIDs to advertise and scan for.
+- `localName?` (string): Local name to advertise where supported.
+- `allowDuplicates?` (boolean): Whether scan callbacks may repeat the same device.
+- `scanMode?` ('lowPower' | 'balanced' | 'lowLatency'): Android scan mode preference.
+- `androidNotificationChannelId?`, `androidNotificationChannelName?`, `androidNotificationTitle?`, `androidNotificationText?`: Android foreground service notification options.
+
+#### `stopBackgroundSession()`
+
+Stops the active background BLE session and clears persisted Android service restore state.
+
+#### `startMultipeerSession(options)`
+
+Starts Apple Multipeer Connectivity discovery and messaging on iOS/iPadOS.
+
+**Parameters:**
+
+- `serviceType` (string): Bonjour service type, 1-15 lowercase letters/numbers/hyphens.
+- `displayName?` (string): Name shown to nearby peers.
+- `discoveryInfo?` (`{ key: string; value: string }[]`): Small discovery metadata.
+- `autoInvite?` (boolean): Automatically invite discovered peers. Defaults to `true`.
+- `autoAcceptInvitations?` (boolean): Automatically accept incoming invitations. Defaults to `true`.
+- `inviteTimeout?` (number): Invitation timeout in seconds. Defaults to `30`.
+- `encryptionPreference?` (`'none' | 'optional' | 'required'`): Defaults to `required`.
+
+#### `stopMultipeerSession()`
+
+Stops the local Multipeer advertiser, browser, and session.
+
+#### `inviteMultipeerPeer(peerId)`
+
+Invites a discovered Multipeer peer when `autoInvite` is disabled or you want manual control.
+
+#### `getMultipeerPeers()`
+
+Returns discovered and connected Multipeer peers for the active runtime session.
+
+#### `sendMultipeerMessage(value, peerIds?, reliable?)`
+
+Sends a hex-encoded payload to connected Multipeer peers. Omit `peerIds` to broadcast to every connected peer. `reliable` defaults to `true`.
 
 #### `startScan(options?)`
 
@@ -404,7 +648,7 @@ Connects to a BLE device.
 
 - `deviceId` (string): The unique identifier of the device
 
-**Returns:** Promise<void>
+**Returns:** Promise<void>. The promise rejects if the native connection does not complete within 15 seconds.
 
 #### `disconnect(deviceId)`
 
@@ -422,7 +666,7 @@ Discovers GATT services for a connected device.
 
 - `deviceId` (string): The unique identifier of the connected device
 
-**Returns:** Promise<GATTService[]>
+**Returns:** Promise<GATTService[]>. The promise rejects if native service discovery does not complete within 15 seconds.
 
 #### `readCharacteristic(deviceId, serviceUUID, characteristicUUID)`
 
@@ -434,7 +678,13 @@ Reads a characteristic value from a connected device.
 - `serviceUUID` (string): The UUID of the service
 - `characteristicUUID` (string): The UUID of the characteristic
 
-**Returns:** Promise<CharacteristicValue>
+**Returns:** Promise<CharacteristicValue>. The promise rejects if the native read callback does not arrive within 15 seconds.
+
+#### `readDescriptor(deviceId, serviceUUID, characteristicUUID, descriptorUUID)`
+
+Reads a descriptor value from a connected device.
+
+**Returns:** Promise<DescriptorValue>. The promise rejects if descriptor discovery/read callbacks do not arrive within 15 seconds.
 
 #### `writeCharacteristic(deviceId, serviceUUID, characteristicUUID, value, writeType?)`
 
@@ -448,7 +698,13 @@ Writes a value to a characteristic on a connected device.
 - `value` (string): The value to write (hex string)
 - `writeType?` ('write' | 'writeWithoutResponse'): Write type
 
-**Returns:** Promise<void>
+**Returns:** Promise<void>. With-response writes reject if the native write callback does not arrive within 15 seconds.
+
+#### `writeDescriptor(deviceId, serviceUUID, characteristicUUID, descriptorUUID, value)`
+
+Writes a descriptor value to a connected device.
+
+**Returns:** Promise<void>. The promise rejects if descriptor discovery/write callbacks do not arrive within 15 seconds.
 
 #### `subscribeToCharacteristic(deviceId, serviceUUID, characteristicUUID)`
 
@@ -470,6 +726,44 @@ Unsubscribes from notifications/indications from a characteristic.
 - `serviceUUID` (string): The UUID of the service
 - `characteristicUUID` (string): The UUID of the characteristic
 
+### Events
+
+Use `addEventListener(eventName, callback)` for BLE status and data events.
+
+| Event | Payload |
+| --- | --- |
+| `deviceFound` | Discovered BLE device payload: `{ id, name?, localName?, rssi?, serviceUUIDs?, serviceData?, manufacturerData?, txPowerLevel?, isConnectable?, advertisingData? }`. |
+| `onDeviceFound`, `scanResult` | Legacy aliases for `deviceFound`. |
+| `scanFailed` | `{ errorCode, message }` on Android scan callback failure. |
+| `advertisingStarted` | Empty payload when advertising starts. |
+| `advertisingStartFailed` | Android: `{ errorCode, message }`; iOS: `{ error }`. |
+| `classicDeviceFound` | Android Classic discovery result: `{ id, name, bondState }`. |
+| `classicScanFailed`, `classicScanFinished` | Android Classic discovery status events. |
+| `classicConnected`, `classicDisconnected` | Android Classic RFCOMM connection status: `{ deviceId }`. |
+| `classicConnectionReceived` | Android Classic RFCOMM inbound connection: `{ deviceId }`. |
+| `classicServerStarted`, `classicServerStopped` | Android Classic RFCOMM listener status. |
+| `classicDataReceived` | Android Classic RFCOMM data: `{ deviceId, value }`. |
+| `deviceConnected` | `{ deviceId }` |
+| `deviceDisconnected` | `{ deviceId }` |
+| `servicesDiscovered` | `{ deviceId, services }` |
+| `characteristicValueChanged` | `{ deviceId, serviceUUID, characteristicUUID, value }` |
+| `l2capChannelPublished`, `l2capChannelUnpublished` | Local LE L2CAP channel lifecycle status. |
+| `l2capChannelOpened`, `l2capChannelClosed` | LE L2CAP stream lifecycle status. |
+| `l2capChannelPublishFailed`, `l2capChannelOpenFailed` | LE L2CAP failure status. |
+| `l2capDataReceived` | LE L2CAP stream data: `{ channelId, psm, deviceId, value }`. |
+| `rssiUpdated` | `{ deviceId, rssi }` |
+| `peripheralReadRequest` | `{ centralId, serviceUUID, characteristicUUID, value }` |
+| `peripheralWriteRequest` | `{ centralId, serviceUUID, characteristicUUID, value }` |
+| `peripheralSubscribed` | `{ centralId, serviceUUID, characteristicUUID }` |
+| `peripheralUnsubscribed` | `{ centralId, serviceUUID, characteristicUUID }` |
+| `backgroundSessionStarted` | `{ platform, serviceUUIDs?, localName? }` |
+| `backgroundSessionStopped` | `{ platform }` |
+| `backgroundSessionRestored` | `{ platform, role?, isScanning?, isAdvertising?, serviceUUIDs?, deviceIds? }` |
+| `backgroundSessionStartFailed` | `{ platform, error }` |
+| `multipeerStarted`, `multipeerStopped`, `multipeerStartFailed` | Apple Multipeer lifecycle status. |
+| `multipeerPeerFound`, `multipeerPeerLost`, `multipeerPeerStateChanged` | Apple Multipeer peer discovery and connection state. |
+| `multipeerMessageReceived` | Apple Multipeer data: `{ peerId, displayName, value }`. |
+
 #### `getConnectedDevices()`
 
 Gets list of currently connected devices.
@@ -486,18 +780,72 @@ Reads RSSI (signal strength) for a connected device.
 
 **Returns:** Promise<number>
 
+#### `requestMTU(deviceId, mtu)`
+
+Requests an ATT MTU on Android. iOS rejects with an unsupported error because CoreBluetooth negotiates MTU internally.
+
+**Returns:** Promise<number>
+
+#### `setPreferredPhy(deviceId, txPhy, rxPhy, phyOption?)`
+
+Sets preferred BLE PHY on Android 8+ when hardware supports it. iOS rejects with an unsupported error.
+
+**Returns:** Promise<void>
+
+#### `readPhy(deviceId)`
+
+Reads the current BLE PHY on Android 8+ when hardware supports it. iOS rejects with an unsupported error.
+
+**Returns:** Promise<PhyStatus>
+
+#### `getBondState(deviceId)`
+
+Returns Android bond state. iOS resolves to `unsupported`.
+
+**Returns:** Promise<BondState>
+
+#### `createBond(deviceId)`
+
+Starts Android pairing/bonding. iOS rejects with an unsupported error.
+
+**Returns:** Promise<BondState>
+
+#### `removeBond(deviceId)`
+
+Removes an Android bond when the OS exposes that operation. iOS rejects with an unsupported error.
+
+**Returns:** Promise<BondState>
+
+#### `startExtendedAdvertising(options)`
+
+Starts an Android BLE extended advertising set on Android 8+ hardware that supports LE extended advertising. iOS rejects with an unsupported error.
+
+**Returns:** Promise<string>
+
+#### `stopExtendedAdvertising(advertisingId)`
+
+Stops an Android BLE extended advertising set.
+
+#### `publishL2CAPChannel()`, `openL2CAPChannel()`, `sendL2CAPData()`
+
+Opens BLE L2CAP channel streams. iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+.
+
+#### `startClassicScan()`, `connectClassic()`, `startClassicServer()`, `writeClassic()`
+
+Android Classic Bluetooth RFCOMM discovery, client connection, server listener, write, disconnect, and receive events. iOS rejects with explicit unsupported errors because public iOS APIs do not expose arbitrary Classic RFCOMM.
+
 ### Types
 
 #### `AdvertisingDataTypes`
 
-Platform-supported interface for BLE advertising data types:
+Platform-aware interface for BLE advertising data types. Android can advertise these payload fields when hardware and payload size allow it. iOS can scan many of these fields from other peripherals, but iOS peripheral advertising is limited to local name and service UUIDs.
 
 ```typescript
 interface AdvertisingDataTypes {
-  // 0x01 - Flags (partial support)
+  // 0x01 - Flags
   flags?: number
 
-  // 0x02-0x07 - Service UUIDs (fully supported)
+  // 0x02-0x07 - Service UUIDs
   incompleteServiceUUIDs16?: string[]
   completeServiceUUIDs16?: string[]
   incompleteServiceUUIDs32?: string[]
@@ -505,18 +853,18 @@ interface AdvertisingDataTypes {
   incompleteServiceUUIDs128?: string[]
   completeServiceUUIDs128?: string[]
 
-  // 0x08-0x09 - Local Name (fully supported)
+  // 0x08-0x09 - Local Name
   shortenedLocalName?: string
   completeLocalName?: string
 
-  // 0x0A - Tx Power Level (fully supported)
+  // 0x0A - Tx Power Level
   txPowerLevel?: number
 
-  // 0x14-0x15 - Service Solicitation (fully supported)
+  // 0x14-0x15 - Service Solicitation
   serviceSolicitationUUIDs16?: string[]
   serviceSolicitationUUIDs128?: string[]
 
-  // 0x16, 0x20, 0x21 - Service Data (fully supported)
+  // 0x16, 0x20, 0x21 - Service Data
   serviceData16?: Array<{
     uuid: string
     data: string
@@ -530,32 +878,32 @@ interface AdvertisingDataTypes {
     data: string
   }>
 
-  // 0x19 - Appearance (partial support)
+  // 0x19 - Appearance
   appearance?: number
 
-  // 0x1F - Service Solicitation (32-bit) (fully supported)
+  // 0x1F - Service Solicitation (32-bit)
   serviceSolicitationUUIDs32?: string[]
 
-  // 0xFF - Manufacturer Specific Data (fully supported)
+  // 0xFF - Manufacturer Specific Data
   manufacturerData?: string
 }
 ```
 
 ## Supported BLE Advertising Data Types
 
-| Hex              | Type Name                     | Description                     | Support Level | Example                                           |
-| ---------------- | ----------------------------- | ------------------------------- | ------------- | ------------------------------------------------- |
-| 0x01             | Flags                         | Basic device capabilities       | Partial       | `flags: 0x06`                                     |
-| 0x02-0x07        | Service UUIDs                 | Service UUIDs offered           | Full          | `completeServiceUUIDs16: ['180D']`                |
-| 0x08-0x09        | Local Name                    | Device name                     | Full          | `completeLocalName: 'My Device'`                  |
-| 0x0A             | Tx Power Level                | Transmit power in dBm           | Full          | `txPowerLevel: -12`                               |
-| 0x14-0x15        | Service Solicitation          | Services being sought           | Full          | `serviceSolicitationUUIDs16: ['180D']`            |
-| 0x16, 0x20, 0x21 | Service Data                  | Data associated with services   | Full          | `serviceData16: [{uuid: '180D', data: '010203'}]` |
-| 0x19             | Appearance                    | Appearance category             | Partial       | `appearance: 0x03C0`                              |
-| 0x1F             | Service Solicitation (32-bit) | 32-bit services being solicited | Full          | `serviceSolicitationUUIDs32: ['0000180D']`        |
-| 0xFF             | Manufacturer Specific Data    | Vendor-defined data             | Full          | `manufacturerData: '4748494A4B4C4D4E'`            |
+| Hex              | Type Name                     | Description                     | Advertise Support | Example                                           |
+| ---------------- | ----------------------------- | ------------------------------- | ----------------- | ------------------------------------------------- |
+| 0x01             | Flags                         | Basic device capabilities       | Android           | `flags: 0x06`                                     |
+| 0x02-0x07        | Service UUIDs                 | Service UUIDs offered           | iOS + Android     | `completeServiceUUIDs16: ['180D']`                |
+| 0x08-0x09        | Local Name                    | Device name                     | iOS + Android     | `completeLocalName: 'My Device'`                  |
+| 0x0A             | Tx Power Level                | Transmit power in dBm           | Android           | `txPowerLevel: -12`                               |
+| 0x14-0x15        | Service Solicitation          | Services being sought           | Android           | `serviceSolicitationUUIDs16: ['180D']`            |
+| 0x16, 0x20, 0x21 | Service Data                  | Data associated with services   | Android           | `serviceData16: [{uuid: '180D', data: '010203'}]` |
+| 0x19             | Appearance                    | Appearance category             | Android           | `appearance: 0x03C0`                              |
+| 0x1F             | Service Solicitation (32-bit) | 32-bit services being solicited | Android           | `serviceSolicitationUUIDs32: ['0000180D']`        |
+| 0xFF             | Manufacturer Specific Data    | Vendor-defined data             | Android           | `manufacturerData: '4748494A4B4C4D4E'`            |
 
-**Note**: This library focuses on reliability and platform compatibility. Advanced BLE features like mesh networking, LE Audio, indoor positioning, etc., are not supported due to platform limitations.
+**Note**: This library focuses on reliable phone-to-phone BLE behavior exposed by public iOS and Android APIs. Bluetooth Mesh, LE Audio broadcast/isoc streams, and arbitrary iOS advertising payloads are not exposed by the mobile OS APIs this package can use.
 
 ## 📖 Usage Examples
 
@@ -564,7 +912,8 @@ interface AdvertisingDataTypes {
 ```typescript
 import { startAdvertising, setServices } from 'munim-bluetooth'
 
-// Health device advertising
+// Health device advertising. The payload fields inside advertisingData are
+// advertised on Android; iOS uses serviceUUIDs/localName for advertising.
 startAdvertising({
   serviceUUIDs: ['180D', '180F'], // Heart Rate, Battery Service
   advertisingData: {
@@ -610,7 +959,8 @@ setServices([
 ```typescript
 import { startAdvertising, updateAdvertisingData } from 'munim-bluetooth'
 
-// Smart home device
+// Smart home device. The payload fields inside advertisingData are advertised
+// on Android; for iOS peers, put live state in GATT characteristics.
 startAdvertising({
   serviceUUIDs: ['1812', '180F'], // HID, Battery Service
   advertisingData: {

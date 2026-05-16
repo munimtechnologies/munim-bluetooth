@@ -11,7 +11,9 @@
 #include "GATTService.hpp"
 
 #include "GATTCharacteristic.hpp"
+#include "GATTDescriptor.hpp"
 #include "JGATTCharacteristic.hpp"
+#include "JGATTDescriptor.hpp"
 #include <optional>
 #include <string>
 #include <vector>
@@ -39,18 +41,30 @@ namespace margelo::nitro::munimbluetooth {
       jni::local_ref<jni::JString> uuid = this->getFieldValue(fieldUuid);
       static const auto fieldCharacteristics = clazz->getField<jni::JArrayClass<JGATTCharacteristic>>("characteristics");
       jni::local_ref<jni::JArrayClass<JGATTCharacteristic>> characteristics = this->getFieldValue(fieldCharacteristics);
+      static const auto fieldIncludedServices = clazz->getField<jni::JArrayClass<jni::JString>>("includedServices");
+      jni::local_ref<jni::JArrayClass<jni::JString>> includedServices = this->getFieldValue(fieldIncludedServices);
       return GATTService(
         uuid->toStdString(),
-        [&]() {
-          size_t __size = characteristics->size();
+        [&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<GATTCharacteristic> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = characteristics->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toCpp());
           }
           return __vector;
-        }()
+        }(characteristics),
+        includedServices != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
+          std::vector<std::string> __vector;
+          __vector.reserve(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            auto __element = __input->getElement(__i);
+            __vector.push_back(__element->toStdString());
+          }
+          return __vector;
+        }(includedServices)) : std::nullopt
       );
     }
 
@@ -60,22 +74,32 @@ namespace margelo::nitro::munimbluetooth {
      */
     [[maybe_unused]]
     static jni::local_ref<JGATTService::javaobject> fromCpp(const GATTService& value) {
-      using JSignature = JGATTService(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<JGATTCharacteristic>>);
+      using JSignature = JGATTService(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<JGATTCharacteristic>>, jni::alias_ref<jni::JArrayClass<jni::JString>>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
         jni::make_jstring(value.uuid),
-        [&]() {
-          size_t __size = value.characteristics.size();
+        [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<JGATTCharacteristic>> __array = jni::JArrayClass<JGATTCharacteristic>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.characteristics[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = JGATTCharacteristic::fromCpp(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }()
+        }(value.characteristics),
+        value.includedServices.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
+          jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            const auto& __element = __input[__i];
+            auto __elementJni = jni::make_jstring(__element);
+            __array->setElement(__i, *__elementJni);
+          }
+          return __array;
+        }(value.includedServices.value()) : nullptr
       );
     }
   };

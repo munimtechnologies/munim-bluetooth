@@ -18,13 +18,25 @@ public extension GATTService {
   /**
    * Create a new instance of `GATTService`.
    */
-  init(uuid: String, characteristics: [GATTCharacteristic]) {
+  init(uuid: String, characteristics: [GATTCharacteristic], includedServices: [String]?) {
     self.init(std.string(uuid), { () -> bridge.std__vector_GATTCharacteristic_ in
       var __vector = bridge.create_std__vector_GATTCharacteristic_(characteristics.count)
       for __item in characteristics {
         __vector.push_back(__item)
       }
       return __vector
+    }(), { () -> bridge.std__optional_std__vector_std__string__ in
+      if let __unwrappedValue = includedServices {
+        return bridge.create_std__optional_std__vector_std__string__({ () -> bridge.std__vector_std__string_ in
+          var __vector = bridge.create_std__vector_std__string_(__unwrappedValue.count)
+          for __item in __unwrappedValue {
+            __vector.push_back(std.string(__item))
+          }
+          return __vector
+        }())
+      } else {
+        return .init()
+      }
     }())
   }
 
@@ -36,5 +48,17 @@ public extension GATTService {
   @inline(__always)
   var characteristics: [GATTCharacteristic] {
     return self.__characteristics.map({ __item in __item })
+  }
+  
+  @inline(__always)
+  var includedServices: [String]? {
+    return { () -> [String]? in
+      if bridge.has_value_std__optional_std__vector_std__string__(self.__includedServices) {
+        let __unwrapped = bridge.get_std__optional_std__vector_std__string__(self.__includedServices)
+        return __unwrapped.map({ __item in String(__item) })
+      } else {
+        return nil
+      }
+    }()
   }
 }

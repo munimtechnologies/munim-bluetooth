@@ -9,6 +9,7 @@ package com.margelo.nitro.munimbluetooth
 
 import androidx.annotation.Keep
 import com.facebook.proguard.annotations.DoNotStrip
+import java.util.Objects
 
 
 /**
@@ -25,9 +26,30 @@ data class GATTCharacteristic(
   val properties: Array<String>,
   @DoNotStrip
   @Keep
-  val value: String?
+  val value: String?,
+  @DoNotStrip
+  @Keep
+  val descriptors: Array<GATTDescriptor>?
 ) {
   /* primary constructor */
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is GATTCharacteristic) return false
+    return Objects.deepEquals(this.uuid, other.uuid)
+      && Objects.deepEquals(this.properties, other.properties)
+      && Objects.deepEquals(this.value, other.value)
+      && Objects.deepEquals(this.descriptors, other.descriptors)
+  }
+
+  override fun hashCode(): Int {
+    return arrayOf(
+      uuid,
+      properties,
+      value,
+      descriptors
+    ).contentDeepHashCode()
+  }
 
   companion object {
     /**
@@ -37,8 +59,8 @@ data class GATTCharacteristic(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(uuid: String, properties: Array<String>, value: String?): GATTCharacteristic {
-      return GATTCharacteristic(uuid, properties, value)
+    private fun fromCpp(uuid: String, properties: Array<String>, value: String?, descriptors: Array<GATTDescriptor>?): GATTCharacteristic {
+      return GATTCharacteristic(uuid, properties, value, descriptors)
     }
   }
 }

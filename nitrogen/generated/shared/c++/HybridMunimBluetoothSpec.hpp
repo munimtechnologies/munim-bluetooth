@@ -19,26 +19,56 @@ namespace margelo::nitro::munimbluetooth { struct AdvertisingOptions; }
 namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
 // Forward declaration of `GATTService` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTService; }
+// Forward declaration of `BluetoothCapabilities` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
+// Forward declaration of `DescriptorValue` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
+// Forward declaration of `BluetoothPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
+// Forward declaration of `BluetoothPhyOption` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
+// Forward declaration of `PhyStatus` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
+// Forward declaration of `BondState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BondState; }
+// Forward declaration of `ExtendedAdvertisingOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ExtendedAdvertisingOptions; }
+// Forward declaration of `L2CAPChannel` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
 // Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
+// Forward declaration of `MultipeerSessionOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerSessionOptions; }
+// Forward declaration of `MultipeerPeer` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 
 #include "AdvertisingOptions.hpp"
 #include "AdvertisingDataTypes.hpp"
 #include <NitroModules/Promise.hpp>
 #include "GATTService.hpp"
 #include <vector>
-#include "ScanOptions.hpp"
-#include <optional>
 #include <string>
+#include <optional>
+#include "BluetoothCapabilities.hpp"
+#include "ScanOptions.hpp"
 #include "CharacteristicValue.hpp"
+#include "DescriptorValue.hpp"
 #include "WriteType.hpp"
+#include "BluetoothPhy.hpp"
+#include "BluetoothPhyOption.hpp"
+#include "PhyStatus.hpp"
+#include "BondState.hpp"
+#include "ExtendedAdvertisingOptions.hpp"
+#include "L2CAPChannel.hpp"
 #include "BackgroundSessionOptions.hpp"
+#include "MultipeerSessionOptions.hpp"
+#include "MultipeerPeer.hpp"
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -76,21 +106,50 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<AdvertisingDataTypes>> getAdvertisingData() = 0;
       virtual void stopAdvertising() = 0;
       virtual void setServices(const std::vector<GATTService>& services) = 0;
+      virtual std::shared_ptr<Promise<void>> updateCharacteristicValue(const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<bool> notify) = 0;
       virtual std::shared_ptr<Promise<bool>> isBluetoothEnabled() = 0;
       virtual std::shared_ptr<Promise<bool>> requestBluetoothPermission() = 0;
+      virtual std::shared_ptr<Promise<BluetoothCapabilities>> getCapabilities() = 0;
       virtual void startScan(const std::optional<ScanOptions>& options) = 0;
       virtual void stopScan() = 0;
       virtual std::shared_ptr<Promise<void>> connect(const std::string& deviceId) = 0;
       virtual void disconnect(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<std::vector<GATTService>>> discoverServices(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<CharacteristicValue>> readCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
+      virtual std::shared_ptr<Promise<DescriptorValue>> readDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID) = 0;
       virtual std::shared_ptr<Promise<void>> writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<WriteType> writeType) = 0;
+      virtual std::shared_ptr<Promise<void>> writeDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID, const std::string& value) = 0;
       virtual void subscribeToCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
       virtual void unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
       virtual std::shared_ptr<Promise<std::vector<std::string>>> getConnectedDevices() = 0;
       virtual std::shared_ptr<Promise<double>> readRSSI(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<double>> requestMTU(const std::string& deviceId, double mtu) = 0;
+      virtual std::shared_ptr<Promise<void>> setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, std::optional<BluetoothPhyOption> phyOption) = 0;
+      virtual std::shared_ptr<Promise<PhyStatus>> readPhy(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<BondState>> getBondState(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<BondState>> createBond(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<BondState>> removeBond(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<std::string>> startExtendedAdvertising(const ExtendedAdvertisingOptions& options) = 0;
+      virtual void stopExtendedAdvertising(const std::string& advertisingId) = 0;
+      virtual std::shared_ptr<Promise<L2CAPChannel>> publishL2CAPChannel(std::optional<bool> encryptionRequired) = 0;
+      virtual void unpublishL2CAPChannel(double psm) = 0;
+      virtual std::shared_ptr<Promise<L2CAPChannel>> openL2CAPChannel(const std::string& deviceId, double psm) = 0;
+      virtual void closeL2CAPChannel(const std::string& channelId) = 0;
+      virtual std::shared_ptr<Promise<void>> sendL2CAPData(const std::string& channelId, const std::string& value) = 0;
+      virtual void startClassicScan() = 0;
+      virtual void stopClassicScan() = 0;
+      virtual std::shared_ptr<Promise<void>> connectClassic(const std::string& deviceId, const std::optional<std::string>& serviceUUID) = 0;
+      virtual std::shared_ptr<Promise<void>> startClassicServer(const std::optional<std::string>& serviceUUID, const std::optional<std::string>& serviceName) = 0;
+      virtual void stopClassicServer(const std::optional<std::string>& serviceUUID) = 0;
+      virtual void disconnectClassic(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<void>> writeClassic(const std::string& deviceId, const std::string& value) = 0;
       virtual void startBackgroundSession(const BackgroundSessionOptions& options) = 0;
       virtual void stopBackgroundSession() = 0;
+      virtual void startMultipeerSession(const MultipeerSessionOptions& options) = 0;
+      virtual void stopMultipeerSession() = 0;
+      virtual void inviteMultipeerPeer(const std::string& peerId) = 0;
+      virtual std::shared_ptr<Promise<std::vector<MultipeerPeer>>> getMultipeerPeers() = 0;
+      virtual std::shared_ptr<Promise<void>> sendMultipeerMessage(const std::string& value, const std::optional<std::vector<std::string>>& peerIds, std::optional<bool> reliable) = 0;
       virtual void addListener(const std::string& eventName) = 0;
       virtual void removeListeners(double count) = 0;
 

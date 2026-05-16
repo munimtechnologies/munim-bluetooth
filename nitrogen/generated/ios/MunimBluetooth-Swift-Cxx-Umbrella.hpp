@@ -14,14 +14,42 @@ namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
 namespace margelo::nitro::munimbluetooth { struct AdvertisingOptions; }
 // Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
+// Forward declaration of `BluetoothCapabilities` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
+// Forward declaration of `BluetoothPhyOption` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
+// Forward declaration of `BluetoothPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
+// Forward declaration of `BondState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BondState; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
+// Forward declaration of `DescriptorValue` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
+// Forward declaration of `ExtendedAdvertisingOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ExtendedAdvertisingOptions; }
 // Forward declaration of `GATTCharacteristic` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTCharacteristic; }
+// Forward declaration of `GATTDescriptor` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct GATTDescriptor; }
 // Forward declaration of `GATTService` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTService; }
 // Forward declaration of `HybridMunimBluetoothSpec` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { class HybridMunimBluetoothSpec; }
+// Forward declaration of `L2CAPChannel` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
+// Forward declaration of `MultipeerDiscoveryInfoEntry` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerDiscoveryInfoEntry; }
+// Forward declaration of `MultipeerEncryptionPreference` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPreference; }
+// Forward declaration of `MultipeerPeerState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
+// Forward declaration of `MultipeerPeer` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
+// Forward declaration of `MultipeerSessionOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct MultipeerSessionOptions; }
+// Forward declaration of `PhyStatus` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
@@ -35,10 +63,24 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include "AdvertisingDataTypes.hpp"
 #include "AdvertisingOptions.hpp"
 #include "BackgroundSessionOptions.hpp"
+#include "BluetoothCapabilities.hpp"
+#include "BluetoothPhy.hpp"
+#include "BluetoothPhyOption.hpp"
+#include "BondState.hpp"
 #include "CharacteristicValue.hpp"
+#include "DescriptorValue.hpp"
+#include "ExtendedAdvertisingOptions.hpp"
 #include "GATTCharacteristic.hpp"
+#include "GATTDescriptor.hpp"
 #include "GATTService.hpp"
 #include "HybridMunimBluetoothSpec.hpp"
+#include "L2CAPChannel.hpp"
+#include "MultipeerDiscoveryInfoEntry.hpp"
+#include "MultipeerEncryptionPreference.hpp"
+#include "MultipeerPeer.hpp"
+#include "MultipeerPeerState.hpp"
+#include "MultipeerSessionOptions.hpp"
+#include "PhyStatus.hpp"
 #include "ScanMode.hpp"
 #include "ScanOptions.hpp"
 #include "ServiceDataEntry.hpp"

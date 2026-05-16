@@ -1,7 +1,7 @@
 {
   "name": "munim-bluetooth",
-  "version": "0.3.27",
-  "description": "A comprehensive React Native library for all your Bluetooth Low Energy (BLE) needs, supporting both peripheral and central roles with Expo support",
+  "version": "0.4.0",
+  "description": "A comprehensive React Native Bluetooth library for BLE central/peripheral, Android Classic Bluetooth, LE L2CAP, Apple Multipeer Connectivity, and Expo support",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -22,6 +22,11 @@
     "peripheral",
     "central",
     "gatt",
+    "l2cap",
+    "mesh",
+    "multipeer-connectivity",
+    "classic-bluetooth",
+    "rfcomm",
     "bluetooth-low-energy",
     "ios",
     "android",
@@ -48,14 +53,15 @@
     "ios/**/*.swift",
     "app.plugin.js",
     "*.podspec",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "workspaces": [
     "example"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/munimtechnologies/munim-bluetooth.git"
+    "url": "git+https://github.com/munimtechnologies/munim-bluetooth.git"
   },
   "author": "sheehanmunim <support@munimtech.com> (https://github.com/sheehanmunim)",
   "license": "MIT",
@@ -80,24 +86,29 @@
     }
   },
   "devDependencies": {
-    "@jamesacarr/eslint-formatter-github-actions": "^0.2.0",
+    "@react-native/gradle-plugin": "^0.83.9",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/jest": "^29.5.14",
-    "@types/react": "19.2.8",
-    "conventional-changelog-conventionalcommits": "^9.1.0",
-    "nitrogen": "^0.35.2",
+    "@types/react": "^19.2.14",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "nitrogen": "^0.35.6",
     "react": "19.2.3",
     "react-native": "0.83.1",
-    "react-native-builder-bob": "^0.40.17",
-    "react-native-nitro-modules": "^0.35.2",
-    "semantic-release": "^25.0.2",
+    "react-native-builder-bob": "^0.40.18",
+    "react-native-nitro-modules": "^0.35.6",
+    "semantic-release": "^25.0.3",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
     "react-native-nitro-modules": "*"
+  },
+  "overrides": {
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.14"
+    }
   },
   "eslintConfig": {
     "root": true,

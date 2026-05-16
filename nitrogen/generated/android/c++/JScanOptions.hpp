@@ -42,16 +42,16 @@ namespace margelo::nitro::munimbluetooth {
       static const auto fieldScanMode = clazz->getField<JScanMode>("scanMode");
       jni::local_ref<JScanMode> scanMode = this->getFieldValue(fieldScanMode);
       return ScanOptions(
-        serviceUUIDs != nullptr ? std::make_optional([&]() {
-          size_t __size = serviceUUIDs->size();
+        serviceUUIDs != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
           std::vector<std::string> __vector;
           __vector.reserve(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = serviceUUIDs->getElement(__i);
+            auto __element = __input->getElement(__i);
             __vector.push_back(__element->toStdString());
           }
           return __vector;
-        }()) : std::nullopt,
+        }(serviceUUIDs)) : std::nullopt,
         allowDuplicates != nullptr ? std::make_optional(static_cast<bool>(allowDuplicates->value())) : std::nullopt,
         scanMode != nullptr ? std::make_optional(scanMode->toCpp()) : std::nullopt
       );
@@ -68,16 +68,16 @@ namespace margelo::nitro::munimbluetooth {
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
-        value.serviceUUIDs.has_value() ? [&]() {
-          size_t __size = value.serviceUUIDs.value().size();
+        value.serviceUUIDs.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
           jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
           for (size_t __i = 0; __i < __size; __i++) {
-            const auto& __element = value.serviceUUIDs.value()[__i];
+            const auto& __element = __input[__i];
             auto __elementJni = jni::make_jstring(__element);
             __array->setElement(__i, *__elementJni);
           }
           return __array;
-        }() : nullptr,
+        }(value.serviceUUIDs.value()) : nullptr,
         value.allowDuplicates.has_value() ? jni::JBoolean::valueOf(value.allowDuplicates.value()) : nullptr,
         value.scanMode.has_value() ? JScanMode::fromCpp(value.scanMode.value()) : nullptr
       );

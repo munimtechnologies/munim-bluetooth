@@ -6,12 +6,14 @@ export interface ServiceDataEntry {
   data: string
 }
 
-// BLE Advertising Data Types - Only Platform-Supported Types
+// BLE advertising data types. Android can advertise all supported fields when
+// payload size and hardware allow it; iOS advertising is limited by
+// CoreBluetooth to local name and service UUIDs.
 export interface AdvertisingDataTypes {
-  // 0x01 - Flags (partial support)
+  // 0x01 - Flags
   flags?: number
 
-  // 0x02-0x07 - Service UUIDs (fully supported)
+  // 0x02-0x07 - Service UUIDs
   incompleteServiceUUIDs16?: string[]
   completeServiceUUIDs16?: string[]
   incompleteServiceUUIDs32?: string[]
@@ -19,18 +21,18 @@ export interface AdvertisingDataTypes {
   incompleteServiceUUIDs128?: string[]
   completeServiceUUIDs128?: string[]
 
-  // 0x08-0x09 - Local Name (fully supported)
+  // 0x08-0x09 - Local Name
   shortenedLocalName?: string
   completeLocalName?: string
 
-  // 0x0A - Tx Power Level (fully supported)
+  // 0x0A - Tx Power Level
   txPowerLevel?: number
 
-  // 0x14-0x15 - Service Solicitation (fully supported)
+  // 0x14-0x15 - Service Solicitation
   serviceSolicitationUUIDs16?: string[]
   serviceSolicitationUUIDs128?: string[]
 
-  // 0x16, 0x20, 0x21 - Service Data (fully supported)
+  // 0x16, 0x20, 0x21 - Service Data
   serviceData16?: ServiceDataEntry[]
   serviceData32?: ServiceDataEntry[]
   serviceData128?: ServiceDataEntry[]
@@ -38,10 +40,10 @@ export interface AdvertisingDataTypes {
   // 0x19 - Appearance (partial support)
   appearance?: number
 
-  // 0x1F - Service Solicitation (32-bit) (fully supported)
+  // 0x1F - Service Solicitation (32-bit)
   serviceSolicitationUUIDs32?: string[]
 
-  // 0xFF - Manufacturer Specific Data (fully supported)
+  // 0xFF - Manufacturer Specific Data
   manufacturerData?: string
 }
 
@@ -49,9 +51,13 @@ export interface AdvertisingDataTypes {
 export interface BLEDevice {
   id: string
   name?: string
+  localName?: string
   rssi?: number
   advertisingData?: AdvertisingDataTypes
   serviceUUIDs?: string[]
+  serviceData?: ServiceDataEntry[]
+  manufacturerData?: string
+  txPowerLevel?: number
   isConnectable?: boolean
 }
 
@@ -65,17 +71,25 @@ export interface ScanOptions {
   scanMode?: ScanMode
 }
 
+export interface GATTDescriptor {
+  uuid: string
+  value?: string
+  permissions?: string[]
+}
+
 // GATT Characteristic
 export interface GATTCharacteristic {
   uuid: string
   properties: string[]
   value?: string
+  descriptors?: GATTDescriptor[]
 }
 
 // GATT Service
 export interface GATTService {
   uuid: string
   characteristics: GATTCharacteristic[]
+  includedServices?: string[]
 }
 
 // Characteristic value
@@ -85,8 +99,42 @@ export interface CharacteristicValue {
   characteristicUUID: string
 }
 
+export interface DescriptorValue {
+  value: string
+  serviceUUID: string
+  characteristicUUID: string
+  descriptorUUID: string
+}
+
 // Write type for characteristic writes
 export type WriteType = 'write' | 'writeWithoutResponse'
+
+export type BluetoothPhy = 'le1m' | 'le2m' | 'leCoded'
+
+export type BluetoothPhyOption = 'none' | 's2' | 's8'
+
+export interface PhyStatus {
+  txPhy: BluetoothPhy
+  rxPhy: BluetoothPhy
+}
+
+export type BondState = 'none' | 'bonding' | 'bonded' | 'unsupported'
+
+export interface BluetoothCapabilities {
+  platform: string
+  supportsBleCentral: boolean
+  supportsBlePeripheral: boolean
+  supportsDescriptors: boolean
+  supportsIncludedServices: boolean
+  supportsMtu: boolean
+  supportsPhy: boolean
+  supportsBonding: boolean
+  supportsExtendedAdvertising: boolean
+  supportsL2cap: boolean
+  supportsClassicBluetooth: boolean
+  supportsBackgroundBle: boolean
+  supportsMultipeerConnectivity: boolean
+}
 
 // Advertising options for startAdvertising
 export interface AdvertisingOptions {
@@ -94,6 +142,22 @@ export interface AdvertisingOptions {
   localName?: string
   manufacturerData?: string
   advertisingData?: AdvertisingDataTypes
+}
+
+export interface ExtendedAdvertisingOptions {
+  serviceUUIDs?: string[]
+  localName?: string
+  manufacturerData?: string
+  advertisingData?: AdvertisingDataTypes
+  connectable?: boolean
+  scannable?: boolean
+  legacyMode?: boolean
+  anonymous?: boolean
+  includeTxPower?: boolean
+  interval?: number
+  txPowerLevel?: number
+  primaryPhy?: BluetoothPhy
+  secondaryPhy?: BluetoothPhy
 }
 
 export interface BackgroundSessionOptions {
@@ -107,14 +171,51 @@ export interface BackgroundSessionOptions {
   androidNotificationText?: string
 }
 
+export type MultipeerEncryptionPreference = 'none' | 'optional' | 'required'
+
+export type MultipeerPeerState = 'notConnected' | 'connecting' | 'connected'
+
+export interface MultipeerDiscoveryInfoEntry {
+  key: string
+  value: string
+}
+
+export interface MultipeerSessionOptions {
+  /**
+   * Bonjour service type, 1-15 chars: lowercase letters, numbers, hyphen.
+   * Example: "anonmesh" or "munim-chat".
+   */
+  serviceType: string
+  displayName?: string
+  discoveryInfo?: MultipeerDiscoveryInfoEntry[]
+  autoInvite?: boolean
+  autoAcceptInvitations?: boolean
+  inviteTimeout?: number
+  encryptionPreference?: MultipeerEncryptionPreference
+}
+
+export interface MultipeerPeer {
+  id: string
+  displayName: string
+  state: MultipeerPeerState
+  discoveryInfo?: MultipeerDiscoveryInfoEntry[]
+}
+
+export interface L2CAPChannel {
+  id: string
+  psm: number
+  deviceId?: string
+}
+
 export interface MunimBluetooth
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
   // ========== Peripheral Features ==========
 
   /**
-   * Start advertising as a Bluetooth peripheral with supported advertising data.
+   * Start advertising as a Bluetooth peripheral with platform-aware advertising data.
    *
-   * @param options - An object with serviceUUIDs (string[]) and supported advertising data types.
+   * @param options - An object with serviceUUIDs (string[]) and advertising data types.
+   *                  iOS only advertises local name and service UUIDs.
    *                  This must be a plain JS object (no Maps/Sets/functions).
    */
   startAdvertising(options: AdvertisingOptions): void
@@ -146,6 +247,22 @@ export interface MunimBluetooth
    */
   setServices(services: GATTService[]): void
 
+  /**
+   * Update a local peripheral characteristic value and optionally notify/indicate
+   * subscribed centrals.
+   *
+   * @param serviceUUID - The UUID of the local GATT service.
+   * @param characteristicUUID - The UUID of the local characteristic.
+   * @param value - Hex-encoded value.
+   * @param notify - When true, push the value to subscribed centrals.
+   */
+  updateCharacteristicValue(
+    serviceUUID: string,
+    characteristicUUID: string,
+    value: string,
+    notify?: boolean
+  ): Promise<void>
+
   // ========== Central/Manager Features ==========
 
   /**
@@ -161,6 +278,11 @@ export interface MunimBluetooth
    * @returns Promise resolving to true if permissions are granted, false otherwise.
    */
   requestBluetoothPermission(): Promise<boolean>
+
+  /**
+   * Return the Bluetooth features this platform can support through public APIs.
+   */
+  getCapabilities(): Promise<BluetoothCapabilities>
 
   /**
    * Start scanning for BLE devices.
@@ -212,6 +334,16 @@ export interface MunimBluetooth
   ): Promise<CharacteristicValue>
 
   /**
+   * Read a descriptor value from a connected BLE device.
+   */
+  readDescriptor(
+    deviceId: string,
+    serviceUUID: string,
+    characteristicUUID: string,
+    descriptorUUID: string
+  ): Promise<DescriptorValue>
+
+  /**
    * Write a value to a characteristic on a connected device.
    *
    * @param deviceId - The unique identifier of the connected device.
@@ -227,6 +359,17 @@ export interface MunimBluetooth
     characteristicUUID: string,
     value: string,
     writeType?: WriteType
+  ): Promise<void>
+
+  /**
+   * Write a descriptor value on a connected BLE device.
+   */
+  writeDescriptor(
+    deviceId: string,
+    serviceUUID: string,
+    characteristicUUID: string,
+    descriptorUUID: string,
+    value: string
   ): Promise<void>
 
   /**
@@ -271,11 +414,119 @@ export interface MunimBluetooth
   readRSSI(deviceId: string): Promise<number>
 
   /**
+   * Request a BLE ATT MTU. Android supports this directly; iOS negotiates MTU internally.
+   */
+  requestMTU(deviceId: string, mtu: number): Promise<number>
+
+  /**
+   * Set preferred BLE PHY where supported.
+   */
+  setPreferredPhy(
+    deviceId: string,
+    txPhy: BluetoothPhy,
+    rxPhy: BluetoothPhy,
+    phyOption?: BluetoothPhyOption
+  ): Promise<void>
+
+  /**
+   * Read current BLE PHY where supported.
+   */
+  readPhy(deviceId: string): Promise<PhyStatus>
+
+  /**
+   * Return the current bond/pairing state for a device.
+   */
+  getBondState(deviceId: string): Promise<BondState>
+
+  /**
+   * Start platform pairing/bonding for a device.
+   */
+  createBond(deviceId: string): Promise<BondState>
+
+  /**
+   * Remove an Android bond. Unsupported on iOS public APIs.
+   */
+  removeBond(deviceId: string): Promise<BondState>
+
+  /**
+   * Start BLE extended advertising where supported.
+   */
+  startExtendedAdvertising(options: ExtendedAdvertisingOptions): Promise<string>
+
+  /**
+   * Stop a BLE extended advertising set.
+   */
+  stopExtendedAdvertising(advertisingId: string): void
+
+  /**
+   * Publish a local L2CAP channel where supported.
+   */
+  publishL2CAPChannel(encryptionRequired?: boolean): Promise<L2CAPChannel>
+
+  /**
+   * Stop a local L2CAP channel.
+   */
+  unpublishL2CAPChannel(psm: number): void
+
+  /**
+   * Open an outbound L2CAP channel to a BLE device.
+   */
+  openL2CAPChannel(deviceId: string, psm: number): Promise<L2CAPChannel>
+
+  /**
+   * Close an L2CAP channel.
+   */
+  closeL2CAPChannel(channelId: string): void
+
+  /**
+   * Send hex data over an open L2CAP channel.
+   */
+  sendL2CAPData(channelId: string, value: string): Promise<void>
+
+  /**
+   * Start Classic Bluetooth discovery. Android only.
+   */
+  startClassicScan(): void
+
+  /**
+   * Stop Classic Bluetooth discovery. Android only.
+   */
+  stopClassicScan(): void
+
+  /**
+   * Connect to a Classic Bluetooth RFCOMM service. Android only.
+   */
+  connectClassic(deviceId: string, serviceUUID?: string): Promise<void>
+
+  /**
+   * Listen for incoming Classic Bluetooth RFCOMM connections. Android only.
+   */
+  startClassicServer(serviceUUID?: string, serviceName?: string): Promise<void>
+
+  /**
+   * Stop a Classic Bluetooth RFCOMM listener. Android only.
+   */
+  stopClassicServer(serviceUUID?: string): void
+
+  /**
+   * Disconnect a Classic Bluetooth device. Android only.
+   */
+  disconnectClassic(deviceId: string): void
+
+  /**
+   * Write hex data to a Classic Bluetooth RFCOMM connection. Android only.
+   */
+  writeClassic(deviceId: string, value: string): Promise<void>
+
+  /**
    * Start a best-effort background BLE session.
    *
-   * Android uses a foreground service so BLE can continue after the app leaves the foreground.
-   * iOS keeps the central/peripheral managers running and relies on the host app's Bluetooth
-   * background modes for best-effort background operation.
+   * Android uses a foreground service so BLE can continue after the app leaves
+   * the foreground, and restores scan/advertising/configured GATT services
+   * after normal service process recreation. iOS relies on Bluetooth background
+   * modes and CoreBluetooth state restoration, with terminated-state relaunch
+   * still limited by Apple's current relaunch rules. User force-quit/force-stop
+   * is controlled by the OS and cannot be bypassed.
    */
   startBackgroundSession(options: BackgroundSessionOptions): void
 
@@ -283,6 +534,39 @@ export interface MunimBluetooth
    * Stop the active background BLE session.
    */
   stopBackgroundSession(): void
+
+  /**
+   * Start Apple Multipeer Connectivity discovery/session transport.
+   *
+   * iOS/iPadOS/macOS/tvOS only. Android cannot join Apple's Multipeer
+   * Connectivity sessions and rejects the related promises.
+   */
+  startMultipeerSession(options: MultipeerSessionOptions): void
+
+  /**
+   * Stop the active Apple Multipeer Connectivity session.
+   */
+  stopMultipeerSession(): void
+
+  /**
+   * Invite a discovered Multipeer peer by runtime peer id.
+   */
+  inviteMultipeerPeer(peerId: string): void
+
+  /**
+   * Return discovered/connected Multipeer peers for this runtime session.
+   */
+  getMultipeerPeers(): Promise<MultipeerPeer[]>
+
+  /**
+   * Send hex data to connected Multipeer peers. Omit peerIds to broadcast to
+   * all connected peers.
+   */
+  sendMultipeerMessage(
+    value: string,
+    peerIds?: string[],
+    reliable?: boolean
+  ): Promise<void>
 
   // ========== Event Management ==========
 
