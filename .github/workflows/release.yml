@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
 
 permissions:
