@@ -9,6 +9,9 @@ on:
       - master
     paths:
       - '.github/workflows/ios-build.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
       - 'example/ios/**'
       - 'example/Gemfile'
       - 'example/Gemfile.lock'
@@ -24,6 +27,9 @@ on:
   pull_request:
     paths:
       - '.github/workflows/ios-build.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
       - 'example/ios/**'
       - 'example/Gemfile'
       - 'example/Gemfile.lock'
@@ -47,26 +53,18 @@ concurrency:
 
 jobs:
   build:
-    name: Build iOS Example App (${{ matrix.arch }})
-    runs-on: macOS-15
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [new, old]
+    name: Build iOS Example App
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 16.4
+          xcode-version: 26.4
 
       - name: Install dependencies (bun)
         run: bun install
-
-      - name: Disable new architecture in Podfile
-        if: matrix.arch == 'old'
-        run: sed -i "" "s/ENV\['RCT_NEW_ARCH_ENABLED'\] = '1'/ENV['RCT_NEW_ARCH_ENABLED'] = '0'/g" example/ios/Podfile
 
       - name: Setup Ruby (bundle)
         uses: ruby/setup-ruby@v1
@@ -100,8 +98,7 @@ jobs:
             -derivedDataPath build -UseModernBuildSystem=YES \
             -workspace MunimBluetoothExample.xcworkspace \
             -scheme MunimBluetoothExample \
-            -sdk iphonesimulator \
             -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination 'generic/platform=iOS' \
             build \
             CODE_SIGNING_ALLOWED=NO | xcpretty
