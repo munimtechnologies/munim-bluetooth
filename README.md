@@ -11,7 +11,7 @@
    <a aria-label="Package version" href="https://www.npmjs.com/package/munim-bluetooth" target="_blank">
     <img alt="Package version" src="https://img.shields.io/npm/v/munim-bluetooth.svg?style=flat-square&label=Version&labelColor=000000&color=0066CC" />
   </a>
-  <a aria-label="Package is free to use" href="https://github.com/munimtechnologies/munim-bluetooth/blob/master/LICENSE" target="_blank">
+  <a aria-label="Package is free to use" href="https://github.com/munimtechnologies/munim-bluetooth/blob/main/LICENSE" target="_blank">
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-success.svg?style=flat-square&color=33CC12" target="_blank" />
   </a>
   <a aria-label="package downloads" href="https://www.npmtrends.com/munim-bluetooth" target="_blank">
