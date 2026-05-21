@@ -1328,17 +1328,20 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
     private func hexStringToData(_ hex: String) -> Data? {
         var data = Data()
-        var hex = hex
+        var hex = hex.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if hex.count % 2 != 0 {
             hex = "0" + hex
         }
 
-        let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
-        regex.enumerateMatches(in: hex, range: NSRange(hex.startIndex..., in: hex)) { match, _, _ in
-            let byteStr = (hex as NSString).substring(with: match!.range)
-            let num = UInt8(byteStr, radix: 16)!
-            data.append(num)
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let nextIndex = hex.index(index, offsetBy: 2)
+            guard let byte = UInt8(hex[index..<nextIndex], radix: 16) else {
+                return nil
+            }
+            data.append(byte)
+            index = nextIndex
         }
 
         return data.isEmpty ? nil : data
@@ -1525,13 +1528,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             advertisingData[CBAdvertisementDataLocalNameKey] = localName
         }
 
-        let serviceUUIDs =
-            (data.incompleteServiceUUIDs16 ?? []) +
-            (data.completeServiceUUIDs16 ?? []) +
-            (data.incompleteServiceUUIDs32 ?? []) +
-            (data.completeServiceUUIDs32 ?? []) +
-            (data.incompleteServiceUUIDs128 ?? []) +
-            (data.completeServiceUUIDs128 ?? [])
+        var serviceUUIDs: [String] = []
+        serviceUUIDs.append(contentsOf: data.incompleteServiceUUIDs16 ?? [])
+        serviceUUIDs.append(contentsOf: data.completeServiceUUIDs16 ?? [])
+        serviceUUIDs.append(contentsOf: data.incompleteServiceUUIDs32 ?? [])
+        serviceUUIDs.append(contentsOf: data.completeServiceUUIDs32 ?? [])
+        serviceUUIDs.append(contentsOf: data.incompleteServiceUUIDs128 ?? [])
+        serviceUUIDs.append(contentsOf: data.completeServiceUUIDs128 ?? [])
 
         if !serviceUUIDs.isEmpty {
             advertisingData[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { CBUUID(string: $0) }
