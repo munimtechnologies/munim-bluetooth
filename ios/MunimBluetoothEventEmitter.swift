@@ -13,11 +13,11 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
 
     public static var shared: MunimBluetoothEventEmitter?
     private static var pendingEvents: [(name: String, body: [String: Any])] = []
+    private var hasListeners = false
 
     override init() {
         super.init()
         MunimBluetoothEventEmitter.shared = self
-        MunimBluetoothEventEmitter.flushPendingEvents()
     }
 
     override func supportedEvents() -> [String]! {
@@ -33,6 +33,13 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
             "connectionStateChanged",
             "servicesDiscovered",
             "characteristicValueChanged",
+            "l2capChannelPublished",
+            "l2capChannelPublishFailed",
+            "l2capChannelUnpublished",
+            "l2capChannelOpened",
+            "l2capChannelOpenFailed",
+            "l2capChannelClosed",
+            "l2capDataReceived",
             "peripheralReadRequest",
             "peripheralWriteRequest",
             "peripheralSubscribed",
@@ -56,6 +63,15 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
         return true
     }
 
+    override func startObserving() {
+        hasListeners = true
+        MunimBluetoothEventEmitter.flushPendingEvents()
+    }
+
+    override func stopObserving() {
+        hasListeners = false
+    }
+
     func emitDeviceFound(_ deviceData: [String: Any]) {
         emitOnMain("deviceFound", body: deviceData)
         emitOnMain("onDeviceFound", body: deviceData)
@@ -63,11 +79,16 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
     }
 
     func emit(_ eventName: String, body: [String: Any]) {
+        guard hasListeners else {
+            MunimBluetoothEventEmitter.pendingEvents.append((name: eventName, body: body))
+            return
+        }
+
         emitOnMain(eventName, body: body)
     }
 
     static func emitOrQueue(_ eventName: String, body: [String: Any]) {
-        guard let shared else {
+        guard let shared, shared.hasListeners else {
             pendingEvents.append((name: eventName, body: body))
             return
         }
@@ -76,7 +97,7 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
     }
 
     private static func flushPendingEvents() {
-        guard let shared, !pendingEvents.isEmpty else {
+        guard let shared, shared.hasListeners, !pendingEvents.isEmpty else {
             return
         }
 

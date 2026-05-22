@@ -35,6 +35,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.annotation.Keep
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.bridge.WritableArray
@@ -42,6 +43,7 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
+import com.facebook.proguard.annotations.DoNotStrip
 import com.margelo.nitro.NitroModules
 import com.margelo.nitro.core.Promise
 import com.margelo.nitro.munimbluetooth.AdvertisingDataTypes
@@ -77,6 +79,8 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.UUID
 
+@Keep
+@DoNotStrip
 class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val bluetoothScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 

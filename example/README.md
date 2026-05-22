@@ -1,97 +1,126 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Munim Bluetooth Example
 
-# Getting Started
+This React Native app is a physical-device smoke tester for `munim-bluetooth`.
+It exercises the Nitro module as both a BLE peripheral and BLE central, and it
+also exposes the iOS/iPadOS Apple Multipeer test controls.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## What The Smoke Test Covers
 
-## Step 1: Start Metro
+- Requests Bluetooth permissions and prints platform capability flags.
+- Configures a test GATT service with read, write, write-without-response,
+  notify, and descriptor support.
+- Advertises as `MunimBT-ios` or `MunimBT-android`.
+- Scans for the test service and shows nearby peers in the Devices section.
+- Connects to a peer, discovers services, reads the characteristic, writes a
+  new value, subscribes to notifications, reads RSSI, and requests MTU on
+  Android.
+- Starts Apple Multipeer Connectivity on iOS/iPadOS and shows peer state and
+  message events.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Run It
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+Install dependencies from the repository root first:
 
 ```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+npm install
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+Install iOS pods when testing iOS:
 
 ```sh
-# Using npm
+cd example
+npm run pod
+```
+
+Start Metro from the example app:
+
+```sh
+cd example
+npm run start
+```
+
+In another terminal, build and install on Android:
+
+```sh
+cd example
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Build and install on iOS:
 
 ```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+cd example
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+For physical iOS devices, open `example/ios/MunimBluetoothExample.xcworkspace`
+in Xcode or run `xcodebuild` with your device destination and signing team.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## Two-Device BLE Smoke Test
 
-## Step 3: Modify your app
+Use one iOS/iPadOS device and one Android device for the broadest coverage.
 
-Now that you have successfully run the app, let's make changes!
+1. Install and launch the app on both devices.
+2. Accept Bluetooth permission prompts on both devices.
+3. On iOS/iPadOS, also accept Local Network prompts when testing Multipeer.
+4. Leave both apps on the main screen. Each device advertises its local test
+   service and scans for peers.
+5. The Android app should discover `MunimBT-ios`, connect, run the GATT smoke
+   sequence, and show `1 peer BLE GATT smoke test(s) passed`.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+The Android scan callback may report an iOS advertiser by local name without
+including the service UUID payload. The example treats `MunimBT-ios` and
+`MunimBT-android` as valid smoke-test peers, then verifies the real GATT service
+after connecting. Production apps should treat local names as discovery hints
+only and validate service/characteristic UUIDs after connection.
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## Useful Device Commands
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+Install a previously built Android debug APK directly:
 
-## Congratulations! :tada:
+```sh
+adb install -r -d android/app/build/outputs/apk/debug/app-debug.apk
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+Forward Android Metro traffic:
 
-### Now what?
+```sh
+adb reverse tcp:8081 tcp:8081
+```
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+Launch the Android example:
 
-# Troubleshooting
+```sh
+adb shell monkey -p com.munimbluetoothexample -c android.intent.category.LAUNCHER 1
+```
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+Filter Android logs for the example:
 
-# Learn More
+```sh
+adb logcat ReactNativeJS:I HybridMunimBluetooth:D BluetoothGatt:D BluetoothGattServer:D '*:S'
+```
 
-To learn more about React Native, take a look at the following resources:
+List connected iOS/iPadOS devices:
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+```sh
+xcrun xctrace list devices
+```
+
+Check whether the physical iOS app process is still running:
+
+```sh
+xcrun devicectl device info processes --device <device-id> | rg MunimBluetoothExample
+```
+
+## Expected Pass Signals
+
+The main screen should show:
+
+- `Enabled` for Bluetooth state.
+- `central=true` and `peripheral=true` in capabilities on BLE-capable devices.
+- A peer row such as `MunimBT-ios` or `MunimBT-android`.
+- `1 peer BLE GATT smoke test(s) passed` after the Android-to-iOS GATT run.
+
+The logs should include successful service discovery, characteristic read,
+characteristic write, notification subscription, RSSI read, and connected-device
+count messages.

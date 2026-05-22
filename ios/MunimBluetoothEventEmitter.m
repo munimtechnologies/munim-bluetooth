@@ -14,7 +14,7 @@ RCT_EXTERN_METHOD(supportedEvents)
 
 + (BOOL)requiresMainQueueSetup
 {
-  return NO;
+  return YES;
 }
 
 @end

@@ -64,6 +64,15 @@ function hasTestService(device: BLEDevice): boolean {
   );
 }
 
+function hasTestPeerName(device: BLEDevice): boolean {
+  const advertisedName = device.localName ?? device.name;
+  return advertisedName === 'MunimBT-ios' || advertisedName === 'MunimBT-android';
+}
+
+function isTestPeer(device: BLEDevice): boolean {
+  return hasTestService(device) || hasTestPeerName(device);
+}
+
 function buildTestService(): GATTService {
   return {
     uuid: TEST_SERVICE_UUID,
@@ -429,7 +438,7 @@ function App(): React.JSX.Element {
 
         if (
           SHOULD_AUTO_CONNECT_TO_PEER &&
-          hasTestService(device) &&
+          isTestPeer(device) &&
           connectedDeviceIds.current.size + connectingDeviceIds.current.size <
             MAX_AUTO_PEERS
         ) {
