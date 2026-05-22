@@ -1,3 +1,9 @@
+## [0.4.3](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.2...v0.4.3) (2026-05-22)
+
+### 🐛 Bug Fixes
+
+* stabilize Bluetooth device smoke test ([3463a06](https://github.com/munimtechnologies/munim-bluetooth/commit/3463a069ce18893bc509944e8fb68d05a178ccd8))
+
 ## [0.4.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.0...v0.4.1) (2026-05-16)
 
 ### 📚 Documentation
