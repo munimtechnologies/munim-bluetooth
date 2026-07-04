@@ -1,3 +1,9 @@
+## [0.4.4](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.3...v0.4.4) (2026-07-04)
+
+### 🐛 Bug Fixes
+
+* resolve dependency vulnerabilities ([089bea6](https://github.com/munimtechnologies/munim-bluetooth/commit/089bea6224c836b4366d0631cf94fd2fe8c0cc17))
+
 ## [0.4.3](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.2...v0.4.3) (2026-05-22)
 
 ### 🐛 Bug Fixes
