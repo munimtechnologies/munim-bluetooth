@@ -86,7 +86,7 @@ namespace margelo::nitro::munimbluetooth {
     void stopExtendedAdvertising(const std::string& advertisingId) override;
     std::shared_ptr<Promise<L2CAPChannel>> publishL2CAPChannel(std::optional<bool> encryptionRequired) override;
     void unpublishL2CAPChannel(double psm) override;
-    std::shared_ptr<Promise<L2CAPChannel>> openL2CAPChannel(const std::string& deviceId, double psm) override;
+    std::shared_ptr<Promise<L2CAPChannel>> openL2CAPChannel(const std::string& deviceId, double psm, std::optional<bool> encryptionRequired) override;
     void closeL2CAPChannel(const std::string& channelId) override;
     std::shared_ptr<Promise<void>> sendL2CAPData(const std::string& channelId, const std::string& value) override;
     void startClassicScan() override;

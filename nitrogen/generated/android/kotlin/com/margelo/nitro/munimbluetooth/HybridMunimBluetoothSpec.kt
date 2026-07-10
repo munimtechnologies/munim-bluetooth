@@ -159,7 +159,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun openL2CAPChannel(deviceId: String, psm: Double): Promise<L2CAPChannel>
+  abstract fun openL2CAPChannel(deviceId: String, psm: Double, encryptionRequired: Boolean?): Promise<L2CAPChannel>
   
   @DoNotStrip
   @Keep

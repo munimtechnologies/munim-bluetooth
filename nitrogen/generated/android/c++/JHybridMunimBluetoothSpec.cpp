@@ -555,9 +555,10 @@ namespace margelo::nitro::munimbluetooth {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* psm */)>("unpublishL2CAPChannel");
     method(_javaPart, psm);
   }
-  std::shared_ptr<Promise<L2CAPChannel>> JHybridMunimBluetoothSpec::openL2CAPChannel(const std::string& deviceId, double psm) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, double /* psm */)>("openL2CAPChannel");
-    auto __result = method(_javaPart, jni::make_jstring(deviceId), psm);
+  std::shared_ptr<Promise<L2CAPChannel>> JHybridMunimBluetoothSpec::openL2CAPChannel(const std::string& deviceId, double psm, std::optional<bool> encryptionRequired) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, double /* psm */, jni::alias_ref<jni::JBoolean> /* encryptionRequired */)>("openL2CAPChannel");
+    auto __encryptionRequired = encryptionRequired.has_value() ? jni::autobox(static_cast<jboolean>(*encryptionRequired)) : nullptr;
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), psm, __encryptionRequired);
     return [&]() {
       auto __promise = Promise<L2CAPChannel>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
