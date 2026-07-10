@@ -503,9 +503,10 @@ export function unpublishL2CAPChannel(psm: number): void {
  */
 export function openL2CAPChannel(
   deviceId: string,
-  psm: number
+  psm: number,
+  encryptionRequired: boolean = true
 ): Promise<L2CAPChannel> {
-  return MunimBluetooth.openL2CAPChannel(deviceId, psm)
+  return MunimBluetooth.openL2CAPChannel(deviceId, psm, encryptionRequired)
 }
 
 /**

@@ -374,8 +374,8 @@ namespace margelo::nitro::munimbluetooth {
         std::rethrow_exception(__result.error());
       }
     }
-    inline std::shared_ptr<Promise<L2CAPChannel>> openL2CAPChannel(const std::string& deviceId, double psm) override {
-      auto __result = _swiftPart.openL2CAPChannel(deviceId, std::forward<decltype(psm)>(psm));
+    inline std::shared_ptr<Promise<L2CAPChannel>> openL2CAPChannel(const std::string& deviceId, double psm, std::optional<bool> encryptionRequired) override {
+      auto __result = _swiftPart.openL2CAPChannel(deviceId, std::forward<decltype(psm)>(psm), std::forward<decltype(encryptionRequired)>(encryptionRequired));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

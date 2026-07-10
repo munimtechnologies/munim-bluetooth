@@ -45,7 +45,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func stopExtendedAdvertising(advertisingId: String) throws -> Void
   func publishL2CAPChannel(encryptionRequired: Bool?) throws -> Promise<L2CAPChannel>
   func unpublishL2CAPChannel(psm: Double) throws -> Void
-  func openL2CAPChannel(deviceId: String, psm: Double) throws -> Promise<L2CAPChannel>
+  func openL2CAPChannel(deviceId: String, psm: Double, encryptionRequired: Bool?) throws -> Promise<L2CAPChannel>
   func closeL2CAPChannel(channelId: String) throws -> Void
   func sendL2CAPData(channelId: String, value: String) throws -> Promise<Void>
   func startClassicScan() throws -> Void

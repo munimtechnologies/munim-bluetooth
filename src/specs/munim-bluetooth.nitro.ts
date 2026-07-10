@@ -472,7 +472,7 @@ export interface MunimBluetooth
   /**
    * Open an outbound L2CAP channel to a BLE device.
    */
-  openL2CAPChannel(deviceId: string, psm: number): Promise<L2CAPChannel>
+  openL2CAPChannel(deviceId: string, psm: number, encryptionRequired?: boolean): Promise<L2CAPChannel>
 
   /**
    * Close an L2CAP channel.

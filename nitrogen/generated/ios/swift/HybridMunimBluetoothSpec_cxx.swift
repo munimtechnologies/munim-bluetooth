@@ -678,9 +678,16 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func openL2CAPChannel(deviceId: std.string, psm: Double) -> bridge.Result_std__shared_ptr_Promise_L2CAPChannel___ {
+  public final func openL2CAPChannel(deviceId: std.string, psm: Double, encryptionRequired: bridge.std__optional_bool_) -> bridge.Result_std__shared_ptr_Promise_L2CAPChannel___ {
     do {
-      let __result = try self.__implementation.openL2CAPChannel(deviceId: String(deviceId), psm: psm)
+      let __result = try self.__implementation.openL2CAPChannel(deviceId: String(deviceId), psm: psm, encryptionRequired: { () -> Bool? in
+        if bridge.has_value_std__optional_bool_(encryptionRequired) {
+          let __unwrapped = bridge.get_std__optional_bool_(encryptionRequired)
+          return __unwrapped
+        } else {
+          return nil
+        }
+      }())
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_L2CAPChannel__ in
         let __promise = bridge.create_std__shared_ptr_Promise_L2CAPChannel__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_L2CAPChannel__(__promise)

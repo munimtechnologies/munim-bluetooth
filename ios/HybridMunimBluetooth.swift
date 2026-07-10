@@ -940,7 +940,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         publishedL2CAPPSMs.remove(psmValue)
     }
 
-    func openL2CAPChannel(deviceId: String, psm: Double) throws -> Promise<L2CAPChannel> {
+    func openL2CAPChannel(deviceId: String, psm: Double, encryptionRequired: Bool?) throws -> Promise<L2CAPChannel> {
+        // encryptionRequired is ignored on iOS — CoreBluetooth has no insecure L2CAP variant;
         let promise = Promise<L2CAPChannel>()
         guard let peripheral = connectedPeripherals[deviceId] else {
             promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))

@@ -1056,7 +1056,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
     }
 
-    override fun openL2CAPChannel(deviceId: String, psm: Double): Promise<L2CAPChannel> {
+    override fun openL2CAPChannel(deviceId: String, psm: Double, encryptionRequired: Boolean?): Promise<L2CAPChannel> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             return unsupportedPromise("BLE L2CAP channel streams require Android 10 or newer")
         }
@@ -1070,7 +1070,11 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
         bluetoothScope.launch(Dispatchers.IO) {
             try {
-                val socket = device.createL2capChannel(psm.toInt())
+                val socket = if (encryptionRequired != false) {
+                    device.createL2capChannel(psm.toInt())
+                } else {
+                    device.createInsecureL2capChannel(psm.toInt())
+                }
                 socket.connect()
                 val channel = registerL2CAPSocket(socket, psm.toInt(), device.address)
                 promise.resolve(channel)
