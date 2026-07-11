@@ -1,3 +1,9 @@
+## [0.4.5](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.4...v0.4.5) (2026-07-11)
+
+### 🐛 Bug Fixes
+
+* scope Android Bluetooth permissions by operation ([1d64351](https://github.com/munimtechnologies/munim-bluetooth/commit/1d643517065e02e1d705eab428fa91363a6d86f5))
+
 ## [0.4.4](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.3...v0.4.4) (2026-07-04)
 
 ### 🐛 Bug Fixes
