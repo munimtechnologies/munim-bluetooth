@@ -146,19 +146,24 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
     }
 
-    private fun hasRequiredBluetoothPermissions(): Boolean {
+    private fun hasRequiredBluetoothPermissions(
+        vararg permissions: BluetoothPermission
+    ): Boolean {
         val context = NitroModules.applicationContext ?: return false
-        return BluetoothPermissionUtils.hasRequiredPermissions(context)
+        return BluetoothPermissionUtils.hasRequiredPermissions(context, *permissions)
     }
 
-    private fun ensureBluetoothPermissions(operationName: String): Boolean {
+    private fun ensureBluetoothPermissions(
+        operationName: String,
+        vararg permissions: BluetoothPermission
+    ): Boolean {
         val context = NitroModules.applicationContext
         if (context == null) {
             Log.w(TAG, "Unable to $operationName: React context unavailable")
             return false
         }
 
-        val missingPermissions = BluetoothPermissionUtils.missingPermissions(context)
+        val missingPermissions = BluetoothPermissionUtils.missingPermissions(context, *permissions)
         if (missingPermissions.isNotEmpty()) {
             Log.w(
                 TAG,
@@ -170,8 +175,29 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return true
     }
 
+    private fun permissionsForRequest(
+        permissions: Array<String>?
+    ): Array<BluetoothPermission> {
+        val requestedCapabilities = permissions ?: arrayOf("scan", "connect")
+        return requestedCapabilities.flatMap { capability ->
+            when (capability.trim().lowercase()) {
+                "scan" -> listOf(BluetoothPermission.SCAN, BluetoothPermission.CONNECT)
+                "connect" -> listOf(BluetoothPermission.CONNECT)
+                "advertise" -> listOf(BluetoothPermission.ADVERTISE, BluetoothPermission.CONNECT)
+                else -> throw IllegalArgumentException(
+                    "Unsupported Bluetooth permission capability: $capability"
+                )
+            }
+        }.distinct().toTypedArray()
+    }
+
     override fun startAdvertising(options: AdvertisingOptions) {
-        if (!ensureBluetoothPermissions("start advertising")) {
+        if (!ensureBluetoothPermissions(
+                "start advertising",
+                BluetoothPermission.ADVERTISE,
+                BluetoothPermission.CONNECT
+            )
+        ) {
             return
         }
 
@@ -264,7 +290,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun setServices(services: Array<GATTService>) {
-        if (!ensureBluetoothPermissions("set GATT services")) {
+        if (!ensureBluetoothPermissions("set GATT services", BluetoothPermission.CONNECT)) {
             return
         }
 
@@ -361,7 +387,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun isBluetoothEnabled(): Promise<Boolean> {
-        if (!hasRequiredBluetoothPermissions()) {
+        if (!hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
             return Promise.resolved(false)
         }
 
@@ -369,13 +395,21 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return Promise.resolved(bluetoothAdapter?.isEnabled == true)
     }
 
-    override fun requestBluetoothPermission(): Promise<Boolean> {
+    override fun requestBluetoothPermission(permissions: Array<String>?): Promise<Boolean> {
         val context = NitroModules.applicationContext ?: run {
             Log.w(TAG, "Unable to request Bluetooth permissions: React context unavailable")
             return Promise.resolved(false)
         }
 
-        val missingPermissions = BluetoothPermissionUtils.missingPermissions(context)
+        val requestedPermissions = try {
+            permissionsForRequest(permissions)
+        } catch (error: IllegalArgumentException) {
+            return Promise.rejected(error)
+        }
+        val missingPermissions = BluetoothPermissionUtils.missingPermissions(
+            context,
+            *requestedPermissions
+        )
         if (missingPermissions.isEmpty()) {
             return Promise.resolved(true)
         }
@@ -437,7 +471,12 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun startScan(options: ScanOptions?) {
-        if (!ensureBluetoothPermissions("start scanning")) {
+        if (!ensureBluetoothPermissions(
+                "start scanning",
+                BluetoothPermission.SCAN,
+                BluetoothPermission.CONNECT
+            )
+        ) {
             return
         }
 
@@ -520,7 +559,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun connect(deviceId: String): Promise<Unit> {
-        if (!ensureBluetoothPermissions("connect to BLE device")) {
+        if (!ensureBluetoothPermissions("connect to BLE device", BluetoothPermission.CONNECT)) {
             return Promise.rejected(IllegalStateException("Bluetooth permissions not granted"))
         }
 
@@ -871,7 +910,12 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return unsupportedPromise("BLE extended advertising requires Android 8.0 or newer")
         }
-        if (!ensureBluetoothPermissions("start extended advertising")) {
+        if (!ensureBluetoothPermissions(
+                "start extended advertising",
+                BluetoothPermission.ADVERTISE,
+                BluetoothPermission.CONNECT
+            )
+        ) {
             return Promise.rejected(IllegalStateException("Bluetooth permissions not granted"))
         }
 
@@ -963,7 +1007,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             return unsupportedPromise("BLE L2CAP channel streams require Android 10 or newer")
         }
-        if (!hasRequiredBluetoothPermissions()) {
+        if (!hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
             return Promise.rejected(SecurityException("Missing Bluetooth permissions"))
         }
 
@@ -1016,7 +1060,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             return unsupportedPromise("BLE L2CAP channel streams require Android 10 or newer")
         }
-        if (!hasRequiredBluetoothPermissions()) {
+        if (!hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
             return Promise.rejected(SecurityException("Missing Bluetooth permissions"))
         }
 
@@ -1066,7 +1110,12 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun startClassicScan() {
-        if (!ensureBluetoothPermissions("start Classic Bluetooth discovery")) {
+        if (!ensureBluetoothPermissions(
+                "start Classic Bluetooth discovery",
+                BluetoothPermission.SCAN,
+                BluetoothPermission.CONNECT
+            )
+        ) {
             return
         }
 
@@ -1151,7 +1200,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun connectClassic(deviceId: String, serviceUUID: String?): Promise<Unit> {
-        if (!hasRequiredBluetoothPermissions()) {
+        if (!hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
             return Promise.rejected(SecurityException("Missing Bluetooth permissions"))
         }
         val device = resolveClassicDevice(deviceId)
@@ -1185,7 +1234,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     override fun startClassicServer(serviceUUID: String?, serviceName: String?): Promise<Unit> {
-        if (!hasRequiredBluetoothPermissions()) {
+        if (!hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
             return Promise.rejected(SecurityException("Missing Bluetooth permissions"))
         }
 
@@ -1266,7 +1315,13 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             return
         }
 
-        if (!ensureBluetoothPermissions("start background BLE session")) {
+        if (!ensureBluetoothPermissions(
+                "start background BLE session",
+                BluetoothPermission.SCAN,
+                BluetoothPermission.CONNECT,
+                BluetoothPermission.ADVERTISE
+            )
+        ) {
             return
         }
 
@@ -1391,7 +1446,12 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     private fun restartAdvertising(delayMs: Long) {
-        if (!ensureBluetoothPermissions("restart advertising")) {
+        if (!ensureBluetoothPermissions(
+                "restart advertising",
+                BluetoothPermission.ADVERTISE,
+                BluetoothPermission.CONNECT
+            )
+        ) {
             return
         }
 

@@ -61,7 +61,7 @@ namespace margelo::nitro::munimbluetooth {
     void setServices(const std::vector<GATTService>& services) override;
     std::shared_ptr<Promise<void>> updateCharacteristicValue(const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<bool> notify) override;
     std::shared_ptr<Promise<bool>> isBluetoothEnabled() override;
-    std::shared_ptr<Promise<bool>> requestBluetoothPermission() override;
+    std::shared_ptr<Promise<bool>> requestBluetoothPermission(const std::optional<std::vector<std::string>>& permissions) override;
     std::shared_ptr<Promise<BluetoothCapabilities>> getCapabilities() override;
     void startScan(const std::optional<ScanOptions>& options) override;
     void stopScan() override;

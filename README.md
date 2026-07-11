@@ -206,37 +206,38 @@ With the included Expo config plugin, the default `munim-mesh` Multipeer service
 
 ### Android Setup
 
-For Android, add the following permissions to your `AndroidManifest.xml`:
+The library does not merge optional Bluetooth permissions into your app. Declare only the capabilities your app uses.
+
+For a central app that scans and connects, add:
 
 ```xml
-<uses-permission android:name="android.permission.BLUETOOTH" />
-<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
 <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
-**For Expo projects**, add these permissions to your `app.json`:
+An app that connects to a known device without scanning can omit `BLUETOOTH_ADMIN`, `ACCESS_FINE_LOCATION`, and `BLUETOOTH_SCAN`. Add `BLUETOOTH_ADVERTISE` only when using peripheral advertising or background sessions that advertise.
+
+**For Expo projects**, select capabilities through the included config plugin. Central mode is the default:
 
 ```json
 {
   "expo": {
-    "android": {
-      "permissions": [
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.BLUETOOTH_ADVERTISE",
-        "android.permission.BLUETOOTH_SCAN",
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+    "plugins": [
+      [
+        "munim-bluetooth",
+        {
+          "androidBluetoothPermissions": ["scan", "connect"]
+        }
       ]
-    }
+    ]
   }
 }
 ```
+
+Use `["connect"]` for connection-only apps, or add `"advertise"` for peripheral/background advertising. Set `androidBluetoothPermissions` to `false` to manage every Android permission outside the plugin.
 
 ## Device-to-Device Messaging
 
@@ -299,10 +300,20 @@ Background sessions are for keeping discovery and small GATT messages alive. The
 
 ```typescript
 import {
+  requestBluetoothPermission,
   setServices,
   startBackgroundSession,
   stopBackgroundSession,
 } from 'munim-bluetooth'
+
+const hasBackgroundPermissions = await requestBluetoothPermission([
+  'scan',
+  'connect',
+  'advertise',
+])
+if (!hasBackgroundPermissions) {
+  throw new Error('Background Bluetooth permission was not granted')
+}
 
 setServices([
   {
@@ -334,7 +345,17 @@ stopBackgroundSession()
 ### Basic Usage - Peripheral Mode
 
 ```typescript
-import { startAdvertising, stopAdvertising, setServices } from 'munim-bluetooth'
+import {
+  requestBluetoothPermission,
+  startAdvertising,
+  stopAdvertising,
+  setServices,
+} from 'munim-bluetooth'
+
+const canAdvertise = await requestBluetoothPermission(['advertise'])
+if (!canAdvertise) {
+  throw new Error('Bluetooth advertising permission was not granted')
+}
 
 // Start advertising with basic options
 startAdvertising({
@@ -375,7 +396,7 @@ import {
   subscribeToCharacteristic,
 } from 'munim-bluetooth'
 
-const hasPermission = await requestBluetoothPermission()
+const hasPermission = await requestBluetoothPermission(['scan', 'connect'])
 if (!hasPermission) {
   throw new Error('Bluetooth permission was not granted')
 }
@@ -570,9 +591,14 @@ Checks if Bluetooth is enabled on the device.
 
 **Returns:** Promise<boolean>
 
-#### `requestBluetoothPermission()`
+#### `requestBluetoothPermission(permissions?)`
 
-Requests Bluetooth permissions (Android) or checks authorization status (iOS).
+Requests only the selected Android capabilities or checks authorization status on iOS. Supported capabilities are `scan`, `connect`, and `advertise`. The default is `['scan', 'connect']`; advertising is never requested implicitly.
+
+```typescript
+await requestBluetoothPermission(['connect'])
+await requestBluetoothPermission(['advertise'])
+```
 
 **Returns:** Promise<boolean>
 

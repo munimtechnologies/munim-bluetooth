@@ -333,7 +333,11 @@ function App(): React.JSX.Element {
     setStatus('Running BLE diagnostics...');
 
     try {
-      const permissionGranted = await MunimBluetooth.requestBluetoothPermission();
+      const permissionGranted = await MunimBluetooth.requestBluetoothPermission([
+        'scan',
+        'connect',
+        'advertise',
+      ]);
       addLog(
         `Permission ${permissionGranted ? 'granted' : 'not granted yet'}`,
         permissionGranted ? 'success' : 'warning'
@@ -394,7 +398,11 @@ function App(): React.JSX.Element {
 
   const startBackgroundMode = useCallback(async () => {
     try {
-      const permissionGranted = await MunimBluetooth.requestBluetoothPermission();
+      const permissionGranted = await MunimBluetooth.requestBluetoothPermission([
+        'scan',
+        'connect',
+        'advertise',
+      ]);
       if (!permissionGranted) {
         addLog('Background session needs Bluetooth permission', 'warning');
         return;

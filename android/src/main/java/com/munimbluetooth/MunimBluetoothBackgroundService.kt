@@ -106,7 +106,13 @@ class MunimBluetoothBackgroundService : Service() {
     private fun startBleSession(config: SessionConfig) {
         stopBleSession()
 
-        if (!BluetoothPermissionUtils.hasRequiredPermissions(applicationContext)) {
+        if (!BluetoothPermissionUtils.hasRequiredPermissions(
+                applicationContext,
+                BluetoothPermission.SCAN,
+                BluetoothPermission.CONNECT,
+                BluetoothPermission.ADVERTISE
+            )
+        ) {
             Log.w(TAG, "Unable to start background BLE session: missing runtime permissions")
             stopSelf()
             return

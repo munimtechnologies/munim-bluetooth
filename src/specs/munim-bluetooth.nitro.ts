@@ -273,11 +273,12 @@ export interface MunimBluetooth
   isBluetoothEnabled(): Promise<boolean>
 
   /**
-   * Request Bluetooth permissions (Android) or check authorization status (iOS).
+   * Request selected Bluetooth permissions (Android) or check authorization status (iOS).
    *
+   * @param permissions - Android capabilities to request.
    * @returns Promise resolving to true if permissions are granted, false otherwise.
    */
-  requestBluetoothPermission(): Promise<boolean>
+  requestBluetoothPermission(permissions?: string[]): Promise<boolean>
 
   /**
    * Return the Bluetooth features this platform can support through public APIs.

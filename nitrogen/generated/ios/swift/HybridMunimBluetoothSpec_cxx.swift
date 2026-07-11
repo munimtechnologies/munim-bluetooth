@@ -233,9 +233,16 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func requestBluetoothPermission() -> bridge.Result_std__shared_ptr_Promise_bool___ {
+  public final func requestBluetoothPermission(permissions: bridge.std__optional_std__vector_std__string__) -> bridge.Result_std__shared_ptr_Promise_bool___ {
     do {
-      let __result = try self.__implementation.requestBluetoothPermission()
+      let __result = try self.__implementation.requestBluetoothPermission(permissions: { () -> [String]? in
+        if bridge.has_value_std__optional_std__vector_std__string__(permissions) {
+          let __unwrapped = bridge.get_std__optional_std__vector_std__string__(permissions)
+          return __unwrapped.map({ __item in String(__item) })
+        } else {
+          return nil
+        }
+      }())
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_bool__ in
         let __promise = bridge.create_std__shared_ptr_Promise_bool__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_bool__(__promise)

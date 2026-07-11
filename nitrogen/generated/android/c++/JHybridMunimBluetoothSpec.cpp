@@ -216,9 +216,18 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
-  std::shared_ptr<Promise<bool>> JHybridMunimBluetoothSpec::requestBluetoothPermission() {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("requestBluetoothPermission");
-    auto __result = method(_javaPart);
+  std::shared_ptr<Promise<bool>> JHybridMunimBluetoothSpec::requestBluetoothPermission(const std::optional<std::vector<std::string>>& permissions) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JArrayClass<jni::JString>> /* permissions */)>("requestBluetoothPermission");
+    auto __result = method(_javaPart, permissions.has_value() ? [&](auto&& __input) {
+      size_t __size = __input.size();
+      jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
+      for (size_t __i = 0; __i < __size; __i++) {
+        const auto& __element = __input[__i];
+        auto __elementJni = jni::make_jstring(__element);
+        __array->setElement(__i, *__elementJni);
+      }
+      return __array;
+    }(permissions.value()) : nullptr);
     return [&]() {
       auto __promise = Promise<bool>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {

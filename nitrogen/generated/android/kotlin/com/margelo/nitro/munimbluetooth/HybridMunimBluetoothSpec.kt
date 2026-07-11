@@ -59,7 +59,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun requestBluetoothPermission(): Promise<Boolean>
+  abstract fun requestBluetoothPermission(permissions: Array<String>?): Promise<Boolean>
   
   @DoNotStrip
   @Keep

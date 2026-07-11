@@ -107,6 +107,8 @@ export type BluetoothEventMap = {
   }
 }
 
+export type AndroidBluetoothPermission = 'scan' | 'connect' | 'advertise'
+
 export type BluetoothEventName = keyof BluetoothEventMap
 
 const MunimBluetooth =
@@ -215,12 +217,15 @@ export function isBluetoothEnabled(): Promise<boolean> {
 }
 
 /**
- * Request Bluetooth permissions (Android) or check authorization status (iOS).
+ * Request selected Bluetooth permissions (Android) or check authorization status (iOS).
  *
+ * @param permissions - Android capabilities to request. Defaults to central-mode permissions.
  * @returns Promise resolving to true if permissions are granted, false otherwise.
  */
-export function requestBluetoothPermission(): Promise<boolean> {
-  return MunimBluetooth.requestBluetoothPermission()
+export function requestBluetoothPermission(
+  permissions: AndroidBluetoothPermission[] = ['scan', 'connect']
+): Promise<boolean> {
+  return MunimBluetooth.requestBluetoothPermission(permissions)
 }
 
 /**

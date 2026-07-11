@@ -591,7 +591,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         return promise
     }
 
-    func requestBluetoothPermission() throws -> Promise<Bool> {
+    func requestBluetoothPermission(permissions: [String]?) throws -> Promise<Bool> {
         let promise = Promise<Bool>()
         promise.resolve(withResult: CBManager.authorization == .allowedAlways)
         return promise
