@@ -1,3 +1,9 @@
+## [0.5.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.5...v0.5.0) (2026-07-13)
+
+### ✨ Features
+
+* add encryptionRequired option to openL2CAPChannel ([ac2cc8a](https://github.com/munimtechnologies/munim-bluetooth/commit/ac2cc8a98f56347a0dcb4f75fe208da1aef82473))
+
 ## [0.4.5](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.4...v0.4.5) (2026-07-11)
 
 ### 🐛 Bug Fixes
