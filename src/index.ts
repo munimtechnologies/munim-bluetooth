@@ -29,6 +29,27 @@ import type {
   L2CAPChannel,
 } from './specs/munim-bluetooth.nitro'
 
+/** Android Bluetooth Class of Device metadata reported during Classic discovery. */
+export interface ClassicBluetoothClass {
+  /** Raw major and minor device class bits from BluetoothClass.getDeviceClass(). */
+  deviceClass: number
+  /** Raw major device class bits from BluetoothClass.getMajorDeviceClass(). */
+  majorDeviceClass: number
+  /** Reported Android BluetoothClass.Service bit flags. */
+  serviceClasses: number[]
+}
+
+/** A device reported by Android Classic Bluetooth discovery. */
+export interface ClassicDevice {
+  id: string
+  name: string | null
+  bondState: BondState
+  rssi?: number
+  bluetoothClass?: ClassicBluetoothClass
+  /** Cached SDP UUIDs, when Android already knows them for this device. */
+  serviceUUIDs?: string[]
+}
+
 export type BluetoothEventMap = {
   deviceFound: BLEDevice
   onDeviceFound: BLEDevice
@@ -36,7 +57,7 @@ export type BluetoothEventMap = {
   scanFailed: { errorCode: number; message: string }
   advertisingStarted: Record<string, never>
   advertisingStartFailed: { error?: string; errorCode?: number; message?: string }
-  classicDeviceFound: BLEDevice & { bondState?: string }
+  classicDeviceFound: ClassicDevice
   classicScanFailed: { message: string }
   classicScanFinished: Record<string, never>
   classicConnected: { deviceId: string }
