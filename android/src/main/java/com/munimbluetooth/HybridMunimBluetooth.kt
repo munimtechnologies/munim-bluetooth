@@ -1,6 +1,7 @@
 package com.munimbluetooth
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -1141,14 +1142,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                         BluetoothDevice.ACTION_FOUND -> {
                             val device = getBluetoothDeviceExtra(intent) ?: return
                             classicDevices[device.address] = device
-                            eventEmitter.emit(
-                                "classicDeviceFound",
-                                mapOf(
-                                    "id" to device.address,
-                                    "name" to device.name,
-                                    "bondState" to bondStateFor(device).name.lowercase()
-                                )
-                            )
+                            eventEmitter.emit("classicDeviceFound", classicDevicePayload(device, intent))
                         }
 
                         BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
@@ -2871,6 +2865,65 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
     }
 
+    private fun classicDevicePayload(
+        device: BluetoothDevice,
+        intent: Intent
+    ): Map<String, Any?> {
+        val payload = mutableMapOf<String, Any?>(
+            "id" to device.address,
+            "name" to device.name,
+            "bondState" to bondStateFor(device).name.lowercase()
+        )
+
+        val rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE)
+        if (rssi != Short.MIN_VALUE) {
+            payload["rssi"] = rssi.toInt()
+        }
+
+        getBluetoothClassExtra(intent)?.let { bluetoothClass ->
+            payload["bluetoothClass"] = mapOf(
+                "deviceClass" to bluetoothClass.deviceClass,
+                "majorDeviceClass" to bluetoothClass.majorDeviceClass,
+                "serviceClasses" to bluetoothServiceClasses(bluetoothClass)
+            )
+        }
+
+        try {
+            device.uuids
+                ?.map { it.uuid.toString() }
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { payload["serviceUUIDs"] = it }
+        } catch (error: SecurityException) {
+            Log.w(TAG, "Unable to read cached Classic Bluetooth service UUIDs", error)
+        }
+
+        return payload
+    }
+
+    private fun bluetoothServiceClasses(bluetoothClass: BluetoothClass): List<Int> {
+        val serviceClasses = CLASSIC_SERVICE_CLASSES
+            .filter { bluetoothClass.hasService(it) }
+            .toMutableList()
+
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            bluetoothClass.hasService(BluetoothClass.Service.LE_AUDIO)
+        ) {
+            serviceClasses += BluetoothClass.Service.LE_AUDIO
+        }
+
+        return serviceClasses
+    }
+
+    private fun getBluetoothClassExtra(intent: Intent): BluetoothClass? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(BluetoothDevice.EXTRA_CLASS, BluetoothClass::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(BluetoothDevice.EXTRA_CLASS)
+        }
+    }
+
     private fun getBluetoothDeviceExtra(intent: Intent): BluetoothDevice? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
@@ -2992,6 +3045,17 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             "Apple Multipeer Connectivity is only available on Apple platforms"
         private val SERIAL_PORT_PROFILE_UUID =
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+        private val CLASSIC_SERVICE_CLASSES = listOf(
+            BluetoothClass.Service.LIMITED_DISCOVERABILITY,
+            BluetoothClass.Service.POSITIONING,
+            BluetoothClass.Service.NETWORKING,
+            BluetoothClass.Service.RENDER,
+            BluetoothClass.Service.CAPTURE,
+            BluetoothClass.Service.OBJECT_TRANSFER,
+            BluetoothClass.Service.AUDIO,
+            BluetoothClass.Service.TELEPHONY,
+            BluetoothClass.Service.INFORMATION
+        )
         private val CLIENT_CHARACTERISTIC_CONFIG_UUID =
             UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }
