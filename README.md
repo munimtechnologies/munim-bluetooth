@@ -766,7 +766,7 @@ Use `addEventListener(eventName, callback)` for BLE status and data events.
 | `scanFailed` | `{ errorCode, message }` on Android scan callback failure. |
 | `advertisingStarted` | Empty payload when advertising starts. |
 | `advertisingStartFailed` | Android: `{ errorCode, message }`; iOS: `{ error }`. |
-| `classicDeviceFound` | Android Classic discovery result: `{ id, name, bondState }`. |
+| `classicDeviceFound` | Android Classic discovery result: `{ id, name, bondState, rssi?, bluetoothClass?, serviceUUIDs? }`. |
 | `classicScanFailed`, `classicScanFinished` | Android Classic discovery status events. |
 | `classicConnected`, `classicDisconnected` | Android Classic RFCOMM connection status: `{ deviceId }`. |
 | `classicConnectionReceived` | Android Classic RFCOMM inbound connection: `{ deviceId }`. |
@@ -862,6 +862,19 @@ Opens BLE L2CAP channel streams. iOS uses CoreBluetooth LE Credit Based Channels
 #### `startClassicScan()`, `connectClassic()`, `startClassicServer()`, `writeClassic()`
 
 Android Classic Bluetooth RFCOMM discovery, client connection, server listener, write, disconnect, and receive events. iOS rejects with explicit unsupported errors because public iOS APIs do not expose arbitrary Classic RFCOMM.
+
+`classicDeviceFound` includes Android classification metadata when the remote device reports it:
+
+```typescript
+addEventListener('classicDeviceFound', (device) => {
+  console.log(device.bluetoothClass?.deviceClass)
+  console.log(device.bluetoothClass?.majorDeviceClass)
+  console.log(device.bluetoothClass?.serviceClasses)
+  console.log(device.serviceUUIDs)
+})
+```
+
+`deviceClass` and `majorDeviceClass` are raw Android Bluetooth class values. `serviceClasses` contains matching `BluetoothClass.Service` bit flags. `serviceUUIDs` contains Android's cached SDP UUIDs and may be absent for unpaired or newly discovered devices. These values are classification hints; devices do not always advertise accurate class or service information.
 
 ### Types
 
