@@ -1,3 +1,9 @@
+## [0.6.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.5.0...v0.6.0) (2026-08-04)
+
+### ✨ Features
+
+* expose Classic Bluetooth discovery metadata ([0f2c952](https://github.com/munimtechnologies/munim-bluetooth/commit/0f2c952777ffe8a89294cbc6f1c234d0dd79a045))
+
 ## [0.5.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.4.5...v0.5.0) (2026-07-13)
 
 ### ✨ Features
