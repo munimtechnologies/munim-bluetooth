@@ -107,7 +107,10 @@
   },
   "overrides": {
     "minimatch@3.1.5": {
-      "brace-expansion": "1.1.14"
+      "brace-expansion": "1.1.18"
+    },
+    "@semantic-release/npm": {
+      "npm": "npm:@semantic-release/error@4.0.0"
     }
   },
   "eslintConfig": {
