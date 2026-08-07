@@ -1,3 +1,13 @@
+## [0.6.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.6.0...v0.6.1) (2026-08-07)
+
+### 🐛 Bug Fixes
+
+* restore cross-platform BLE discovery ([add08e4](https://github.com/munimtechnologies/munim-bluetooth/commit/add08e4ce795f887a0882b8840fece5c393ed345))
+
+### 🛠️ Other changes
+
+* let semantic-release generate changelog ([c9cef34](https://github.com/munimtechnologies/munim-bluetooth/commit/c9cef3473d46b726d22eabe2e7eaa428a36b4b2e))
+
 ## [0.6.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.5.0...v0.6.0) (2026-08-04)
 
 ### ✨ Features
