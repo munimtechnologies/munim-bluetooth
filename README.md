@@ -214,11 +214,15 @@ For a central app that scans and connects, add:
 <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
-<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission
+  android:name="android.permission.BLUETOOTH_SCAN"
+  android:usesPermissionFlags="neverForLocation" />
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```
 
 An app that connects to a known device without scanning can omit `BLUETOOTH_ADMIN`, `ACCESS_FINE_LOCATION`, and `BLUETOOTH_SCAN`. Add `BLUETOOTH_ADVERTISE` only when using peripheral advertising or background sessions that advertise.
+
+The example above asserts that scan results are never used to derive physical location. This avoids a location permission on Android 12+ and is required for scan-result delivery on devices that enforce that distinction. Android may filter some beacon formats under this mode. If your app derives location from Bluetooth scans or needs every beacon format, remove `neverForLocation`, remove `android:maxSdkVersion="30"` from `ACCESS_FINE_LOCATION`, and request location permission at runtime.
 
 **For Expo projects**, select capabilities through the included config plugin. Central mode is the default:
 
@@ -553,6 +557,12 @@ Starts BLE advertising with the specified options.
   - `manufacturerData?` (string): Manufacturer data in hex format (legacy Android advertising support)
   - `advertisingData?` (AdvertisingDataTypes): Platform-aware advertising data. Android can advertise payload fields; iOS advertises local name and service UUIDs.
 
+BLE legacy advertisements have a small payload. When advertising 128-bit
+service UUIDs on iOS, keep `localName` short or omit it so the service UUID stays
+discoverable by Android service-filtered scans. For maximum interoperability,
+scan without a native filter and validate the discovered service UUID or local
+name in application code.
+
 #### `updateAdvertisingData(advertisingData)`
 
 Updates the advertising data while advertising is active.
@@ -664,6 +674,10 @@ Starts scanning for BLE devices.
   - `serviceUUIDs?` (string[]): Filter by service UUIDs
   - `allowDuplicates?` (boolean): Allow duplicate scan results
   - `scanMode?` ('lowPower' | 'balanced' | 'lowLatency'): Scan mode
+
+On Android, an unfiltered scan can be more reliable for iOS peripherals whose
+128-bit service UUID was moved out of the primary legacy advertisement because
+of payload limits. Filter the emitted devices in application code when needed.
 
 #### `stopScan()`
 

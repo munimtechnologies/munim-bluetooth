@@ -19,7 +19,17 @@ import type {
 const TEST_SERVICE_UUID = '71f271d0-8f4c-4c4d-8a2d-6f3a9497b41d';
 const TEST_CHARACTERISTIC_UUID = '4ad4a6d2-3f4a-477c-9832-5e0d8f7654d8';
 const TEST_DESCRIPTOR_UUID = '00002901-0000-1000-8000-00805f9b34fb';
-const TEST_LOCAL_NAME = `MunimBT-${Platform.OS}`;
+// Keep the test name short enough to coexist with a 128-bit service UUID in a
+// legacy BLE advertisement. Longer iOS names can move fields out of the packet
+// that Android uses for native service-filter matching.
+const TEST_LOCAL_NAME = Platform.OS === 'ios' ? 'MBT-ios' : 'MBT-and';
+const TEST_PEER_NAMES = [
+  'MBT-ios',
+  'MBT-and',
+  // Preserve discovery across OS-level name caches from older example builds.
+  'MunimBT-ios',
+  'MunimBT-android',
+];
 const INITIAL_VALUE = '70696e67';
 const UPDATED_VALUE = '706f6e67';
 const MULTIPEER_SERVICE_TYPE = 'munim-mesh';
@@ -66,7 +76,7 @@ function hasTestService(device: BLEDevice): boolean {
 
 function hasTestPeerName(device: BLEDevice): boolean {
   const advertisedName = device.localName ?? device.name;
-  return advertisedName === 'MunimBT-ios' || advertisedName === 'MunimBT-android';
+  return advertisedName != null && TEST_PEER_NAMES.includes(advertisedName);
 }
 
 function isTestPeer(device: BLEDevice): boolean {
@@ -161,12 +171,22 @@ function App(): React.JSX.Element {
     }
 
     MunimBluetooth.startScan({
-      serviceUUIDs: [TEST_SERVICE_UUID],
+      // iOS can move 128-bit UUIDs out of the primary legacy advertisement
+      // when the payload is full. Scan broadly on Android, then use
+      // isTestPeer() to validate the UUID or short local name in JavaScript.
+      ...(Platform.OS === 'android'
+        ? {}
+        : { serviceUUIDs: [TEST_SERVICE_UUID] }),
       allowDuplicates: false,
       scanMode: 'lowLatency',
     });
     setStatus('Advertising and scanning for peer device');
-    addLog('BLE scan started with service filter', 'success');
+    addLog(
+      Platform.OS === 'android'
+        ? 'BLE scan started; peer filter applied in JavaScript'
+        : 'BLE scan started with service filter',
+      'success'
+    );
   }, [addLog]);
 
   const upsertMultipeerPeer = useCallback((peer: MultipeerPeer) => {
@@ -450,7 +470,7 @@ function App(): React.JSX.Element {
           connectedDeviceIds.current.size + connectingDeviceIds.current.size <
             MAX_AUTO_PEERS
         ) {
-          void runPeerGattSmoke(device);
+          runPeerGattSmoke(device);
         }
       }),
       MunimBluetooth.addEventListener('advertisingStarted', () => {
@@ -542,7 +562,7 @@ function App(): React.JSX.Element {
           !multipeerPingedPeerIds.current.has(peer.id)
         ) {
           multipeerPingedPeerIds.current.add(peer.id);
-          void sendMultipeerPing([peer.id]);
+          sendMultipeerPing([peer.id]);
         }
       }),
       MunimBluetooth.addEventListener('multipeerMessageReceived', (event) => {
@@ -564,7 +584,7 @@ function App(): React.JSX.Element {
     }
 
     didAutoRun.current = true;
-    void runDiagnostics();
+    runDiagnostics();
   }, [runDiagnostics]);
 
   return (
@@ -591,7 +611,7 @@ function App(): React.JSX.Element {
             onPress={
               isBackgroundSessionActive
                 ? stopBackgroundMode
-                : () => void startBackgroundMode()
+                : startBackgroundMode
             }
             color="#5856D6"
           />
@@ -609,7 +629,7 @@ function App(): React.JSX.Element {
         <View style={styles.button}>
           <Button
             title="Ping Mesh"
-            onPress={() => void sendMultipeerPing()}
+            onPress={() => sendMultipeerPing()}
             color="#30D158"
           />
         </View>
@@ -644,7 +664,7 @@ function App(): React.JSX.Element {
               </View>
               <Button
                 title="Test"
-                onPress={() => void runPeerGattSmoke(device)}
+                onPress={() => runPeerGattSmoke(device)}
                 color="#34C759"
               />
             </View>
@@ -667,7 +687,7 @@ function App(): React.JSX.Element {
               </View>
               <Button
                 title="Ping"
-                onPress={() => void sendMultipeerPing([peer.id])}
+                onPress={() => sendMultipeerPing([peer.id])}
                 color="#34C759"
               />
             </View>

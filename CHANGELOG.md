@@ -1,3 +1,11 @@
+## [0.6.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.6.0...v0.6.1) (2026-08-06)
+
+### 🐛 Bug Fixes
+
+* restore Android scan-result delivery when Bluetooth scans are not used for location
+* improve Android-to-iOS BLE discovery for constrained legacy advertisements
+* resolve dependency vulnerabilities
+
 ## [0.6.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.5.0...v0.6.0) (2026-08-04)
 
 ### ✨ Features
