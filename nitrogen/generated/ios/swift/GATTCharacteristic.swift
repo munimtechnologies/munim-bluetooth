@@ -18,13 +18,25 @@ public extension GATTCharacteristic {
   /**
    * Create a new instance of `GATTCharacteristic`.
    */
-  init(uuid: String, properties: [String], value: String?, descriptors: [GATTDescriptor]?) {
+  init(uuid: String, properties: [String], permissions: [GATTCharacteristicPermission]?, value: String?, descriptors: [GATTDescriptor]?) {
     self.init(std.string(uuid), { () -> bridge.std__vector_std__string_ in
       var __vector = bridge.create_std__vector_std__string_(properties.count)
       for __item in properties {
         __vector.push_back(std.string(__item))
       }
       return __vector
+    }(), { () -> bridge.std__optional_std__vector_GATTCharacteristicPermission__ in
+      if let __unwrappedValue = permissions {
+        return bridge.create_std__optional_std__vector_GATTCharacteristicPermission__({ () -> bridge.std__vector_GATTCharacteristicPermission_ in
+          var __vector = bridge.create_std__vector_GATTCharacteristicPermission_(__unwrappedValue.count)
+          for __item in __unwrappedValue {
+            __vector.push_back(__item)
+          }
+          return __vector
+        }())
+      } else {
+        return .init()
+      }
     }(), { () -> bridge.std__optional_std__string_ in
       if let __unwrappedValue = value {
         return bridge.create_std__optional_std__string_(std.string(__unwrappedValue))
@@ -54,6 +66,18 @@ public extension GATTCharacteristic {
   @inline(__always)
   var properties: [String] {
     return self.__properties.map({ __item in String(__item) })
+  }
+  
+  @inline(__always)
+  var permissions: [GATTCharacteristicPermission]? {
+    return { () -> [GATTCharacteristicPermission]? in
+      if bridge.has_value_std__optional_std__vector_GATTCharacteristicPermission__(self.__permissions) {
+        let __unwrapped = bridge.get_std__optional_std__vector_GATTCharacteristicPermission__(self.__permissions)
+        return __unwrapped.map({ __item in __item })
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)

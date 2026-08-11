@@ -28,11 +28,14 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `GATTCharacteristicPermission` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class GATTCharacteristicPermission; }
 // Forward declaration of `GATTDescriptor` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTDescriptor; }
 
 #include <string>
 #include <vector>
+#include "GATTCharacteristicPermission.hpp"
 #include <optional>
 #include "GATTDescriptor.hpp"
 
@@ -45,12 +48,13 @@ namespace margelo::nitro::munimbluetooth {
   public:
     std::string uuid     SWIFT_PRIVATE;
     std::vector<std::string> properties     SWIFT_PRIVATE;
+    std::optional<std::vector<GATTCharacteristicPermission>> permissions     SWIFT_PRIVATE;
     std::optional<std::string> value     SWIFT_PRIVATE;
     std::optional<std::vector<GATTDescriptor>> descriptors     SWIFT_PRIVATE;
 
   public:
     GATTCharacteristic() = default;
-    explicit GATTCharacteristic(std::string uuid, std::vector<std::string> properties, std::optional<std::string> value, std::optional<std::vector<GATTDescriptor>> descriptors): uuid(uuid), properties(properties), value(value), descriptors(descriptors) {}
+    explicit GATTCharacteristic(std::string uuid, std::vector<std::string> properties, std::optional<std::vector<GATTCharacteristicPermission>> permissions, std::optional<std::string> value, std::optional<std::vector<GATTDescriptor>> descriptors): uuid(uuid), properties(properties), permissions(permissions), value(value), descriptors(descriptors) {}
 
   public:
     friend bool operator==(const GATTCharacteristic& lhs, const GATTCharacteristic& rhs) = default;
@@ -68,6 +72,7 @@ namespace margelo::nitro {
       return margelo::nitro::munimbluetooth::GATTCharacteristic(
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "uuid"))),
         JSIConverter<std::vector<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "properties"))),
+        JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::GATTCharacteristicPermission>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "permissions"))),
         JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "value"))),
         JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::GATTDescriptor>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "descriptors")))
       );
@@ -76,6 +81,7 @@ namespace margelo::nitro {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "uuid"), JSIConverter<std::string>::toJSI(runtime, arg.uuid));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "properties"), JSIConverter<std::vector<std::string>>::toJSI(runtime, arg.properties));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "permissions"), JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::GATTCharacteristicPermission>>>::toJSI(runtime, arg.permissions));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "value"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.value));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "descriptors"), JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::GATTDescriptor>>>::toJSI(runtime, arg.descriptors));
       return obj;
@@ -90,6 +96,7 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "uuid")))) return false;
       if (!JSIConverter<std::vector<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "properties")))) return false;
+      if (!JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::GATTCharacteristicPermission>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "permissions")))) return false;
       if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "value")))) return false;
       if (!JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::GATTDescriptor>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "descriptors")))) return false;
       return true;

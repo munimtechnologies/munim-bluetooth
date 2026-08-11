@@ -14,7 +14,9 @@
 #include "BluetoothPhy.hpp"
 #include "JAdvertisingDataTypes.hpp"
 #include "JBluetoothPhy.hpp"
+#include "JManufacturerDataEntry.hpp"
 #include "JServiceDataEntry.hpp"
+#include "ManufacturerDataEntry.hpp"
 #include "ServiceDataEntry.hpp"
 #include <optional>
 #include <string>
@@ -45,6 +47,10 @@ namespace margelo::nitro::munimbluetooth {
       jni::local_ref<jni::JString> localName = this->getFieldValue(fieldLocalName);
       static const auto fieldManufacturerData = clazz->getField<jni::JString>("manufacturerData");
       jni::local_ref<jni::JString> manufacturerData = this->getFieldValue(fieldManufacturerData);
+      static const auto fieldManufacturerCompanyId = clazz->getField<jni::JDouble>("manufacturerCompanyId");
+      jni::local_ref<jni::JDouble> manufacturerCompanyId = this->getFieldValue(fieldManufacturerCompanyId);
+      static const auto fieldManufacturerDataEntries = clazz->getField<jni::JArrayClass<JManufacturerDataEntry>>("manufacturerDataEntries");
+      jni::local_ref<jni::JArrayClass<JManufacturerDataEntry>> manufacturerDataEntries = this->getFieldValue(fieldManufacturerDataEntries);
       static const auto fieldAdvertisingData = clazz->getField<JAdvertisingDataTypes>("advertisingData");
       jni::local_ref<JAdvertisingDataTypes> advertisingData = this->getFieldValue(fieldAdvertisingData);
       static const auto fieldConnectable = clazz->getField<jni::JBoolean>("connectable");
@@ -78,6 +84,17 @@ namespace margelo::nitro::munimbluetooth {
         }(serviceUUIDs)) : std::nullopt,
         localName != nullptr ? std::make_optional(localName->toStdString()) : std::nullopt,
         manufacturerData != nullptr ? std::make_optional(manufacturerData->toStdString()) : std::nullopt,
+        manufacturerCompanyId != nullptr ? std::make_optional(manufacturerCompanyId->value()) : std::nullopt,
+        manufacturerDataEntries != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
+          std::vector<ManufacturerDataEntry> __vector;
+          __vector.reserve(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            auto __element = __input->getElement(__i);
+            __vector.push_back(__element->toCpp());
+          }
+          return __vector;
+        }(manufacturerDataEntries)) : std::nullopt,
         advertisingData != nullptr ? std::make_optional(advertisingData->toCpp()) : std::nullopt,
         connectable != nullptr ? std::make_optional(static_cast<bool>(connectable->value())) : std::nullopt,
         scannable != nullptr ? std::make_optional(static_cast<bool>(scannable->value())) : std::nullopt,
@@ -97,7 +114,7 @@ namespace margelo::nitro::munimbluetooth {
      */
     [[maybe_unused]]
     static jni::local_ref<JExtendedAdvertisingOptions::javaobject> fromCpp(const ExtendedAdvertisingOptions& value) {
-      using JSignature = JExtendedAdvertisingOptions(jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JString>, jni::alias_ref<JAdvertisingDataTypes>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JDouble>, jni::alias_ref<JBluetoothPhy>, jni::alias_ref<JBluetoothPhy>);
+      using JSignature = JExtendedAdvertisingOptions(jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JArrayClass<JManufacturerDataEntry>>, jni::alias_ref<JAdvertisingDataTypes>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JDouble>, jni::alias_ref<JBluetoothPhy>, jni::alias_ref<JBluetoothPhy>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -114,6 +131,17 @@ namespace margelo::nitro::munimbluetooth {
         }(value.serviceUUIDs.value()) : nullptr,
         value.localName.has_value() ? jni::make_jstring(value.localName.value()) : nullptr,
         value.manufacturerData.has_value() ? jni::make_jstring(value.manufacturerData.value()) : nullptr,
+        value.manufacturerCompanyId.has_value() ? jni::JDouble::valueOf(value.manufacturerCompanyId.value()) : nullptr,
+        value.manufacturerDataEntries.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
+          jni::local_ref<jni::JArrayClass<JManufacturerDataEntry>> __array = jni::JArrayClass<JManufacturerDataEntry>::newArray(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            const auto& __element = __input[__i];
+            auto __elementJni = JManufacturerDataEntry::fromCpp(__element);
+            __array->setElement(__i, *__elementJni);
+          }
+          return __array;
+        }(value.manufacturerDataEntries.value()) : nullptr,
         value.advertisingData.has_value() ? JAdvertisingDataTypes::fromCpp(value.advertisingData.value()) : nullptr,
         value.connectable.has_value() ? jni::JBoolean::valueOf(value.connectable.value()) : nullptr,
         value.scannable.has_value() ? jni::JBoolean::valueOf(value.scannable.value()) : nullptr,

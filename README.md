@@ -112,7 +112,7 @@
 | Capability | iOS | Android | Notes |
 | --- | --- | --- | --- |
 | Peripheral advertising | ✅ | ✅ | iOS only allows CoreBluetooth-supported advertising keys such as local name and service UUIDs. Android splits primary advertising data and scan response data to stay within BLE size limits. |
-| Peripheral GATT services | ✅ | ✅ | Read and write requests are handled natively on both platforms. Included services are wired when supplied in `setServices()`. |
+| Peripheral GATT services | ✅ | ✅ | Read and write requests are handled natively on both platforms. Characteristics can require encrypted access; authenticated-MITM permissions are Android-only because CoreBluetooth has no matching public option. |
 | Peripheral notify/indicate subscriptions | ✅ | ✅ | Subscribe/unsubscribe events are emitted when centrals change CCC state. |
 | Central scan | ✅ | ✅ | Android scan failures emit `scanFailed`. |
 | Central connect/disconnect | ✅ | ✅ | `connect()` has a native 15 second timeout. |
@@ -126,9 +126,9 @@
 | BLE PHY read/preference | ❌ | ✅ | Android 8+ supports `readPhy()` and `setPreferredPhy()` when hardware allows it. |
 | Pairing/bond state | ❌ | ✅ | Android supports bond state and starts/removes bonds. iOS handles pairing automatically and does not expose bond management through CoreBluetooth. |
 | Extended advertising | ❌ | ✅ | Android 8+ supports `startExtendedAdvertising()` on hardware with LE extended advertising. iOS does not expose BLE extended advertising. |
-| BLE L2CAP channel streams | ✅ | ✅ | iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+ for LE CoC sockets. |
+| BLE L2CAP channel streams | ✅ | ✅ | iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+ for LE CoC sockets. Published and outbound channels require encryption by default. |
 | Classic Bluetooth RFCOMM | ❌ | ✅ | Android supports discovery, SPP-style RFCOMM client connections, server/listener sockets, disconnect, write, and receive events. iOS apps cannot use public Classic Bluetooth RFCOMM APIs. |
-| Apple Multipeer Connectivity | ✅ | ❌ | iOS/iPadOS devices can discover peers, auto-invite/accept sessions, and exchange encrypted messages. Android cannot join Apple's Multipeer sessions; use BLE/GATT for iOS-to-Android. |
+| Apple Multipeer Connectivity | ✅ | ❌ | iOS/iPadOS devices can discover peers, approve incoming invitations explicitly, manually invite selected peers, and exchange encrypted messages. Android cannot join Apple's Multipeer sessions; use BLE/GATT for iOS-to-Android. |
 
 Call `getCapabilities()` at runtime when you need optional behavior. Platform support can still vary by OS version, hardware, permissions, and app background state.
 
@@ -255,11 +255,14 @@ Advertising payload caveat: Android can advertise manufacturer data, service dat
 
 ### Apple Multipeer Connectivity
 
-For iOS-to-iOS or iPadOS-to-iOS communication, `startMultipeerSession()` exposes Apple's Multipeer Connectivity as a higher-level peer transport. It advertises and browses using a Bonjour service type, auto-invites discovered peers by default, accepts incoming invitations by default, and sends hex-encoded payloads to one peer or all connected peers.
+For iOS-to-iOS or iPadOS-to-iOS communication, `startMultipeerSession()` exposes Apple's Multipeer Connectivity as a higher-level peer transport. It advertises and browses using a Bonjour service type and sends hex-encoded payloads to one peer or all connected peers. For security, discovery does not invite or accept unknown peers by default. The app must manually invite a selected discovered peer or accept/reject each incoming invitation.
 
 ```typescript
 import {
+  acceptMultipeerInvitation,
   addEventListener,
+  inviteMultipeerPeer,
+  rejectMultipeerInvitation,
   sendMultipeerMessage,
   startMultipeerSession,
   stopMultipeerSession,
@@ -269,9 +272,21 @@ startMultipeerSession({
   serviceType: 'munim-mesh',
   displayName: 'Sheehan iPhone',
   discoveryInfo: [{ key: 'role', value: 'wallet-peer' }],
-  autoInvite: true,
-  autoAcceptInvitations: true,
   encryptionPreference: 'required',
+})
+
+addEventListener('multipeerPeerFound', (peer) => {
+  if (isExpectedPeer(peer)) {
+    inviteMultipeerPeer(peer.id)
+  }
+})
+
+addEventListener('multipeerInvitationReceived', (invitation) => {
+  if (isExpectedPeerId(invitation.peerId)) {
+    acceptMultipeerInvitation(invitation.invitationId)
+  } else {
+    rejectMultipeerInvitation(invitation.invitationId)
+  }
 })
 
 addEventListener('multipeerPeerStateChanged', async (peer) => {
@@ -289,6 +304,10 @@ stopMultipeerSession()
 ```
 
 Multipeer service types must be 1-15 lowercase letters/numbers/hyphens, and the matching Bonjour entry must be declared in iOS `Info.plist` as `_<serviceType>._tcp` (for example `_munim-mesh._tcp`). The Expo config plugin adds `_munim-mesh._tcp` by default and accepts a `multipeerServiceTypes` option for custom service types.
+
+Incoming invitations use opaque, runtime-only IDs. At most 32 are retained; they expire after the configured invitation timeout (capped at 60 seconds) and are rejected automatically. Setting `autoInvite` or `autoAcceptInvitations` to `true` is an explicit broad trust decision and should only be used when discovery itself is authenticated.
+
+To prevent unbounded native memory growth while JavaScript is not observing events, iOS retains at most 256 queued events and approximately 1 MiB. Discovery/RSSI/latest-value events are coalesced first, and high-rate data events are dropped before lifecycle events when pressure remains.
 
 ## Background and Terminated Behavior
 
@@ -326,6 +345,7 @@ setServices([
       {
         uuid: CHARACTERISTIC_UUID,
         properties: ['read', 'write', 'writeWithoutResponse', 'notify'],
+        permissions: ['readEncrypted', 'writeEncrypted'],
         value: '70696e67',
       },
     ],
@@ -587,7 +607,12 @@ Sets GATT services and characteristics.
 
 **Parameters:**
 
-- `services` (array): Array of service objects
+- `services` (array): Array of service objects. Each characteristic has `properties` and may set `permissions` to one read choice and/or one write choice:
+  - Plaintext: `read`, `write`
+  - Link encryption required: `readEncrypted`, `writeEncrypted`
+  - Authenticated MITM protection: `readEncryptedMitm`, `writeEncryptedMitm` (Android only; iOS rejects these because CoreBluetooth has no equivalent public permission)
+
+When `permissions` is omitted, existing behavior is preserved: read/write properties receive plaintext permissions. When it is supplied, permissions must match the characteristic properties exactly; conflicting, unknown, or mismatched choices are rejected instead of falling back to plaintext. Android background GATT restoration preserves the configured permission choices.
 
 #### `updateCharacteristicValue(serviceUUID, characteristicUUID, value, notify)`
 
@@ -643,8 +668,8 @@ Starts Apple Multipeer Connectivity discovery and messaging on iOS/iPadOS.
 - `serviceType` (string): Bonjour service type, 1-15 lowercase letters/numbers/hyphens.
 - `displayName?` (string): Name shown to nearby peers.
 - `discoveryInfo?` (`{ key: string; value: string }[]`): Small discovery metadata.
-- `autoInvite?` (boolean): Automatically invite discovered peers. Defaults to `true`.
-- `autoAcceptInvitations?` (boolean): Automatically accept incoming invitations. Defaults to `true`.
+- `autoInvite?` (boolean): Automatically invite every discovered peer. Defaults to `false`; prefer `inviteMultipeerPeer(peerId)` after app-level approval.
+- `autoAcceptInvitations?` (boolean): Automatically accept every incoming invitation. Defaults to `false`; prefer the invitation event and explicit response APIs.
 - `inviteTimeout?` (number): Invitation timeout in seconds. Defaults to `30`.
 - `encryptionPreference?` (`'none' | 'optional' | 'required'`): Defaults to `required`.
 
@@ -655,6 +680,10 @@ Stops the local Multipeer advertiser, browser, and session.
 #### `inviteMultipeerPeer(peerId)`
 
 Invites a discovered Multipeer peer when `autoInvite` is disabled or you want manual control.
+
+#### `acceptMultipeerInvitation(invitationId)`, `rejectMultipeerInvitation(invitationId)`
+
+Responds once to a pending `multipeerInvitationReceived` event. IDs are opaque, bounded, and expire automatically; unknown, reused, or expired IDs are rejected.
 
 #### `getMultipeerPeers()`
 
@@ -805,6 +834,7 @@ Use `addEventListener(eventName, callback)` for BLE status and data events.
 | `backgroundSessionStartFailed` | `{ platform, error }` |
 | `multipeerStarted`, `multipeerStopped`, `multipeerStartFailed` | Apple Multipeer lifecycle status. |
 | `multipeerPeerFound`, `multipeerPeerLost`, `multipeerPeerStateChanged` | Apple Multipeer peer discovery and connection state. |
+| `multipeerInvitationReceived` | Pending Apple Multipeer invitation: `{ invitationId, peerId, displayName, expiresAt }`. Explicitly accept or reject it before expiry. |
 | `multipeerMessageReceived` | Apple Multipeer data: `{ peerId, displayName, value }`. |
 
 #### `getConnectedDevices()`
@@ -871,7 +901,7 @@ Stops an Android BLE extended advertising set.
 
 #### `publishL2CAPChannel()`, `openL2CAPChannel()`, `sendL2CAPData()`
 
-Opens BLE L2CAP channel streams. iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+.
+Opens BLE L2CAP channel streams. iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+. Publishing and outbound opening require encryption by default; pass `false` explicitly only for a deliberately insecure channel. Native servers admit at most 16 inbound channels globally and 4 per peer, closing excess channels immediately.
 
 #### `startClassicScan()`, `connectClassic()`, `startClassicServer()`, `writeClassic()`
 

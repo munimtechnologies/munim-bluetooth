@@ -41,6 +41,10 @@ namespace margelo::nitro::munimbluetooth {
       jni::local_ref<jni::JBoolean> allowDuplicates = this->getFieldValue(fieldAllowDuplicates);
       static const auto fieldScanMode = clazz->getField<JScanMode>("scanMode");
       jni::local_ref<JScanMode> scanMode = this->getFieldValue(fieldScanMode);
+      static const auto fieldRssiThreshold = clazz->getField<jni::JDouble>("rssiThreshold");
+      jni::local_ref<jni::JDouble> rssiThreshold = this->getFieldValue(fieldRssiThreshold);
+      static const auto fieldNamePrefix = clazz->getField<jni::JString>("namePrefix");
+      jni::local_ref<jni::JString> namePrefix = this->getFieldValue(fieldNamePrefix);
       return ScanOptions(
         serviceUUIDs != nullptr ? std::make_optional([&](auto&& __input) {
           size_t __size = __input->size();
@@ -53,7 +57,9 @@ namespace margelo::nitro::munimbluetooth {
           return __vector;
         }(serviceUUIDs)) : std::nullopt,
         allowDuplicates != nullptr ? std::make_optional(static_cast<bool>(allowDuplicates->value())) : std::nullopt,
-        scanMode != nullptr ? std::make_optional(scanMode->toCpp()) : std::nullopt
+        scanMode != nullptr ? std::make_optional(scanMode->toCpp()) : std::nullopt,
+        rssiThreshold != nullptr ? std::make_optional(rssiThreshold->value()) : std::nullopt,
+        namePrefix != nullptr ? std::make_optional(namePrefix->toStdString()) : std::nullopt
       );
     }
 
@@ -63,7 +69,7 @@ namespace margelo::nitro::munimbluetooth {
      */
     [[maybe_unused]]
     static jni::local_ref<JScanOptions::javaobject> fromCpp(const ScanOptions& value) {
-      using JSignature = JScanOptions(jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<JScanMode>);
+      using JSignature = JScanOptions(jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<JScanMode>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JString>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -79,7 +85,9 @@ namespace margelo::nitro::munimbluetooth {
           return __array;
         }(value.serviceUUIDs.value()) : nullptr,
         value.allowDuplicates.has_value() ? jni::JBoolean::valueOf(value.allowDuplicates.value()) : nullptr,
-        value.scanMode.has_value() ? JScanMode::fromCpp(value.scanMode.value()) : nullptr
+        value.scanMode.has_value() ? JScanMode::fromCpp(value.scanMode.value()) : nullptr,
+        value.rssiThreshold.has_value() ? jni::JDouble::valueOf(value.rssiThreshold.value()) : nullptr,
+        value.namePrefix.has_value() ? jni::make_jstring(value.namePrefix.value()) : nullptr
       );
     }
   };

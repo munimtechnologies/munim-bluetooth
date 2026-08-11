@@ -19,6 +19,10 @@ namespace margelo::nitro::munimbluetooth { struct AdvertisingOptions; }
 namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
 // Forward declaration of `GATTService` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTService; }
+// Forward declaration of `PeripheralRequestOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct PeripheralRequestOptions; }
+// Forward declaration of `PeripheralRequestStatus` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class PeripheralRequestStatus; }
 // Forward declaration of `BluetoothCapabilities` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
@@ -29,6 +33,8 @@ namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
 namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
+// Forward declaration of `GATTQueueDiagnostic` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct GATTQueueDiagnostic; }
 // Forward declaration of `BluetoothPhy` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 // Forward declaration of `BluetoothPhyOption` to properly resolve imports.
@@ -53,13 +59,16 @@ namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 #include <NitroModules/Promise.hpp>
 #include "GATTService.hpp"
 #include <vector>
-#include <string>
+#include "PeripheralRequestOptions.hpp"
 #include <optional>
+#include <string>
+#include "PeripheralRequestStatus.hpp"
 #include "BluetoothCapabilities.hpp"
 #include "ScanOptions.hpp"
 #include "CharacteristicValue.hpp"
 #include "DescriptorValue.hpp"
 #include "WriteType.hpp"
+#include "GATTQueueDiagnostic.hpp"
 #include "BluetoothPhy.hpp"
 #include "BluetoothPhyOption.hpp"
 #include "PhyStatus.hpp"
@@ -105,8 +114,11 @@ namespace margelo::nitro::munimbluetooth {
       virtual void updateAdvertisingData(const AdvertisingDataTypes& advertisingData) = 0;
       virtual std::shared_ptr<Promise<AdvertisingDataTypes>> getAdvertisingData() = 0;
       virtual void stopAdvertising() = 0;
-      virtual void setServices(const std::vector<GATTService>& services) = 0;
+      virtual void setServices(const std::vector<GATTService>& services, const std::optional<PeripheralRequestOptions>& requestOptions) = 0;
       virtual std::shared_ptr<Promise<void>> updateCharacteristicValue(const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<bool> notify) = 0;
+      virtual std::shared_ptr<Promise<void>> respondToPeripheralReadRequest(const std::string& requestId, const std::optional<std::string>& value, std::optional<PeripheralRequestStatus> status) = 0;
+      virtual std::shared_ptr<Promise<void>> respondToPeripheralWriteRequest(const std::string& requestId, bool accept, std::optional<PeripheralRequestStatus> status) = 0;
+      virtual std::shared_ptr<Promise<void>> respondToPeripheralExecuteWriteRequest(const std::string& requestId, bool accept) = 0;
       virtual std::shared_ptr<Promise<bool>> isBluetoothEnabled() = 0;
       virtual std::shared_ptr<Promise<bool>> requestBluetoothPermission(const std::optional<std::vector<std::string>>& permissions) = 0;
       virtual std::shared_ptr<Promise<BluetoothCapabilities>> getCapabilities() = 0;
@@ -119,8 +131,9 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<DescriptorValue>> readDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID) = 0;
       virtual std::shared_ptr<Promise<void>> writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<WriteType> writeType) = 0;
       virtual std::shared_ptr<Promise<void>> writeDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID, const std::string& value) = 0;
-      virtual void subscribeToCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
-      virtual void unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
+      virtual std::shared_ptr<Promise<void>> subscribeToCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
+      virtual std::shared_ptr<Promise<void>> unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
+      virtual std::shared_ptr<Promise<std::vector<GATTQueueDiagnostic>>> getGattQueueDiagnostics() = 0;
       virtual std::shared_ptr<Promise<std::vector<std::string>>> getConnectedDevices() = 0;
       virtual std::shared_ptr<Promise<double>> readRSSI(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<double>> requestMTU(const std::string& deviceId, double mtu) = 0;
@@ -148,6 +161,8 @@ namespace margelo::nitro::munimbluetooth {
       virtual void startMultipeerSession(const MultipeerSessionOptions& options) = 0;
       virtual void stopMultipeerSession() = 0;
       virtual void inviteMultipeerPeer(const std::string& peerId) = 0;
+      virtual void acceptMultipeerInvitation(const std::string& invitationId) = 0;
+      virtual void rejectMultipeerInvitation(const std::string& invitationId) = 0;
       virtual std::shared_ptr<Promise<std::vector<MultipeerPeer>>> getMultipeerPeers() = 0;
       virtual std::shared_ptr<Promise<void>> sendMultipeerMessage(const std::string& value, const std::optional<std::vector<std::string>>& peerIds, std::optional<bool> reliable) = 0;
       virtual void addListener(const std::string& eventName) = 0;

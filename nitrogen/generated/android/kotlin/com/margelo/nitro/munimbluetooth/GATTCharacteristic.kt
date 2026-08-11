@@ -26,6 +26,9 @@ data class GATTCharacteristic(
   val properties: Array<String>,
   @DoNotStrip
   @Keep
+  val permissions: Array<GATTCharacteristicPermission>?,
+  @DoNotStrip
+  @Keep
   val value: String?,
   @DoNotStrip
   @Keep
@@ -38,6 +41,7 @@ data class GATTCharacteristic(
     if (other !is GATTCharacteristic) return false
     return Objects.deepEquals(this.uuid, other.uuid)
       && Objects.deepEquals(this.properties, other.properties)
+      && Objects.deepEquals(this.permissions, other.permissions)
       && Objects.deepEquals(this.value, other.value)
       && Objects.deepEquals(this.descriptors, other.descriptors)
   }
@@ -46,6 +50,7 @@ data class GATTCharacteristic(
     return arrayOf(
       uuid,
       properties,
+      permissions,
       value,
       descriptors
     ).contentDeepHashCode()
@@ -59,8 +64,8 @@ data class GATTCharacteristic(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(uuid: String, properties: Array<String>, value: String?, descriptors: Array<GATTDescriptor>?): GATTCharacteristic {
-      return GATTCharacteristic(uuid, properties, value, descriptors)
+    private fun fromCpp(uuid: String, properties: Array<String>, permissions: Array<GATTCharacteristicPermission>?, value: String?, descriptors: Array<GATTDescriptor>?): GATTCharacteristic {
+      return GATTCharacteristic(uuid, properties, permissions, value, descriptors)
     }
   }
 }

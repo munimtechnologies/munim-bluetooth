@@ -2856,7 +2856,7 @@ SPEC CHECKSUMS:
   FBLazyVector: 309703e71d3f2f1ed7dc7889d58309c9d77a95a4
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: e425ecaba1e2428241e5fd89f59ac7066f6d373f
+  hermes-engine: d1ede0c42e6816212b1cc199d55e9d5678db086a
   MunimBluetooth: 22e2cc191d675fd1d489179009256f57fc8e122b
   NitroModules: 70e2ff77a0b718e47d5bccd837fefe8a9aa20f50
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669

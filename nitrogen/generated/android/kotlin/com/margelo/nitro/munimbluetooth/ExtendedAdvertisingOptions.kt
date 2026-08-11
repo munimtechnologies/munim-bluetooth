@@ -29,6 +29,12 @@ data class ExtendedAdvertisingOptions(
   val manufacturerData: String?,
   @DoNotStrip
   @Keep
+  val manufacturerCompanyId: Double?,
+  @DoNotStrip
+  @Keep
+  val manufacturerDataEntries: Array<ManufacturerDataEntry>?,
+  @DoNotStrip
+  @Keep
   val advertisingData: AdvertisingDataTypes?,
   @DoNotStrip
   @Keep
@@ -66,6 +72,8 @@ data class ExtendedAdvertisingOptions(
     return Objects.deepEquals(this.serviceUUIDs, other.serviceUUIDs)
       && Objects.deepEquals(this.localName, other.localName)
       && Objects.deepEquals(this.manufacturerData, other.manufacturerData)
+      && Objects.deepEquals(this.manufacturerCompanyId, other.manufacturerCompanyId)
+      && Objects.deepEquals(this.manufacturerDataEntries, other.manufacturerDataEntries)
       && Objects.deepEquals(this.advertisingData, other.advertisingData)
       && Objects.deepEquals(this.connectable, other.connectable)
       && Objects.deepEquals(this.scannable, other.scannable)
@@ -83,6 +91,8 @@ data class ExtendedAdvertisingOptions(
       serviceUUIDs,
       localName,
       manufacturerData,
+      manufacturerCompanyId,
+      manufacturerDataEntries,
       advertisingData,
       connectable,
       scannable,
@@ -104,8 +114,8 @@ data class ExtendedAdvertisingOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(serviceUUIDs: Array<String>?, localName: String?, manufacturerData: String?, advertisingData: AdvertisingDataTypes?, connectable: Boolean?, scannable: Boolean?, legacyMode: Boolean?, anonymous: Boolean?, includeTxPower: Boolean?, interval: Double?, txPowerLevel: Double?, primaryPhy: BluetoothPhy?, secondaryPhy: BluetoothPhy?): ExtendedAdvertisingOptions {
-      return ExtendedAdvertisingOptions(serviceUUIDs, localName, manufacturerData, advertisingData, connectable, scannable, legacyMode, anonymous, includeTxPower, interval, txPowerLevel, primaryPhy, secondaryPhy)
+    private fun fromCpp(serviceUUIDs: Array<String>?, localName: String?, manufacturerData: String?, manufacturerCompanyId: Double?, manufacturerDataEntries: Array<ManufacturerDataEntry>?, advertisingData: AdvertisingDataTypes?, connectable: Boolean?, scannable: Boolean?, legacyMode: Boolean?, anonymous: Boolean?, includeTxPower: Boolean?, interval: Double?, txPowerLevel: Double?, primaryPhy: BluetoothPhy?, secondaryPhy: BluetoothPhy?): ExtendedAdvertisingOptions {
+      return ExtendedAdvertisingOptions(serviceUUIDs, localName, manufacturerData, manufacturerCompanyId, manufacturerDataEntries, advertisingData, connectable, scannable, legacyMode, anonymous, includeTxPower, interval, txPowerLevel, primaryPhy, secondaryPhy)
     }
   }
 }

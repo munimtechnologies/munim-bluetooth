@@ -10,7 +10,9 @@
 #include <fbjni/fbjni.h>
 #include "GATTCharacteristic.hpp"
 
+#include "GATTCharacteristicPermission.hpp"
 #include "GATTDescriptor.hpp"
+#include "JGATTCharacteristicPermission.hpp"
 #include "JGATTDescriptor.hpp"
 #include <optional>
 #include <string>
@@ -39,6 +41,8 @@ namespace margelo::nitro::munimbluetooth {
       jni::local_ref<jni::JString> uuid = this->getFieldValue(fieldUuid);
       static const auto fieldProperties = clazz->getField<jni::JArrayClass<jni::JString>>("properties");
       jni::local_ref<jni::JArrayClass<jni::JString>> properties = this->getFieldValue(fieldProperties);
+      static const auto fieldPermissions = clazz->getField<jni::JArrayClass<JGATTCharacteristicPermission>>("permissions");
+      jni::local_ref<jni::JArrayClass<JGATTCharacteristicPermission>> permissions = this->getFieldValue(fieldPermissions);
       static const auto fieldValue = clazz->getField<jni::JString>("value");
       jni::local_ref<jni::JString> value = this->getFieldValue(fieldValue);
       static const auto fieldDescriptors = clazz->getField<jni::JArrayClass<JGATTDescriptor>>("descriptors");
@@ -55,6 +59,16 @@ namespace margelo::nitro::munimbluetooth {
           }
           return __vector;
         }(properties),
+        permissions != nullptr ? std::make_optional([&](auto&& __input) {
+          size_t __size = __input->size();
+          std::vector<GATTCharacteristicPermission> __vector;
+          __vector.reserve(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            auto __element = __input->getElement(__i);
+            __vector.push_back(__element->toCpp());
+          }
+          return __vector;
+        }(permissions)) : std::nullopt,
         value != nullptr ? std::make_optional(value->toStdString()) : std::nullopt,
         descriptors != nullptr ? std::make_optional([&](auto&& __input) {
           size_t __size = __input->size();
@@ -75,7 +89,7 @@ namespace margelo::nitro::munimbluetooth {
      */
     [[maybe_unused]]
     static jni::local_ref<JGATTCharacteristic::javaobject> fromCpp(const GATTCharacteristic& value) {
-      using JSignature = JGATTCharacteristic(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<JGATTDescriptor>>);
+      using JSignature = JGATTCharacteristic(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JArrayClass<JGATTCharacteristicPermission>>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JArrayClass<JGATTDescriptor>>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -91,6 +105,16 @@ namespace margelo::nitro::munimbluetooth {
           }
           return __array;
         }(value.properties),
+        value.permissions.has_value() ? [&](auto&& __input) {
+          size_t __size = __input.size();
+          jni::local_ref<jni::JArrayClass<JGATTCharacteristicPermission>> __array = jni::JArrayClass<JGATTCharacteristicPermission>::newArray(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            const auto& __element = __input[__i];
+            auto __elementJni = JGATTCharacteristicPermission::fromCpp(__element);
+            __array->setElement(__i, *__elementJni);
+          }
+          return __array;
+        }(value.permissions.value()) : nullptr,
         value.value.has_value() ? jni::make_jstring(value.value.value()) : nullptr,
         value.descriptors.has_value() ? [&](auto&& __input) {
           size_t __size = __input.size();

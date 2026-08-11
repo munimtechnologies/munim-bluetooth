@@ -8,6 +8,7 @@ import {
 import type {
   MunimBluetooth as MunimBluetoothSpec,
   AdvertisingDataTypes,
+  ManufacturerDataEntry,
   BLEDevice,
   BackgroundSessionOptions,
   MultipeerSessionOptions,
@@ -17,6 +18,7 @@ import type {
   MultipeerPeerState,
   ScanOptions,
   GATTService,
+  GATTCharacteristicPermission,
   GATTDescriptor,
   CharacteristicValue,
   DescriptorValue,
@@ -27,6 +29,9 @@ import type {
   PhyStatus,
   ExtendedAdvertisingOptions,
   L2CAPChannel,
+  PeripheralRequestOptions,
+  PeripheralRequestStatus,
+  GATTQueueDiagnostic,
 } from './specs/munim-bluetooth.nitro'
 
 /** Android Bluetooth Class of Device metadata reported during Classic discovery. */
@@ -66,8 +71,18 @@ export type BluetoothEventMap = {
   classicServerStarted: { serviceUUID: string; serviceName: string }
   classicServerStopped: { serviceUUID: string }
   classicDataReceived: { deviceId: string; value: string }
-  deviceConnected: { deviceId: string }
-  deviceDisconnected: { deviceId: string }
+  adapterStateChanged: {
+    state: 'unknown' | 'resetting' | 'unsupported' | 'unauthorized' | 'poweredOff' | 'poweredOn'
+    authorization: 'notDetermined' | 'restricted' | 'denied' | 'allowedAlways' | 'unknown'
+  }
+  deviceConnected: { deviceId: string; status?: number }
+  deviceDisconnected: { deviceId: string; status?: number; reason?: string }
+  connectionStateChanged: {
+    deviceId: string
+    state: 'connecting' | 'connected' | 'disconnecting' | 'disconnected'
+    status?: number
+    reason?: string
+  }
   servicesDiscovered: { deviceId: string; services: GATTService[] }
   characteristicValueChanged: CharacteristicValue & { deviceId: string }
   l2capChannelPublished: { channelId: string; psm: number }
@@ -82,8 +97,25 @@ export type BluetoothEventMap = {
     deviceId?: string
     value: string
   }
-  peripheralReadRequest: CharacteristicValue & { centralId: string }
-  peripheralWriteRequest: CharacteristicValue & { centralId: string }
+  peripheralReadRequest: CharacteristicValue & {
+    requestId: string
+    centralId: string
+    offset: number
+    responseRequired: boolean
+  }
+  peripheralWriteRequest: CharacteristicValue & {
+    requestId: string
+    centralId: string
+    offset: number
+    preparedWrite: boolean
+    responseRequired: boolean
+  }
+  peripheralExecuteWriteRequest: {
+    requestId: string
+    centralId: string
+    execute: boolean
+    preparedRequestIds: string[]
+  }
   peripheralSubscribed: {
     centralId: string
     serviceUUID: string
@@ -95,6 +127,26 @@ export type BluetoothEventMap = {
     characteristicUUID: string
   }
   rssiUpdated: { deviceId: string; rssi: number }
+  bondStateChanged: {
+    deviceId: string
+    bondState: BondState
+    previousBondState?: BondState
+  }
+  mtuChanged: { deviceId: string; mtu: number; status?: number }
+  phyChanged: {
+    deviceId: string
+    txPhy: BluetoothPhy
+    rxPhy: BluetoothPhy
+    status?: number
+  }
+  gattOperationCompleted: {
+    deviceId: string
+    operation: string
+    target: string
+    durationMs: number
+    status?: number
+    error?: string
+  }
   backgroundSessionStarted: {
     platform: string
     serviceUUIDs?: string[]
@@ -121,6 +173,12 @@ export type BluetoothEventMap = {
   multipeerPeerFound: MultipeerPeer
   multipeerPeerLost: { peerId: string }
   multipeerPeerStateChanged: MultipeerPeer
+  multipeerInvitationReceived: {
+    invitationId: string
+    peerId: string
+    displayName: string
+    expiresAt: number
+  }
   multipeerMessageReceived: {
     peerId: string
     displayName: string
@@ -167,6 +225,8 @@ export function startAdvertising(options: {
   serviceUUIDs: string[]
   localName?: string
   manufacturerData?: string
+  manufacturerCompanyId?: number
+  manufacturerDataEntries?: ManufacturerDataEntry[]
   advertisingData?: AdvertisingDataTypes
 }): void {
   return MunimBluetooth.startAdvertising(options)
@@ -204,8 +264,11 @@ export function stopAdvertising(): void {
  *
  * @param services - An array of service objects, each with a uuid and an array of characteristics.
  */
-export function setServices(services: GATTService[]): void {
-  return MunimBluetooth.setServices(services)
+export function setServices(
+  services: GATTService[],
+  requestOptions?: PeripheralRequestOptions
+): void {
+  return MunimBluetooth.setServices(services, requestOptions)
 }
 
 /**
@@ -224,6 +287,29 @@ export function updateCharacteristicValue(
     value,
     notify
   )
+}
+
+export function respondToPeripheralReadRequest(
+  requestId: string,
+  value?: string,
+  status?: PeripheralRequestStatus
+): Promise<void> {
+  return MunimBluetooth.respondToPeripheralReadRequest(requestId, value, status)
+}
+
+export function respondToPeripheralWriteRequest(
+  requestId: string,
+  accept: boolean,
+  status?: PeripheralRequestStatus
+): Promise<void> {
+  return MunimBluetooth.respondToPeripheralWriteRequest(requestId, accept, status)
+}
+
+export function respondToPeripheralExecuteWriteRequest(
+  requestId: string,
+  accept: boolean
+): Promise<void> {
+  return MunimBluetooth.respondToPeripheralExecuteWriteRequest(requestId, accept)
 }
 
 // ========== Central/Manager Features ==========
@@ -394,7 +480,7 @@ export function subscribeToCharacteristic(
   deviceId: string,
   serviceUUID: string,
   characteristicUUID: string
-): void {
+): Promise<void> {
   return MunimBluetooth.subscribeToCharacteristic(
     deviceId,
     serviceUUID,
@@ -413,12 +499,16 @@ export function unsubscribeFromCharacteristic(
   deviceId: string,
   serviceUUID: string,
   characteristicUUID: string
-): void {
+): Promise<void> {
   return MunimBluetooth.unsubscribeFromCharacteristic(
     deviceId,
     serviceUUID,
     characteristicUUID
   )
+}
+
+export function getGattQueueDiagnostics(): Promise<GATTQueueDiagnostic[]> {
+  return MunimBluetooth.getGattQueueDiagnostics()
 }
 
 /**
@@ -504,10 +594,11 @@ export function stopExtendedAdvertising(advertisingId: string): void {
 }
 
 /**
- * Publish a local BLE L2CAP channel where supported.
+ * Publish a local BLE L2CAP channel where supported. Encryption is required by
+ * default; pass false explicitly to publish an insecure channel.
  */
 export function publishL2CAPChannel(
-  encryptionRequired?: boolean
+  encryptionRequired: boolean = true
 ): Promise<L2CAPChannel> {
   return MunimBluetooth.publishL2CAPChannel(encryptionRequired)
 }
@@ -629,7 +720,8 @@ export function stopBackgroundSession(): void {
 
 /**
  * Start Apple Multipeer Connectivity transport. This is iOS/iPadOS/macOS/tvOS
- * only; Android cannot join Apple Multipeer sessions.
+ * only; Android cannot join Apple Multipeer sessions. Automatic outgoing and
+ * incoming invitations both default to false.
  */
 export function startMultipeerSession(
   options: MultipeerSessionOptions
@@ -649,6 +741,20 @@ export function stopMultipeerSession(): void {
  */
 export function inviteMultipeerPeer(peerId: string): void {
   return MunimBluetooth.inviteMultipeerPeer(peerId)
+}
+
+/**
+ * Accept a pending incoming Multipeer invitation by opaque runtime id.
+ */
+export function acceptMultipeerInvitation(invitationId: string): void {
+  return MunimBluetooth.acceptMultipeerInvitation(invitationId)
+}
+
+/**
+ * Reject a pending incoming Multipeer invitation by opaque runtime id.
+ */
+export function rejectMultipeerInvitation(invitationId: string): void {
+  return MunimBluetooth.rejectMultipeerInvitation(invitationId)
 }
 
 /**
@@ -736,6 +842,7 @@ export function removeListeners(count: number): void {
 
 export type {
   AdvertisingDataTypes,
+  ManufacturerDataEntry,
   BLEDevice,
   BackgroundSessionOptions,
   MultipeerSessionOptions,
@@ -745,6 +852,7 @@ export type {
   MultipeerPeerState,
   ScanOptions,
   GATTService,
+  GATTCharacteristicPermission,
   GATTDescriptor,
   CharacteristicValue,
   DescriptorValue,
@@ -755,6 +863,9 @@ export type {
   PhyStatus,
   ExtendedAdvertisingOptions,
   L2CAPChannel,
+  PeripheralRequestOptions,
+  PeripheralRequestStatus,
+  GATTQueueDiagnostic,
 }
 
 // Default export for convenience
@@ -766,6 +877,9 @@ export default {
   getAdvertisingData,
   setServices,
   updateCharacteristicValue,
+  respondToPeripheralReadRequest,
+  respondToPeripheralWriteRequest,
+  respondToPeripheralExecuteWriteRequest,
   // Central
   isBluetoothEnabled,
   requestBluetoothPermission,
@@ -781,6 +895,7 @@ export default {
   writeDescriptor,
   subscribeToCharacteristic,
   unsubscribeFromCharacteristic,
+  getGattQueueDiagnostics,
   getConnectedDevices,
   readRSSI,
   requestMTU,
@@ -808,6 +923,8 @@ export default {
   startMultipeerSession,
   stopMultipeerSession,
   inviteMultipeerPeer,
+  acceptMultipeerInvitation,
+  rejectMultipeerInvitation,
   getMultipeerPeers,
   sendMultipeerMessage,
   // Events

@@ -58,8 +58,11 @@ namespace margelo::nitro::munimbluetooth {
     void updateAdvertisingData(const AdvertisingDataTypes& advertisingData) override;
     std::shared_ptr<Promise<AdvertisingDataTypes>> getAdvertisingData() override;
     void stopAdvertising() override;
-    void setServices(const std::vector<GATTService>& services) override;
+    void setServices(const std::vector<GATTService>& services, const std::optional<PeripheralRequestOptions>& requestOptions) override;
     std::shared_ptr<Promise<void>> updateCharacteristicValue(const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<bool> notify) override;
+    std::shared_ptr<Promise<void>> respondToPeripheralReadRequest(const std::string& requestId, const std::optional<std::string>& value, std::optional<PeripheralRequestStatus> status) override;
+    std::shared_ptr<Promise<void>> respondToPeripheralWriteRequest(const std::string& requestId, bool accept, std::optional<PeripheralRequestStatus> status) override;
+    std::shared_ptr<Promise<void>> respondToPeripheralExecuteWriteRequest(const std::string& requestId, bool accept) override;
     std::shared_ptr<Promise<bool>> isBluetoothEnabled() override;
     std::shared_ptr<Promise<bool>> requestBluetoothPermission(const std::optional<std::vector<std::string>>& permissions) override;
     std::shared_ptr<Promise<BluetoothCapabilities>> getCapabilities() override;
@@ -72,8 +75,9 @@ namespace margelo::nitro::munimbluetooth {
     std::shared_ptr<Promise<DescriptorValue>> readDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID) override;
     std::shared_ptr<Promise<void>> writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<WriteType> writeType) override;
     std::shared_ptr<Promise<void>> writeDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID, const std::string& value) override;
-    void subscribeToCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) override;
-    void unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) override;
+    std::shared_ptr<Promise<void>> subscribeToCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) override;
+    std::shared_ptr<Promise<void>> unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) override;
+    std::shared_ptr<Promise<std::vector<GATTQueueDiagnostic>>> getGattQueueDiagnostics() override;
     std::shared_ptr<Promise<std::vector<std::string>>> getConnectedDevices() override;
     std::shared_ptr<Promise<double>> readRSSI(const std::string& deviceId) override;
     std::shared_ptr<Promise<double>> requestMTU(const std::string& deviceId, double mtu) override;
@@ -101,6 +105,8 @@ namespace margelo::nitro::munimbluetooth {
     void startMultipeerSession(const MultipeerSessionOptions& options) override;
     void stopMultipeerSession() override;
     void inviteMultipeerPeer(const std::string& peerId) override;
+    void acceptMultipeerInvitation(const std::string& invitationId) override;
+    void rejectMultipeerInvitation(const std::string& invitationId) override;
     std::shared_ptr<Promise<std::vector<MultipeerPeer>>> getMultipeerPeers() override;
     std::shared_ptr<Promise<void>> sendMultipeerMessage(const std::string& value, const std::optional<std::vector<std::string>>& peerIds, std::optional<bool> reliable) override;
     void addListener(const std::string& eventName) override;

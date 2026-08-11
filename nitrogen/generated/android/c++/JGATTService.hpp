@@ -11,8 +11,10 @@
 #include "GATTService.hpp"
 
 #include "GATTCharacteristic.hpp"
+#include "GATTCharacteristicPermission.hpp"
 #include "GATTDescriptor.hpp"
 #include "JGATTCharacteristic.hpp"
+#include "JGATTCharacteristicPermission.hpp"
 #include "JGATTDescriptor.hpp"
 #include <optional>
 #include <string>

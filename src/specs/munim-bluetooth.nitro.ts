@@ -6,6 +6,13 @@ export interface ServiceDataEntry {
   data: string
 }
 
+export interface ManufacturerDataEntry {
+  /** Bluetooth SIG company identifier (0...65535). */
+  companyId: number
+  /** Manufacturer payload only; the company identifier is carried separately. */
+  data: string
+}
+
 // BLE advertising data types. Android can advertise all supported fields when
 // payload size and hardware allow it; iOS advertising is limited by
 // CoreBluetooth to local name and service UUIDs.
@@ -44,7 +51,12 @@ export interface AdvertisingDataTypes {
   serviceSolicitationUUIDs32?: string[]
 
   // 0xFF - Manufacturer Specific Data
+  /** Legacy payload. Uses manufacturerCompanyId, or 0 when omitted. */
   manufacturerData?: string
+  /** Company identifier paired with legacy manufacturerData. */
+  manufacturerCompanyId?: number
+  /** Preferred representation; supports multiple company data sections. */
+  manufacturerDataEntries?: ManufacturerDataEntry[]
 }
 
 // BLE Device information
@@ -57,6 +69,8 @@ export interface BLEDevice {
   serviceUUIDs?: string[]
   serviceData?: ServiceDataEntry[]
   manufacturerData?: string
+  manufacturerCompanyId?: number
+  manufacturerDataEntries?: ManufacturerDataEntry[]
   txPowerLevel?: number
   isConnectable?: boolean
 }
@@ -69,6 +83,10 @@ export interface ScanOptions {
   serviceUUIDs?: string[]
   allowDuplicates?: boolean
   scanMode?: ScanMode
+  /** Drop scan results weaker than this RSSI (dBm), filtered in-process. */
+  rssiThreshold?: number
+  /** Only report devices whose advertised/local name starts with this prefix. */
+  namePrefix?: string
 }
 
 export interface GATTDescriptor {
@@ -77,10 +95,27 @@ export interface GATTDescriptor {
   permissions?: string[]
 }
 
+export type GATTCharacteristicPermission =
+  | 'read'
+  | 'write'
+  | 'readEncrypted'
+  | 'writeEncrypted'
+  | 'readEncryptedMitm'
+  | 'writeEncryptedMitm'
+
 // GATT Characteristic
 export interface GATTCharacteristic {
   uuid: string
   properties: string[]
+  /**
+   * Access requirements for read/write properties. When omitted, readable and
+   * writable properties retain their existing plaintext behavior.
+   *
+   * Android supports encrypted and authenticated-MITM permissions. CoreBluetooth
+   * supports encrypted permissions but has no public authenticated-MITM option,
+   * so iOS rejects authenticated-MITM permissions instead of weakening them.
+   */
+  permissions?: GATTCharacteristicPermission[]
   value?: string
   descriptors?: GATTDescriptor[]
 }
@@ -90,6 +125,34 @@ export interface GATTService {
   uuid: string
   characteristics: GATTCharacteristic[]
   includedServices?: string[]
+}
+
+export type PeripheralRequestMode = 'automatic' | 'manual'
+
+export interface PeripheralRequestOptions {
+  /**
+   * `automatic` preserves the legacy static-value behavior. `manual` waits for
+   * an explicit JS response and falls back to an ATT error on timeout.
+   */
+  mode?: PeripheralRequestMode
+  /** Response timeout in milliseconds. Clamped natively to 100...30000. */
+  timeoutMs?: number
+}
+
+export type PeripheralRequestStatus =
+  | 'success'
+  | 'invalidOffset'
+  | 'readNotPermitted'
+  | 'writeNotPermitted'
+  | 'requestNotSupported'
+  | 'unlikelyError'
+
+export interface GATTQueueDiagnostic {
+  deviceId: string
+  activeOperation?: string
+  activeTarget?: string
+  queuedOperations: number
+  activeDurationMs?: number
 }
 
 // Characteristic value
@@ -141,6 +204,8 @@ export interface AdvertisingOptions {
   serviceUUIDs: string[]
   localName?: string
   manufacturerData?: string
+  manufacturerCompanyId?: number
+  manufacturerDataEntries?: ManufacturerDataEntry[]
   advertisingData?: AdvertisingDataTypes
 }
 
@@ -148,6 +213,8 @@ export interface ExtendedAdvertisingOptions {
   serviceUUIDs?: string[]
   localName?: string
   manufacturerData?: string
+  manufacturerCompanyId?: number
+  manufacturerDataEntries?: ManufacturerDataEntry[]
   advertisingData?: AdvertisingDataTypes
   connectable?: boolean
   scannable?: boolean
@@ -188,7 +255,14 @@ export interface MultipeerSessionOptions {
   serviceType: string
   displayName?: string
   discoveryInfo?: MultipeerDiscoveryInfoEntry[]
+  /**
+   * Defaults to false. Prefer inviting a selected peer explicitly.
+   */
   autoInvite?: boolean
+  /**
+   * Defaults to false. Setting this to true explicitly accepts all incoming
+   * invitations; otherwise use acceptMultipeerInvitation/rejectMultipeerInvitation.
+   */
   autoAcceptInvitations?: boolean
   inviteTimeout?: number
   encryptionPreference?: MultipeerEncryptionPreference
@@ -245,7 +319,7 @@ export interface MunimBluetooth
    * @param services - An array of service objects, each with a uuid and an array of characteristics.
    *                  This must be serializable to a plain JS array (no Maps/Sets/functions).
    */
-  setServices(services: GATTService[]): void
+  setServices(services: GATTService[], requestOptions?: PeripheralRequestOptions): void
 
   /**
    * Update a local peripheral characteristic value and optionally notify/indicate
@@ -261,6 +335,26 @@ export interface MunimBluetooth
     characteristicUUID: string,
     value: string,
     notify?: boolean
+  ): Promise<void>
+
+  /** Complete a pending manual peripheral read request. */
+  respondToPeripheralReadRequest(
+    requestId: string,
+    value?: string,
+    status?: PeripheralRequestStatus
+  ): Promise<void>
+
+  /** Accept or reject a pending manual peripheral write request. */
+  respondToPeripheralWriteRequest(
+    requestId: string,
+    accept: boolean,
+    status?: PeripheralRequestStatus
+  ): Promise<void>
+
+  /** Commit or cancel an Android prepared-write transaction. */
+  respondToPeripheralExecuteWriteRequest(
+    requestId: string,
+    accept: boolean
   ): Promise<void>
 
   // ========== Central/Manager Features ==========
@@ -384,7 +478,7 @@ export interface MunimBluetooth
     deviceId: string,
     serviceUUID: string,
     characteristicUUID: string
-  ): void
+  ): Promise<void>
 
   /**
    * Unsubscribe from notifications/indications from a characteristic.
@@ -397,7 +491,10 @@ export interface MunimBluetooth
     deviceId: string,
     serviceUUID: string,
     characteristicUUID: string
-  ): void
+  ): Promise<void>
+
+  /** Snapshot serialized per-device GATT queues for diagnostics. */
+  getGattQueueDiagnostics(): Promise<GATTQueueDiagnostic[]>
 
   /**
    * Get list of currently connected devices.
@@ -460,7 +557,8 @@ export interface MunimBluetooth
   stopExtendedAdvertising(advertisingId: string): void
 
   /**
-   * Publish a local L2CAP channel where supported.
+   * Publish a local L2CAP channel where supported. Encryption is required by
+   * default; pass false explicitly to publish an insecure channel.
    */
   publishL2CAPChannel(encryptionRequired?: boolean): Promise<L2CAPChannel>
 
@@ -553,6 +651,16 @@ export interface MunimBluetooth
    * Invite a discovered Multipeer peer by runtime peer id.
    */
   inviteMultipeerPeer(peerId: string): void
+
+  /**
+   * Accept a pending incoming Multipeer invitation by its opaque runtime id.
+   */
+  acceptMultipeerInvitation(invitationId: string): void
+
+  /**
+   * Reject a pending incoming Multipeer invitation by its opaque runtime id.
+   */
+  rejectMultipeerInvitation(invitationId: string): void
 
   /**
    * Return discovered/connected Multipeer peers for this runtime session.

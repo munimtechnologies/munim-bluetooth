@@ -71,7 +71,13 @@ data class AdvertisingDataTypes(
   val serviceSolicitationUUIDs32: Array<String>?,
   @DoNotStrip
   @Keep
-  val manufacturerData: String?
+  val manufacturerData: String?,
+  @DoNotStrip
+  @Keep
+  val manufacturerCompanyId: Double?,
+  @DoNotStrip
+  @Keep
+  val manufacturerDataEntries: Array<ManufacturerDataEntry>?
 ) {
   /* primary constructor */
 
@@ -96,6 +102,8 @@ data class AdvertisingDataTypes(
       && Objects.deepEquals(this.appearance, other.appearance)
       && Objects.deepEquals(this.serviceSolicitationUUIDs32, other.serviceSolicitationUUIDs32)
       && Objects.deepEquals(this.manufacturerData, other.manufacturerData)
+      && Objects.deepEquals(this.manufacturerCompanyId, other.manufacturerCompanyId)
+      && Objects.deepEquals(this.manufacturerDataEntries, other.manufacturerDataEntries)
   }
 
   override fun hashCode(): Int {
@@ -117,7 +125,9 @@ data class AdvertisingDataTypes(
       serviceData128,
       appearance,
       serviceSolicitationUUIDs32,
-      manufacturerData
+      manufacturerData,
+      manufacturerCompanyId,
+      manufacturerDataEntries
     ).contentDeepHashCode()
   }
 
@@ -129,8 +139,8 @@ data class AdvertisingDataTypes(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(flags: Double?, incompleteServiceUUIDs16: Array<String>?, completeServiceUUIDs16: Array<String>?, incompleteServiceUUIDs32: Array<String>?, completeServiceUUIDs32: Array<String>?, incompleteServiceUUIDs128: Array<String>?, completeServiceUUIDs128: Array<String>?, shortenedLocalName: String?, completeLocalName: String?, txPowerLevel: Double?, serviceSolicitationUUIDs16: Array<String>?, serviceSolicitationUUIDs128: Array<String>?, serviceData16: Array<ServiceDataEntry>?, serviceData32: Array<ServiceDataEntry>?, serviceData128: Array<ServiceDataEntry>?, appearance: Double?, serviceSolicitationUUIDs32: Array<String>?, manufacturerData: String?): AdvertisingDataTypes {
-      return AdvertisingDataTypes(flags, incompleteServiceUUIDs16, completeServiceUUIDs16, incompleteServiceUUIDs32, completeServiceUUIDs32, incompleteServiceUUIDs128, completeServiceUUIDs128, shortenedLocalName, completeLocalName, txPowerLevel, serviceSolicitationUUIDs16, serviceSolicitationUUIDs128, serviceData16, serviceData32, serviceData128, appearance, serviceSolicitationUUIDs32, manufacturerData)
+    private fun fromCpp(flags: Double?, incompleteServiceUUIDs16: Array<String>?, completeServiceUUIDs16: Array<String>?, incompleteServiceUUIDs32: Array<String>?, completeServiceUUIDs32: Array<String>?, incompleteServiceUUIDs128: Array<String>?, completeServiceUUIDs128: Array<String>?, shortenedLocalName: String?, completeLocalName: String?, txPowerLevel: Double?, serviceSolicitationUUIDs16: Array<String>?, serviceSolicitationUUIDs128: Array<String>?, serviceData16: Array<ServiceDataEntry>?, serviceData32: Array<ServiceDataEntry>?, serviceData128: Array<ServiceDataEntry>?, appearance: Double?, serviceSolicitationUUIDs32: Array<String>?, manufacturerData: String?, manufacturerCompanyId: Double?, manufacturerDataEntries: Array<ManufacturerDataEntry>?): AdvertisingDataTypes {
+      return AdvertisingDataTypes(flags, incompleteServiceUUIDs16, completeServiceUUIDs16, incompleteServiceUUIDs32, completeServiceUUIDs32, incompleteServiceUUIDs128, completeServiceUUIDs128, shortenedLocalName, completeLocalName, txPowerLevel, serviceSolicitationUUIDs16, serviceSolicitationUUIDs128, serviceData16, serviceData32, serviceData128, appearance, serviceSolicitationUUIDs32, manufacturerData, manufacturerCompanyId, manufacturerDataEntries)
     }
   }
 }
