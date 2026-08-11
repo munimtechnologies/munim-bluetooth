@@ -18,7 +18,7 @@ public extension ScanOptions {
   /**
    * Create a new instance of `ScanOptions`.
    */
-  init(serviceUUIDs: [String]?, allowDuplicates: Bool?, scanMode: ScanMode?) {
+  init(serviceUUIDs: [String]?, allowDuplicates: Bool?, scanMode: ScanMode?, rssiThreshold: Double?, namePrefix: String?) {
     self.init({ () -> bridge.std__optional_std__vector_std__string__ in
       if let __unwrappedValue = serviceUUIDs {
         return bridge.create_std__optional_std__vector_std__string__({ () -> bridge.std__vector_std__string_ in
@@ -40,6 +40,18 @@ public extension ScanOptions {
     }(), { () -> bridge.std__optional_ScanMode_ in
       if let __unwrappedValue = scanMode {
         return bridge.create_std__optional_ScanMode_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_double_ in
+      if let __unwrappedValue = rssiThreshold {
+        return bridge.create_std__optional_double_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_std__string_ in
+      if let __unwrappedValue = namePrefix {
+        return bridge.create_std__optional_std__string_(std.string(__unwrappedValue))
       } else {
         return .init()
       }
@@ -73,5 +85,29 @@ public extension ScanOptions {
   @inline(__always)
   var scanMode: ScanMode? {
     return self.__scanMode.value
+  }
+  
+  @inline(__always)
+  var rssiThreshold: Double? {
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__rssiThreshold) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__rssiThreshold)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
+  }
+  
+  @inline(__always)
+  var namePrefix: String? {
+    return { () -> String? in
+      if bridge.has_value_std__optional_std__string_(self.__namePrefix) {
+        let __unwrapped = bridge.get_std__optional_std__string_(self.__namePrefix)
+        return String(__unwrapped)
+      } else {
+        return nil
+      }
+    }()
   }
 }

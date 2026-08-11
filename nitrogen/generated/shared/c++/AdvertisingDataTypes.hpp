@@ -30,11 +30,14 @@
 
 // Forward declaration of `ServiceDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ServiceDataEntry; }
+// Forward declaration of `ManufacturerDataEntry` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ManufacturerDataEntry; }
 
 #include <optional>
 #include <string>
 #include <vector>
 #include "ServiceDataEntry.hpp"
+#include "ManufacturerDataEntry.hpp"
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -61,10 +64,12 @@ namespace margelo::nitro::munimbluetooth {
     std::optional<double> appearance     SWIFT_PRIVATE;
     std::optional<std::vector<std::string>> serviceSolicitationUUIDs32     SWIFT_PRIVATE;
     std::optional<std::string> manufacturerData     SWIFT_PRIVATE;
+    std::optional<double> manufacturerCompanyId     SWIFT_PRIVATE;
+    std::optional<std::vector<ManufacturerDataEntry>> manufacturerDataEntries     SWIFT_PRIVATE;
 
   public:
     AdvertisingDataTypes() = default;
-    explicit AdvertisingDataTypes(std::optional<double> flags, std::optional<std::vector<std::string>> incompleteServiceUUIDs16, std::optional<std::vector<std::string>> completeServiceUUIDs16, std::optional<std::vector<std::string>> incompleteServiceUUIDs32, std::optional<std::vector<std::string>> completeServiceUUIDs32, std::optional<std::vector<std::string>> incompleteServiceUUIDs128, std::optional<std::vector<std::string>> completeServiceUUIDs128, std::optional<std::string> shortenedLocalName, std::optional<std::string> completeLocalName, std::optional<double> txPowerLevel, std::optional<std::vector<std::string>> serviceSolicitationUUIDs16, std::optional<std::vector<std::string>> serviceSolicitationUUIDs128, std::optional<std::vector<ServiceDataEntry>> serviceData16, std::optional<std::vector<ServiceDataEntry>> serviceData32, std::optional<std::vector<ServiceDataEntry>> serviceData128, std::optional<double> appearance, std::optional<std::vector<std::string>> serviceSolicitationUUIDs32, std::optional<std::string> manufacturerData): flags(flags), incompleteServiceUUIDs16(incompleteServiceUUIDs16), completeServiceUUIDs16(completeServiceUUIDs16), incompleteServiceUUIDs32(incompleteServiceUUIDs32), completeServiceUUIDs32(completeServiceUUIDs32), incompleteServiceUUIDs128(incompleteServiceUUIDs128), completeServiceUUIDs128(completeServiceUUIDs128), shortenedLocalName(shortenedLocalName), completeLocalName(completeLocalName), txPowerLevel(txPowerLevel), serviceSolicitationUUIDs16(serviceSolicitationUUIDs16), serviceSolicitationUUIDs128(serviceSolicitationUUIDs128), serviceData16(serviceData16), serviceData32(serviceData32), serviceData128(serviceData128), appearance(appearance), serviceSolicitationUUIDs32(serviceSolicitationUUIDs32), manufacturerData(manufacturerData) {}
+    explicit AdvertisingDataTypes(std::optional<double> flags, std::optional<std::vector<std::string>> incompleteServiceUUIDs16, std::optional<std::vector<std::string>> completeServiceUUIDs16, std::optional<std::vector<std::string>> incompleteServiceUUIDs32, std::optional<std::vector<std::string>> completeServiceUUIDs32, std::optional<std::vector<std::string>> incompleteServiceUUIDs128, std::optional<std::vector<std::string>> completeServiceUUIDs128, std::optional<std::string> shortenedLocalName, std::optional<std::string> completeLocalName, std::optional<double> txPowerLevel, std::optional<std::vector<std::string>> serviceSolicitationUUIDs16, std::optional<std::vector<std::string>> serviceSolicitationUUIDs128, std::optional<std::vector<ServiceDataEntry>> serviceData16, std::optional<std::vector<ServiceDataEntry>> serviceData32, std::optional<std::vector<ServiceDataEntry>> serviceData128, std::optional<double> appearance, std::optional<std::vector<std::string>> serviceSolicitationUUIDs32, std::optional<std::string> manufacturerData, std::optional<double> manufacturerCompanyId, std::optional<std::vector<ManufacturerDataEntry>> manufacturerDataEntries): flags(flags), incompleteServiceUUIDs16(incompleteServiceUUIDs16), completeServiceUUIDs16(completeServiceUUIDs16), incompleteServiceUUIDs32(incompleteServiceUUIDs32), completeServiceUUIDs32(completeServiceUUIDs32), incompleteServiceUUIDs128(incompleteServiceUUIDs128), completeServiceUUIDs128(completeServiceUUIDs128), shortenedLocalName(shortenedLocalName), completeLocalName(completeLocalName), txPowerLevel(txPowerLevel), serviceSolicitationUUIDs16(serviceSolicitationUUIDs16), serviceSolicitationUUIDs128(serviceSolicitationUUIDs128), serviceData16(serviceData16), serviceData32(serviceData32), serviceData128(serviceData128), appearance(appearance), serviceSolicitationUUIDs32(serviceSolicitationUUIDs32), manufacturerData(manufacturerData), manufacturerCompanyId(manufacturerCompanyId), manufacturerDataEntries(manufacturerDataEntries) {}
 
   public:
     friend bool operator==(const AdvertisingDataTypes& lhs, const AdvertisingDataTypes& rhs) = default;
@@ -97,7 +102,9 @@ namespace margelo::nitro {
         JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::ServiceDataEntry>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "serviceData128"))),
         JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "appearance"))),
         JSIConverter<std::optional<std::vector<std::string>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "serviceSolicitationUUIDs32"))),
-        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData")))
+        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerCompanyId"))),
+        JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::ManufacturerDataEntry>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataEntries")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::munimbluetooth::AdvertisingDataTypes& arg) {
@@ -120,6 +127,8 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "appearance"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.appearance));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "serviceSolicitationUUIDs32"), JSIConverter<std::optional<std::vector<std::string>>>::toJSI(runtime, arg.serviceSolicitationUUIDs32));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.manufacturerData));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerCompanyId"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.manufacturerCompanyId));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataEntries"), JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::ManufacturerDataEntry>>>::toJSI(runtime, arg.manufacturerDataEntries));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -148,6 +157,8 @@ namespace margelo::nitro {
       if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "appearance")))) return false;
       if (!JSIConverter<std::optional<std::vector<std::string>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "serviceSolicitationUUIDs32")))) return false;
       if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerCompanyId")))) return false;
+      if (!JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::ManufacturerDataEntry>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataEntries")))) return false;
       return true;
     }
   };

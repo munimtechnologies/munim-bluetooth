@@ -276,8 +276,11 @@ class MunimBluetoothBackgroundService : Service() {
                     val characteristic = BluetoothGattCharacteristic(
                         UUID.fromString(characteristicJson.getString("uuid")),
                         propertiesFromJson(characteristicJson.optJSONArray("properties")),
-                        BluetoothGattCharacteristic.PERMISSION_READ or
-                            BluetoothGattCharacteristic.PERMISSION_WRITE
+                        characteristicPermissionsFromJson(
+                            characteristicJson.optJSONArray("permissions"),
+                            characteristicJson.optJSONArray("properties"),
+                            characteristicJson.getString("uuid")
+                        )
                     )
                     val characteristicInitialValue = optionalString(characteristicJson, "value")
                         ?.let { value ->
@@ -359,6 +362,17 @@ class MunimBluetoothBackgroundService : Service() {
                 offset: Int,
                 characteristic: BluetoothGattCharacteristic
             ) {
+                if ((characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ) == 0) {
+                    gattServer?.sendResponse(
+                        device,
+                        requestId,
+                        BluetoothGatt.GATT_READ_NOT_PERMITTED,
+                        offset,
+                        null
+                    )
+                    return
+                }
+
                 val value = characteristicValues[characteristicKey(characteristic)] ?: ByteArray(0)
                 if (offset > value.size) {
                     gattServer?.sendResponse(
@@ -729,9 +743,75 @@ class MunimBluetoothBackgroundService : Service() {
                 "writeWithoutResponse" -> {
                     result = result or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
                 }
+                else -> throw IllegalArgumentException(
+                    "Unsupported restored GATT characteristic property '$property'"
+                )
             }
         }
         return result
+    }
+
+    private fun characteristicPermissionsFromJson(
+        permissions: JSONArray?,
+        properties: JSONArray?,
+        characteristicUuid: String
+    ): Int {
+        val propertyValues = jsonStrings(properties)
+        val hasReadProperty = "read" in propertyValues
+        val hasWriteProperty =
+            "write" in propertyValues || "writeWithoutResponse" in propertyValues
+
+        if (permissions == null) {
+            var defaults = 0
+            if (hasReadProperty) {
+                defaults = defaults or BluetoothGattCharacteristic.PERMISSION_READ
+            }
+            if (hasWriteProperty) {
+                defaults = defaults or BluetoothGattCharacteristic.PERMISSION_WRITE
+            }
+            return defaults
+        }
+
+        val permissionValues = jsonStrings(permissions)
+        val allowed = setOf(
+            "read",
+            "write",
+            "readEncrypted",
+            "writeEncrypted",
+            "readEncryptedMitm",
+            "writeEncryptedMitm"
+        )
+        val invalid = permissionValues.firstOrNull { it !in allowed }
+        require(invalid == null) {
+            "Unsupported restored GATT characteristic permission '$invalid'"
+        }
+
+        val readPermissions = permissionValues.filter {
+            it == "read" || it == "readEncrypted" || it == "readEncryptedMitm"
+        }
+        val writePermissions = permissionValues.filter {
+            it == "write" || it == "writeEncrypted" || it == "writeEncryptedMitm"
+        }
+        require(readPermissions.size == if (hasReadProperty) 1 else 0) {
+            "Characteristic $characteristicUuid must specify exactly one read permission when and only when it has the read property"
+        }
+        require(writePermissions.size == if (hasWriteProperty) 1 else 0) {
+            "Characteristic $characteristicUuid must specify exactly one write permission when and only when it has a write property"
+        }
+
+        return permissionValues.fold(0) { result, permission ->
+            result or when (permission) {
+                "read" -> BluetoothGattCharacteristic.PERMISSION_READ
+                "write" -> BluetoothGattCharacteristic.PERMISSION_WRITE
+                "readEncrypted" -> BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED
+                "writeEncrypted" -> BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
+                "readEncryptedMitm" ->
+                    BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM
+                "writeEncryptedMitm" ->
+                    BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM
+                else -> error("Permission was validated above")
+            }
+        }
     }
 
     private fun descriptorPermissionsFromJson(permissions: JSONArray?): Int {
@@ -763,6 +843,11 @@ class MunimBluetoothBackgroundService : Service() {
         for (index in 0 until array.length()) {
             block(array.optString(index))
         }
+    }
+
+    private fun jsonStrings(array: JSONArray?): List<String> {
+        if (array == null) return emptyList()
+        return List(array.length()) { index -> array.getString(index) }
     }
 
     private fun optionalString(json: org.json.JSONObject, key: String): String? {

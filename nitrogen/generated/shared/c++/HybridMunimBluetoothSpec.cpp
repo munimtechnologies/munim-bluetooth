@@ -20,6 +20,9 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("stopAdvertising", &HybridMunimBluetoothSpec::stopAdvertising);
       prototype.registerHybridMethod("setServices", &HybridMunimBluetoothSpec::setServices);
       prototype.registerHybridMethod("updateCharacteristicValue", &HybridMunimBluetoothSpec::updateCharacteristicValue);
+      prototype.registerHybridMethod("respondToPeripheralReadRequest", &HybridMunimBluetoothSpec::respondToPeripheralReadRequest);
+      prototype.registerHybridMethod("respondToPeripheralWriteRequest", &HybridMunimBluetoothSpec::respondToPeripheralWriteRequest);
+      prototype.registerHybridMethod("respondToPeripheralExecuteWriteRequest", &HybridMunimBluetoothSpec::respondToPeripheralExecuteWriteRequest);
       prototype.registerHybridMethod("isBluetoothEnabled", &HybridMunimBluetoothSpec::isBluetoothEnabled);
       prototype.registerHybridMethod("requestBluetoothPermission", &HybridMunimBluetoothSpec::requestBluetoothPermission);
       prototype.registerHybridMethod("getCapabilities", &HybridMunimBluetoothSpec::getCapabilities);
@@ -34,6 +37,7 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("writeDescriptor", &HybridMunimBluetoothSpec::writeDescriptor);
       prototype.registerHybridMethod("subscribeToCharacteristic", &HybridMunimBluetoothSpec::subscribeToCharacteristic);
       prototype.registerHybridMethod("unsubscribeFromCharacteristic", &HybridMunimBluetoothSpec::unsubscribeFromCharacteristic);
+      prototype.registerHybridMethod("getGattQueueDiagnostics", &HybridMunimBluetoothSpec::getGattQueueDiagnostics);
       prototype.registerHybridMethod("getConnectedDevices", &HybridMunimBluetoothSpec::getConnectedDevices);
       prototype.registerHybridMethod("readRSSI", &HybridMunimBluetoothSpec::readRSSI);
       prototype.registerHybridMethod("requestMTU", &HybridMunimBluetoothSpec::requestMTU);
@@ -61,6 +65,8 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("startMultipeerSession", &HybridMunimBluetoothSpec::startMultipeerSession);
       prototype.registerHybridMethod("stopMultipeerSession", &HybridMunimBluetoothSpec::stopMultipeerSession);
       prototype.registerHybridMethod("inviteMultipeerPeer", &HybridMunimBluetoothSpec::inviteMultipeerPeer);
+      prototype.registerHybridMethod("acceptMultipeerInvitation", &HybridMunimBluetoothSpec::acceptMultipeerInvitation);
+      prototype.registerHybridMethod("rejectMultipeerInvitation", &HybridMunimBluetoothSpec::rejectMultipeerInvitation);
       prototype.registerHybridMethod("getMultipeerPeers", &HybridMunimBluetoothSpec::getMultipeerPeers);
       prototype.registerHybridMethod("sendMultipeerMessage", &HybridMunimBluetoothSpec::sendMultipeerMessage);
       prototype.registerHybridMethod("addListener", &HybridMunimBluetoothSpec::addListener);

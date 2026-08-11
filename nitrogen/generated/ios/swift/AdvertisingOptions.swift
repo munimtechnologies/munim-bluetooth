@@ -18,7 +18,7 @@ public extension AdvertisingOptions {
   /**
    * Create a new instance of `AdvertisingOptions`.
    */
-  init(serviceUUIDs: [String], localName: String?, manufacturerData: String?, advertisingData: AdvertisingDataTypes?) {
+  init(serviceUUIDs: [String], localName: String?, manufacturerData: String?, manufacturerCompanyId: Double?, manufacturerDataEntries: [ManufacturerDataEntry]?, advertisingData: AdvertisingDataTypes?) {
     self.init({ () -> bridge.std__vector_std__string_ in
       var __vector = bridge.create_std__vector_std__string_(serviceUUIDs.count)
       for __item in serviceUUIDs {
@@ -34,6 +34,24 @@ public extension AdvertisingOptions {
     }(), { () -> bridge.std__optional_std__string_ in
       if let __unwrappedValue = manufacturerData {
         return bridge.create_std__optional_std__string_(std.string(__unwrappedValue))
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_double_ in
+      if let __unwrappedValue = manufacturerCompanyId {
+        return bridge.create_std__optional_double_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_std__vector_ManufacturerDataEntry__ in
+      if let __unwrappedValue = manufacturerDataEntries {
+        return bridge.create_std__optional_std__vector_ManufacturerDataEntry__({ () -> bridge.std__vector_ManufacturerDataEntry_ in
+          var __vector = bridge.create_std__vector_ManufacturerDataEntry_(__unwrappedValue.count)
+          for __item in __unwrappedValue {
+            __vector.push_back(__item)
+          }
+          return __vector
+        }())
       } else {
         return .init()
       }
@@ -69,6 +87,30 @@ public extension AdvertisingOptions {
       if bridge.has_value_std__optional_std__string_(self.__manufacturerData) {
         let __unwrapped = bridge.get_std__optional_std__string_(self.__manufacturerData)
         return String(__unwrapped)
+      } else {
+        return nil
+      }
+    }()
+  }
+  
+  @inline(__always)
+  var manufacturerCompanyId: Double? {
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__manufacturerCompanyId) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__manufacturerCompanyId)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
+  }
+  
+  @inline(__always)
+  var manufacturerDataEntries: [ManufacturerDataEntry]? {
+    return { () -> [ManufacturerDataEntry]? in
+      if bridge.has_value_std__optional_std__vector_ManufacturerDataEntry__(self.__manufacturerDataEntries) {
+        let __unwrapped = bridge.get_std__optional_std__vector_ManufacturerDataEntry__(self.__manufacturerDataEntries)
+        return __unwrapped.map({ __item in __item })
       } else {
         return nil
       }

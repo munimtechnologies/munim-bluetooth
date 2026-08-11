@@ -26,7 +26,13 @@ data class ScanOptions(
   val allowDuplicates: Boolean?,
   @DoNotStrip
   @Keep
-  val scanMode: ScanMode?
+  val scanMode: ScanMode?,
+  @DoNotStrip
+  @Keep
+  val rssiThreshold: Double?,
+  @DoNotStrip
+  @Keep
+  val namePrefix: String?
 ) {
   /* primary constructor */
 
@@ -36,13 +42,17 @@ data class ScanOptions(
     return Objects.deepEquals(this.serviceUUIDs, other.serviceUUIDs)
       && Objects.deepEquals(this.allowDuplicates, other.allowDuplicates)
       && Objects.deepEquals(this.scanMode, other.scanMode)
+      && Objects.deepEquals(this.rssiThreshold, other.rssiThreshold)
+      && Objects.deepEquals(this.namePrefix, other.namePrefix)
   }
 
   override fun hashCode(): Int {
     return arrayOf(
       serviceUUIDs,
       allowDuplicates,
-      scanMode
+      scanMode,
+      rssiThreshold,
+      namePrefix
     ).contentDeepHashCode()
   }
 
@@ -54,8 +64,8 @@ data class ScanOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(serviceUUIDs: Array<String>?, allowDuplicates: Boolean?, scanMode: ScanMode?): ScanOptions {
-      return ScanOptions(serviceUUIDs, allowDuplicates, scanMode)
+    private fun fromCpp(serviceUUIDs: Array<String>?, allowDuplicates: Boolean?, scanMode: ScanMode?, rssiThreshold: Double?, namePrefix: String?): ScanOptions {
+      return ScanOptions(serviceUUIDs, allowDuplicates, scanMode, rssiThreshold, namePrefix)
     }
   }
 }

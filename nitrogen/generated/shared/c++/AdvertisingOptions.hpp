@@ -28,12 +28,15 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `ManufacturerDataEntry` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ManufacturerDataEntry; }
 // Forward declaration of `AdvertisingDataTypes` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
 
 #include <string>
 #include <vector>
 #include <optional>
+#include "ManufacturerDataEntry.hpp"
 #include "AdvertisingDataTypes.hpp"
 
 namespace margelo::nitro::munimbluetooth {
@@ -46,11 +49,13 @@ namespace margelo::nitro::munimbluetooth {
     std::vector<std::string> serviceUUIDs     SWIFT_PRIVATE;
     std::optional<std::string> localName     SWIFT_PRIVATE;
     std::optional<std::string> manufacturerData     SWIFT_PRIVATE;
+    std::optional<double> manufacturerCompanyId     SWIFT_PRIVATE;
+    std::optional<std::vector<ManufacturerDataEntry>> manufacturerDataEntries     SWIFT_PRIVATE;
     std::optional<AdvertisingDataTypes> advertisingData     SWIFT_PRIVATE;
 
   public:
     AdvertisingOptions() = default;
-    explicit AdvertisingOptions(std::vector<std::string> serviceUUIDs, std::optional<std::string> localName, std::optional<std::string> manufacturerData, std::optional<AdvertisingDataTypes> advertisingData): serviceUUIDs(serviceUUIDs), localName(localName), manufacturerData(manufacturerData), advertisingData(advertisingData) {}
+    explicit AdvertisingOptions(std::vector<std::string> serviceUUIDs, std::optional<std::string> localName, std::optional<std::string> manufacturerData, std::optional<double> manufacturerCompanyId, std::optional<std::vector<ManufacturerDataEntry>> manufacturerDataEntries, std::optional<AdvertisingDataTypes> advertisingData): serviceUUIDs(serviceUUIDs), localName(localName), manufacturerData(manufacturerData), manufacturerCompanyId(manufacturerCompanyId), manufacturerDataEntries(manufacturerDataEntries), advertisingData(advertisingData) {}
 
   public:
     friend bool operator==(const AdvertisingOptions& lhs, const AdvertisingOptions& rhs) = default;
@@ -69,6 +74,8 @@ namespace margelo::nitro {
         JSIConverter<std::vector<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "serviceUUIDs"))),
         JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "localName"))),
         JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerCompanyId"))),
+        JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::ManufacturerDataEntry>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataEntries"))),
         JSIConverter<std::optional<margelo::nitro::munimbluetooth::AdvertisingDataTypes>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "advertisingData")))
       );
     }
@@ -77,6 +84,8 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "serviceUUIDs"), JSIConverter<std::vector<std::string>>::toJSI(runtime, arg.serviceUUIDs));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "localName"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.localName));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.manufacturerData));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerCompanyId"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.manufacturerCompanyId));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataEntries"), JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::ManufacturerDataEntry>>>::toJSI(runtime, arg.manufacturerDataEntries));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "advertisingData"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::AdvertisingDataTypes>>::toJSI(runtime, arg.advertisingData));
       return obj;
     }
@@ -91,6 +100,8 @@ namespace margelo::nitro {
       if (!JSIConverter<std::vector<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "serviceUUIDs")))) return false;
       if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "localName")))) return false;
       if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerCompanyId")))) return false;
+      if (!JSIConverter<std::optional<std::vector<margelo::nitro::munimbluetooth::ManufacturerDataEntry>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataEntries")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::AdvertisingDataTypes>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "advertisingData")))) return false;
       return true;
     }

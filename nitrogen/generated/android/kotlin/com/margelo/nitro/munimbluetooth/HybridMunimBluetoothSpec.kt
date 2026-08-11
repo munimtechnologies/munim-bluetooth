@@ -47,11 +47,23 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun setServices(services: Array<GATTService>): Unit
+  abstract fun setServices(services: Array<GATTService>, requestOptions: PeripheralRequestOptions?): Unit
   
   @DoNotStrip
   @Keep
   abstract fun updateCharacteristicValue(serviceUUID: String, characteristicUUID: String, value: String, notify: Boolean?): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun respondToPeripheralReadRequest(requestId: String, value: String?, status: PeripheralRequestStatus?): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun respondToPeripheralWriteRequest(requestId: String, accept: Boolean, status: PeripheralRequestStatus?): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun respondToPeripheralExecuteWriteRequest(requestId: String, accept: Boolean): Promise<Unit>
   
   @DoNotStrip
   @Keep
@@ -103,11 +115,15 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Unit
+  abstract fun subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Promise<Unit>
   
   @DoNotStrip
   @Keep
-  abstract fun unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Unit
+  abstract fun unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun getGattQueueDiagnostics(): Promise<Array<GATTQueueDiagnostic>>
   
   @DoNotStrip
   @Keep
@@ -216,6 +232,14 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   @DoNotStrip
   @Keep
   abstract fun inviteMultipeerPeer(peerId: String): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun acceptMultipeerInvitation(invitationId: String): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun rejectMultipeerInvitation(invitationId: String): Unit
   
   @DoNotStrip
   @Keep

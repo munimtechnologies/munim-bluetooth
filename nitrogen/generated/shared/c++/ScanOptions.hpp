@@ -46,10 +46,12 @@ namespace margelo::nitro::munimbluetooth {
     std::optional<std::vector<std::string>> serviceUUIDs     SWIFT_PRIVATE;
     std::optional<bool> allowDuplicates     SWIFT_PRIVATE;
     std::optional<ScanMode> scanMode     SWIFT_PRIVATE;
+    std::optional<double> rssiThreshold     SWIFT_PRIVATE;
+    std::optional<std::string> namePrefix     SWIFT_PRIVATE;
 
   public:
     ScanOptions() = default;
-    explicit ScanOptions(std::optional<std::vector<std::string>> serviceUUIDs, std::optional<bool> allowDuplicates, std::optional<ScanMode> scanMode): serviceUUIDs(serviceUUIDs), allowDuplicates(allowDuplicates), scanMode(scanMode) {}
+    explicit ScanOptions(std::optional<std::vector<std::string>> serviceUUIDs, std::optional<bool> allowDuplicates, std::optional<ScanMode> scanMode, std::optional<double> rssiThreshold, std::optional<std::string> namePrefix): serviceUUIDs(serviceUUIDs), allowDuplicates(allowDuplicates), scanMode(scanMode), rssiThreshold(rssiThreshold), namePrefix(namePrefix) {}
 
   public:
     friend bool operator==(const ScanOptions& lhs, const ScanOptions& rhs) = default;
@@ -67,7 +69,9 @@ namespace margelo::nitro {
       return margelo::nitro::munimbluetooth::ScanOptions(
         JSIConverter<std::optional<std::vector<std::string>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "serviceUUIDs"))),
         JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "allowDuplicates"))),
-        JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMode>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "scanMode")))
+        JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMode>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "scanMode"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "rssiThreshold"))),
+        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "namePrefix")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::munimbluetooth::ScanOptions& arg) {
@@ -75,6 +79,8 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "serviceUUIDs"), JSIConverter<std::optional<std::vector<std::string>>>::toJSI(runtime, arg.serviceUUIDs));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "allowDuplicates"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.allowDuplicates));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "scanMode"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMode>>::toJSI(runtime, arg.scanMode));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "rssiThreshold"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.rssiThreshold));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "namePrefix"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.namePrefix));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -88,6 +94,8 @@ namespace margelo::nitro {
       if (!JSIConverter<std::optional<std::vector<std::string>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "serviceUUIDs")))) return false;
       if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "allowDuplicates")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMode>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "scanMode")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "rssiThreshold")))) return false;
+      if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "namePrefix")))) return false;
       return true;
     }
   };

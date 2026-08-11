@@ -97,7 +97,7 @@
     "react-native": "0.83.1",
     "react-native-builder-bob": "^0.40.18",
     "react-native-nitro-modules": "^0.35.6",
-    "semantic-release": "^25.0.3",
+    "semantic-release": "^25.0.9",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
@@ -106,9 +106,13 @@
     "react-native-nitro-modules": "*"
   },
   "overrides": {
-    "minimatch@3.1.5": {
-      "brace-expansion": "1.1.18"
-    },
+    "brace-expansion@1.x": "1.1.18",
+    "brace-expansion@2.x": "2.1.4",
+    "brace-expansion@>=3 <6": "5.0.9",
+    "ip-address@10.x": "10.5.0",
+    "tar@7.x": "7.5.22",
+    "undici@6.x": "6.28.0",
+    "undici@7.x": "7.29.0",
     "@semantic-release/npm": {
       "npm": "npm:@semantic-release/error@4.0.0"
     }
