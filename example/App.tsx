@@ -390,6 +390,43 @@ function App(): React.JSX.Element {
     startScanning,
   ]);
 
+  const runNativePathsSmoke = useCallback(async () => {
+    // Exercises the L2CAP publish path and (on Android) Classic RFCOMM server +
+    // scan, which the main smoke test does not touch.
+    try {
+      addLog('L2CAP: publishing encrypted channel…', 'info');
+      const channel = await MunimBluetooth.publishL2CAPChannel(true);
+      addLog(`L2CAP: channel published on PSM ${channel.psm}`, 'success');
+      setTimeout(() => {
+        MunimBluetooth.unpublishL2CAPChannel(channel.psm);
+        addLog(`L2CAP: unpublished PSM ${channel.psm}`, 'info');
+      }, 4000);
+    } catch (error) {
+      addLog(`L2CAP publish failed: ${formatError(error)}`, 'warning');
+    }
+
+    if (Platform.OS === 'android') {
+      try {
+        addLog('Classic: starting RFCOMM server…', 'info');
+        await MunimBluetooth.startClassicServer(
+          TEST_SERVICE_UUID,
+          'MunimClassic',
+        );
+        addLog('Classic: RFCOMM server listening', 'success');
+        addLog('Classic: starting discovery scan…', 'info');
+        await MunimBluetooth.startClassicScan();
+        addLog('Classic: discovery started', 'success');
+        setTimeout(() => {
+          MunimBluetooth.stopClassicScan();
+          MunimBluetooth.stopClassicServer(TEST_SERVICE_UUID);
+          addLog('Classic: scan + server stopped', 'info');
+        }, 6000);
+      } catch (error) {
+        addLog(`Classic path failed: ${formatError(error)}`, 'warning');
+      }
+    }
+  }, [addLog]);
+
   const stopEverything = useCallback(() => {
     try {
       MunimBluetooth.stopScan();
@@ -631,6 +668,16 @@ function App(): React.JSX.Element {
             title="Ping Mesh"
             onPress={() => sendMultipeerPing()}
             color="#30D158"
+          />
+        </View>
+      </View>
+
+      <View style={styles.buttonRow}>
+        <View style={styles.button}>
+          <Button
+            title="L2CAP + Classic"
+            onPress={runNativePathsSmoke}
+            color="#FF9F0A"
           />
         </View>
       </View>
