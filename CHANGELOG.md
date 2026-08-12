@@ -1,3 +1,9 @@
+## [0.7.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.6.1...v0.7.0) (2026-08-12)
+
+### ✨ Features
+
+* complete iOS parity - peripheral manual request mode, GATT operation queue, manufacturer data entries, bond state events, scan filters, and L2CAP write backpressure ([4ac842c](https://github.com/munimtechnologies/munim-bluetooth/commit/4ac842cfd5b91a67e5867a66df98f341d4a280a7))
+
 ## [0.6.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.6.0...v0.6.1) (2026-08-07)
 
 ### 🐛 Bug Fixes
