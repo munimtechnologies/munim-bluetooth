@@ -35,7 +35,7 @@ data class PhyStatus(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       txPhy,
       rxPhy
     ).contentDeepHashCode()

@@ -79,7 +79,7 @@ data class BluetoothCapabilities(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       platform,
       supportsBleCentral,
       supportsBlePeripheral,

@@ -35,7 +35,7 @@ data class ServiceDataEntry(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       uuid,
       data
     ).contentDeepHashCode()

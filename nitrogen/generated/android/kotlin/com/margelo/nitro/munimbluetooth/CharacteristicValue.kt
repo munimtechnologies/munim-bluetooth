@@ -39,7 +39,7 @@ data class CharacteristicValue(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       value,
       serviceUUID,
       characteristicUUID

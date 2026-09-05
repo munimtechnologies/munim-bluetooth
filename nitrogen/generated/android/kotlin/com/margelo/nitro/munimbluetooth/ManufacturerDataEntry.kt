@@ -35,7 +35,7 @@ data class ManufacturerDataEntry(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       companyId,
       data
     ).contentDeepHashCode()

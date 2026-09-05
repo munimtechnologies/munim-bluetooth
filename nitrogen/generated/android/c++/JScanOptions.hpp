@@ -21,7 +21,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "ScanOptions" and the the Kotlin data class "ScanOptions".
+   * The C++ JNI bridge between the C++ struct "ScanOptions" and the Kotlin data class "ScanOptions".
    */
   struct JScanOptions final: public jni::JavaClass<JScanOptions> {
   public:

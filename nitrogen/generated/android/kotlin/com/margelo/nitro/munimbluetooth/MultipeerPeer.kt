@@ -43,7 +43,7 @@ data class MultipeerPeer(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       id,
       displayName,
       state,

@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "PeripheralRequestStatus" and the the Kotlin enum "PeripheralRequestStatus".
+   * The C++ JNI bridge between the C++ enum "PeripheralRequestStatus" and the Kotlin enum "PeripheralRequestStatus".
    */
   struct JPeripheralRequestStatus final: public jni::JavaClass<JPeripheralRequestStatus> {
   public:

@@ -47,7 +47,7 @@ data class GATTQueueDiagnostic(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       deviceId,
       activeOperation,
       activeTarget,

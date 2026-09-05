@@ -18,7 +18,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "L2CAPChannel" and the the Kotlin data class "L2CAPChannel".
+   * The C++ JNI bridge between the C++ struct "L2CAPChannel" and the Kotlin data class "L2CAPChannel".
    */
   struct JL2CAPChannel final: public jni::JavaClass<JL2CAPChannel> {
   public:

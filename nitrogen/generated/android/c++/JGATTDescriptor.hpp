@@ -19,7 +19,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "GATTDescriptor" and the the Kotlin data class "GATTDescriptor".
+   * The C++ JNI bridge between the C++ struct "GATTDescriptor" and the Kotlin data class "GATTDescriptor".
    */
   struct JGATTDescriptor final: public jni::JavaClass<JGATTDescriptor> {
   public:

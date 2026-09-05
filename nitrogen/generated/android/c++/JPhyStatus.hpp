@@ -18,7 +18,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "PhyStatus" and the the Kotlin data class "PhyStatus".
+   * The C++ JNI bridge between the C++ struct "PhyStatus" and the Kotlin data class "PhyStatus".
    */
   struct JPhyStatus final: public jni::JavaClass<JPhyStatus> {
   public:

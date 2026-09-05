@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "BondState" and the the Kotlin enum "BondState".
+   * The C++ JNI bridge between the C++ enum "BondState" and the Kotlin enum "BondState".
    */
   struct JBondState final: public jni::JavaClass<JBondState> {
   public:

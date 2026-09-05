@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "WriteType" and the the Kotlin enum "WriteType".
+   * The C++ JNI bridge between the C++ enum "WriteType" and the Kotlin enum "WriteType".
    */
   struct JWriteType final: public jni::JavaClass<JWriteType> {
   public:

@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "MultipeerEncryptionPreference" and the the Kotlin enum "MultipeerEncryptionPreference".
+   * The C++ JNI bridge between the C++ enum "MultipeerEncryptionPreference" and the Kotlin enum "MultipeerEncryptionPreference".
    */
   struct JMultipeerEncryptionPreference final: public jni::JavaClass<JMultipeerEncryptionPreference> {
   public:

@@ -59,7 +59,7 @@ data class BackgroundSessionOptions(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       serviceUUIDs,
       localName,
       allowDuplicates,

@@ -23,7 +23,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "MultipeerPeer" and the the Kotlin data class "MultipeerPeer".
+   * The C++ JNI bridge between the C++ struct "MultipeerPeer" and the Kotlin data class "MultipeerPeer".
    */
   struct JMultipeerPeer final: public jni::JavaClass<JMultipeerPeer> {
   public:

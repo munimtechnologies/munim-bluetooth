@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "MultipeerPeerState" and the the Kotlin enum "MultipeerPeerState".
+   * The C++ JNI bridge between the C++ enum "MultipeerPeerState" and the Kotlin enum "MultipeerPeerState".
    */
   struct JMultipeerPeerState final: public jni::JavaClass<JMultipeerPeerState> {
   public:

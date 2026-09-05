@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "BluetoothPhyOption" and the the Kotlin enum "BluetoothPhyOption".
+   * The C++ JNI bridge between the C++ enum "BluetoothPhyOption" and the Kotlin enum "BluetoothPhyOption".
    */
   struct JBluetoothPhyOption final: public jni::JavaClass<JBluetoothPhyOption> {
   public:

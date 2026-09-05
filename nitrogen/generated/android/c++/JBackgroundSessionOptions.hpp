@@ -21,7 +21,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "BackgroundSessionOptions" and the the Kotlin data class "BackgroundSessionOptions".
+   * The C++ JNI bridge between the C++ struct "BackgroundSessionOptions" and the Kotlin data class "BackgroundSessionOptions".
    */
   struct JBackgroundSessionOptions final: public jni::JavaClass<JBackgroundSessionOptions> {
   public:

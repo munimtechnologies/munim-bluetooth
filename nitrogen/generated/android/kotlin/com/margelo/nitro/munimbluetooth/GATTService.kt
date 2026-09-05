@@ -39,7 +39,7 @@ data class GATTService(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       uuid,
       characteristics,
       includedServices

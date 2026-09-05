@@ -35,7 +35,7 @@ data class MultipeerDiscoveryInfoEntry(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       key,
       value
     ).contentDeepHashCode()

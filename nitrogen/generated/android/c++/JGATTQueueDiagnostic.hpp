@@ -18,7 +18,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "GATTQueueDiagnostic" and the the Kotlin data class "GATTQueueDiagnostic".
+   * The C++ JNI bridge between the C++ struct "GATTQueueDiagnostic" and the Kotlin data class "GATTQueueDiagnostic".
    */
   struct JGATTQueueDiagnostic final: public jni::JavaClass<JGATTQueueDiagnostic> {
   public:

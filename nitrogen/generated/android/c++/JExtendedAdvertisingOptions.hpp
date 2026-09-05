@@ -27,7 +27,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "ExtendedAdvertisingOptions" and the the Kotlin data class "ExtendedAdvertisingOptions".
+   * The C++ JNI bridge between the C++ struct "ExtendedAdvertisingOptions" and the Kotlin data class "ExtendedAdvertisingOptions".
    */
   struct JExtendedAdvertisingOptions final: public jni::JavaClass<JExtendedAdvertisingOptions> {
   public:

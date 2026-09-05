@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "PeripheralRequestMode" and the the Kotlin enum "PeripheralRequestMode".
+   * The C++ JNI bridge between the C++ enum "PeripheralRequestMode" and the Kotlin enum "PeripheralRequestMode".
    */
   struct JPeripheralRequestMode final: public jni::JavaClass<JPeripheralRequestMode> {
   public:

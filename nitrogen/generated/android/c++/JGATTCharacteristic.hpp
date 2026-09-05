@@ -23,7 +23,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "GATTCharacteristic" and the the Kotlin data class "GATTCharacteristic".
+   * The C++ JNI bridge between the C++ struct "GATTCharacteristic" and the Kotlin data class "GATTCharacteristic".
    */
   struct JGATTCharacteristic final: public jni::JavaClass<JGATTCharacteristic> {
   public:

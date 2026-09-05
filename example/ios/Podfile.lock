@@ -8,7 +8,7 @@ PODS:
   - hermes-engine (0.14.0):
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
-  - MunimBluetooth (0.6.1):
+  - MunimBluetooth (0.7.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -38,7 +38,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - NitroModules (0.35.6):
+  - NitroModules (0.36.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -2857,8 +2857,8 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: d1ede0c42e6816212b1cc199d55e9d5678db086a
-  MunimBluetooth: 22e2cc191d675fd1d489179009256f57fc8e122b
-  NitroModules: 70e2ff77a0b718e47d5bccd837fefe8a9aa20f50
+  MunimBluetooth: ad820a72916e8d946fe2e43d9975f9de5cfcfed4
+  NitroModules: ab089a25876d6510138cc21fbf2e36e872f7d607
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: a41bbdd9af30bf2e5715796b313e44ec43eefff1
   RCTRequired: 7be34aabb0b77c3cefe644528df0fa0afad4e4d0

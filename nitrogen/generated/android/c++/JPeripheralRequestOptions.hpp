@@ -19,7 +19,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "PeripheralRequestOptions" and the the Kotlin data class "PeripheralRequestOptions".
+   * The C++ JNI bridge between the C++ struct "PeripheralRequestOptions" and the Kotlin data class "PeripheralRequestOptions".
    */
   struct JPeripheralRequestOptions final: public jni::JavaClass<JPeripheralRequestOptions> {
   public:

@@ -39,7 +39,7 @@ data class GATTDescriptor(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       uuid,
       value,
       permissions

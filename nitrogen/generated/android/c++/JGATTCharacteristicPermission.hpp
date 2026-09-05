@@ -15,7 +15,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "GATTCharacteristicPermission" and the the Kotlin enum "GATTCharacteristicPermission".
+   * The C++ JNI bridge between the C++ enum "GATTCharacteristicPermission" and the Kotlin enum "GATTCharacteristicPermission".
    */
   struct JGATTCharacteristicPermission final: public jni::JavaClass<JGATTCharacteristicPermission> {
   public:

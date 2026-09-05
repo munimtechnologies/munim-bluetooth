@@ -87,7 +87,7 @@ data class ExtendedAdvertisingOptions(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       serviceUUIDs,
       localName,
       manufacturerData,

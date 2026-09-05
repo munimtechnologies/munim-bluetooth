@@ -107,7 +107,7 @@ data class AdvertisingDataTypes(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       flags,
       incompleteServiceUUIDs16,
       completeServiceUUIDs16,

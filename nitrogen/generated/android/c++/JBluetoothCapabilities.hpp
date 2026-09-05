@@ -17,7 +17,7 @@ namespace margelo::nitro::munimbluetooth {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "BluetoothCapabilities" and the the Kotlin data class "BluetoothCapabilities".
+   * The C++ JNI bridge between the C++ struct "BluetoothCapabilities" and the Kotlin data class "BluetoothCapabilities".
    */
   struct JBluetoothCapabilities final: public jni::JavaClass<JBluetoothCapabilities> {
   public:

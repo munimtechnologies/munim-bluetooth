@@ -47,7 +47,7 @@ data class GATTCharacteristic(
   }
 
   override fun hashCode(): Int {
-    return arrayOf(
+    return arrayOf<Any?>(
       uuid,
       properties,
       permissions,
