@@ -389,7 +389,6 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         // Emit event through the event emitter
         if let emitter = MunimBluetoothEventEmitter.shared {
             emitter.emitDeviceFound(deviceData)
-            NSLog("[MunimBluetooth] ✅ Device found event emitted: %@", device.identifier.uuidString)
         } else {
             NSLog("[MunimBluetooth] ⚠️ Event emitter not initialized!")
         }
@@ -398,642 +397,688 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // MARK: - Peripheral Features
 
     func startAdvertising(options: AdvertisingOptions) throws {
-        guard let peripheralManager = peripheralManager else {
-            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
-        }
-
-        guard peripheralManager.state == .poweredOn else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
-        }
-
-        // Stop any existing advertising first
-        if peripheralManager.isAdvertising {
-            NSLog("[MunimBluetooth] Stopping existing advertising")
-            peripheralManager.stopAdvertising()
-        }
-
-        var advertisingData: [String: Any] = [:]
-
-        // Service UUIDs - ALLOWED
-        if !options.serviceUUIDs.isEmpty {
-            let uuids = options.serviceUUIDs.compactMap { CBUUID(string: $0) }
-            advertisingData[CBAdvertisementDataServiceUUIDsKey] = uuids
-#if DEBUG
-            NSLog("[MunimBluetooth] Advertising service UUIDs: %@", options.serviceUUIDs)
-#endif
-        }
-
-        // Local name - ALLOWED
-        if let localName = options.localName {
-            advertisingData[CBAdvertisementDataLocalNameKey] = localName
-#if DEBUG
-            NSLog("[MunimBluetooth] Advertising local name: %@", localName)
-#endif
-        }
-
-        // Manufacturer data - NOT ALLOWED by iOS for peripheral advertising
-        // This can only be included when you're a central scanning for peripherals
-        if options.manufacturerData != nil || options.manufacturerDataEntries?.isEmpty == false {
-            NSLog("[MunimBluetooth] ⚠️ WARNING: Manufacturer data cannot be advertised on iOS")
-            NSLog("[MunimBluetooth] iOS only allows localName and serviceUUIDs in peripheral advertisements")
-            // Don't add it to advertisingData - it will cause a warning/error.
-            // The values are still stored so getAdvertisingData() can return them.
-        }
-
-        // Advertising data types - Most are NOT ALLOWED
-        if let advertisingDataTypes = options.advertisingData {
-            // Only process allowed fields
-            processAdvertisingData(advertisingDataTypes, into: &advertisingData)
-            if let completeLocalName = advertisingDataTypes.completeLocalName {
-                advertisingData[CBAdvertisementDataLocalNameKey] = completeLocalName
-#if DEBUG
-                NSLog("[MunimBluetooth] Using complete local name from advertising data: %@", completeLocalName)
-#endif
+        try onBluetoothThread {
+            guard let peripheralManager = peripheralManager else {
+                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
             }
 
-            // Warn about unsupported fields
-            if advertisingDataTypes.txPowerLevel != nil {
-                NSLog("[MunimBluetooth] ⚠️ WARNING: txPowerLevel cannot be set in peripheral advertisements on iOS")
+            guard peripheralManager.state == .poweredOn else {
+                throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
             }
-            if advertisingDataTypes.flags != nil {
-                NSLog("[MunimBluetooth] ⚠️ WARNING: flags cannot be set in peripheral advertisements on iOS")
+
+            // Stop any existing advertising first
+            if peripheralManager.isAdvertising {
+                NSLog("[MunimBluetooth] Stopping existing advertising")
+                peripheralManager.stopAdvertising()
             }
+
+            var advertisingData: [String: Any] = [:]
+
+            // Service UUIDs - ALLOWED
+            if !options.serviceUUIDs.isEmpty {
+                let uuids = options.serviceUUIDs.compactMap { CBUUID(string: $0) }
+                advertisingData[CBAdvertisementDataServiceUUIDsKey] = uuids
+    #if DEBUG
+                NSLog("[MunimBluetooth] Advertising service UUIDs: %@", options.serviceUUIDs)
+    #endif
+            }
+
+            // Local name - ALLOWED
+            if let localName = options.localName {
+                advertisingData[CBAdvertisementDataLocalNameKey] = localName
+    #if DEBUG
+                NSLog("[MunimBluetooth] Advertising local name: %@", localName)
+    #endif
+            }
+
+            // Manufacturer data - NOT ALLOWED by iOS for peripheral advertising
+            // This can only be included when you're a central scanning for peripherals
+            if options.manufacturerData != nil || options.manufacturerDataEntries?.isEmpty == false {
+                NSLog("[MunimBluetooth] ⚠️ WARNING: Manufacturer data cannot be advertised on iOS")
+                NSLog("[MunimBluetooth] iOS only allows localName and serviceUUIDs in peripheral advertisements")
+                // Don't add it to advertisingData - it will cause a warning/error.
+                // The values are still stored so getAdvertisingData() can return them.
+            }
+
+            // Advertising data types - Most are NOT ALLOWED
+            if let advertisingDataTypes = options.advertisingData {
+                // Only process allowed fields
+                processAdvertisingData(advertisingDataTypes, into: &advertisingData)
+                if let completeLocalName = advertisingDataTypes.completeLocalName {
+                    advertisingData[CBAdvertisementDataLocalNameKey] = completeLocalName
+    #if DEBUG
+                    NSLog("[MunimBluetooth] Using complete local name from advertising data: %@", completeLocalName)
+    #endif
+                }
+
+                // Warn about unsupported fields
+                if advertisingDataTypes.txPowerLevel != nil {
+                    NSLog("[MunimBluetooth] ⚠️ WARNING: txPowerLevel cannot be set in peripheral advertisements on iOS")
+                }
+                if advertisingDataTypes.flags != nil {
+                    NSLog("[MunimBluetooth] ⚠️ WARNING: flags cannot be set in peripheral advertisements on iOS")
+                }
+            }
+
+            currentAdvertisingData = normalizeAdvertisingData(
+                options.advertisingData,
+                serviceUUIDs: options.serviceUUIDs,
+                localName: options.localName,
+                manufacturerData: options.manufacturerData,
+                manufacturerCompanyId: options.manufacturerCompanyId,
+                manufacturerDataEntries: options.manufacturerDataEntries
+            )
+
+    #if DEBUG
+            NSLog("[MunimBluetooth] Starting advertising with %ld fields", advertisingData.count)
+    #endif
+            peripheralManager.startAdvertising(advertisingData)
         }
-
-        currentAdvertisingData = normalizeAdvertisingData(
-            options.advertisingData,
-            serviceUUIDs: options.serviceUUIDs,
-            localName: options.localName,
-            manufacturerData: options.manufacturerData,
-            manufacturerCompanyId: options.manufacturerCompanyId,
-            manufacturerDataEntries: options.manufacturerDataEntries
-        )
-
-#if DEBUG
-        NSLog("[MunimBluetooth] Starting advertising with %ld fields", advertisingData.count)
-#endif
-        peripheralManager.startAdvertising(advertisingData)
     }
 
     func updateAdvertisingData(advertisingData: AdvertisingDataTypes) throws {
-        guard let peripheralManager = peripheralManager,
-              peripheralManager.state == .poweredOn else {
-            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+        try onBluetoothThread {
+            guard let peripheralManager = peripheralManager,
+                  peripheralManager.state == .poweredOn else {
+                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+            }
+
+            peripheralManager.stopAdvertising()
+
+            var newAdvertisingData: [String: Any] = [:]
+            processAdvertisingData(advertisingData, into: &newAdvertisingData)
+
+            currentAdvertisingData = normalizeAdvertisingData(advertisingData, serviceUUIDs: nil, localName: nil)
+            peripheralManager.startAdvertising(newAdvertisingData)
         }
-
-        peripheralManager.stopAdvertising()
-
-        var newAdvertisingData: [String: Any] = [:]
-        processAdvertisingData(advertisingData, into: &newAdvertisingData)
-
-        currentAdvertisingData = normalizeAdvertisingData(advertisingData, serviceUUIDs: nil, localName: nil)
-        peripheralManager.startAdvertising(newAdvertisingData)
     }
 
     func getAdvertisingData() throws -> Promise<AdvertisingDataTypes> {
-        let promise = Promise<AdvertisingDataTypes>()
-        promise.resolve(withResult: self.currentAdvertisingData ?? AdvertisingDataTypes())
-        return promise
+        try onBluetoothThread {
+            let promise = Promise<AdvertisingDataTypes>()
+            promise.resolve(withResult: self.currentAdvertisingData ?? AdvertisingDataTypes())
+            return promise
+        }
     }
 
     func stopAdvertising() throws {
-        peripheralManager?.stopAdvertising()
-        peripheralManager?.removeAllServices()
-        rejectAllPeripheralRequests()
-        peripheralServices.removeAll()
-        peripheralCharacteristicValues.removeAll()
-        subscribedCentrals.removeAll()
-        pendingSubscriberUpdates.removeAll()
-        currentAdvertisingData = nil
+        try onBluetoothThread {
+            peripheralManager?.stopAdvertising()
+            peripheralManager?.removeAllServices()
+            rejectAllPeripheralRequests()
+            peripheralServices.removeAll()
+            peripheralCharacteristicValues.removeAll()
+            subscribedCentrals.removeAll()
+            pendingSubscriberUpdates.removeAll()
+            currentAdvertisingData = nil
+        }
     }
 
     func setServices(services: [GATTService], requestOptions: PeripheralRequestOptions?) throws {
-        guard let peripheralManager = peripheralManager else {
-            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
-        }
+        try onBluetoothThread {
+            guard let peripheralManager = peripheralManager else {
+                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
+            }
 
-        guard peripheralManager.state == .poweredOn else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
-        }
+            guard peripheralManager.state == .poweredOn else {
+                throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
+            }
 
-        peripheralRequestMode = requestOptions?.mode ?? .automatic
-        let timeoutMs = requestOptions?.timeoutMs ?? Self.defaultPeripheralRequestTimeoutMs
-        peripheralRequestTimeout = min(max(timeoutMs, 100), 30_000) / 1_000.0
-        rejectAllPeripheralRequests()
+            peripheralRequestMode = requestOptions?.mode ?? .automatic
+            let timeoutMs = requestOptions?.timeoutMs ?? Self.defaultPeripheralRequestTimeoutMs
+            peripheralRequestTimeout = min(max(timeoutMs, 100), 30_000) / 1_000.0
+            rejectAllPeripheralRequests()
 
-        // Remove existing services first
-        peripheralManager.removeAllServices()
-        peripheralServices.removeAll()
-        configuredServices = services
-        peripheralCharacteristicValues.removeAll()
-        subscribedCentrals.removeAll()
-        pendingSubscriberUpdates.removeAll()
+            // Remove existing services first
+            peripheralManager.removeAllServices()
+            peripheralServices.removeAll()
+            configuredServices = services
+            peripheralCharacteristicValues.removeAll()
+            subscribedCentrals.removeAll()
+            pendingSubscriberUpdates.removeAll()
 
-        NSLog("[MunimBluetooth] Setting up %d services", services.count)
+            NSLog("[MunimBluetooth] Setting up %d services", services.count)
 
-        var createdServices: [(GATTService, CBMutableService)] = []
+            var createdServices: [(GATTService, CBMutableService)] = []
 
-        for service in services {
-            let serviceUUID = CBUUID(string: service.uuid)
-            let mutableService = CBMutableService(type: serviceUUID, primary: true)
+            for service in services {
+                let serviceUUID = CBUUID(string: service.uuid)
+                let mutableService = CBMutableService(type: serviceUUID, primary: true)
 
-            var characteristics: [CBMutableCharacteristic] = []
+                var characteristics: [CBMutableCharacteristic] = []
 
-            NSLog("[MunimBluetooth] Service %@: %d characteristics", service.uuid, service.characteristics.count)
+                NSLog("[MunimBluetooth] Service %@: %d characteristics", service.uuid, service.characteristics.count)
 
-            for characteristic in service.characteristics {
-                let charUUID = CBUUID(string: characteristic.uuid)
+                for characteristic in service.characteristics {
+                    let charUUID = CBUUID(string: characteristic.uuid)
 
-                var properties: CBCharacteristicProperties = []
-                for prop in characteristic.properties {
-                    switch prop {
-                    case "read":
-                        properties.insert(.read)
-                    case "write":
-                        properties.insert(.write)
-                    case "writeWithoutResponse":
-                        properties.insert(.writeWithoutResponse)
-                    case "notify":
-                        properties.insert(.notify)
-                    case "indicate":
-                        properties.insert(.indicate)
-                    default:
-                        throw NSError(
-                            domain: "MunimBluetooth",
-                            code: 3,
-                            userInfo: [NSLocalizedDescriptionKey: "Unsupported GATT characteristic property '\(prop)' on \(characteristic.uuid)"]
-                        )
+                    var properties: CBCharacteristicProperties = []
+                    for prop in characteristic.properties {
+                        switch prop {
+                        case "read":
+                            properties.insert(.read)
+                        case "write":
+                            properties.insert(.write)
+                        case "writeWithoutResponse":
+                            properties.insert(.writeWithoutResponse)
+                        case "notify":
+                            properties.insert(.notify)
+                        case "indicate":
+                            properties.insert(.indicate)
+                        default:
+                            throw NSError(
+                                domain: "MunimBluetooth",
+                                code: 3,
+                                userInfo: [NSLocalizedDescriptionKey: "Unsupported GATT characteristic property '\(prop)' on \(characteristic.uuid)"]
+                            )
+                        }
                     }
+
+                    let initialValue = characteristic.value.flatMap { hexStringToData($0) }
+                    let characteristicValueKey = peripheralCharacteristicKey(
+                        serviceUUID: service.uuid,
+                        characteristicUUID: characteristic.uuid
+                    )
+                    if let initialValue = initialValue {
+                        peripheralCharacteristicValues[characteristicValueKey] = initialValue
+                    }
+
+                    let permissions = try attributePermissions(
+                        for: characteristic,
+                        properties: properties
+                    )
+
+                    let mutableChar = CBMutableCharacteristic(
+                        type: charUUID,
+                        properties: properties,
+                        value: nil,
+                        permissions: permissions
+                    )
+                    mutableChar.descriptors = characteristic.descriptors?.compactMap {
+                        makeMutableDescriptor(from: $0)
+                    }
+
+                    characteristics.append(mutableChar)
+                    NSLog("[MunimBluetooth] Characteristic added: %@ with properties: %lu, hasValue: %@",
+                          characteristic.uuid, properties.rawValue, initialValue != nil ? "YES" : "NO")
                 }
 
-                let initialValue = characteristic.value.flatMap { hexStringToData($0) }
-                let characteristicValueKey = peripheralCharacteristicKey(
-                    serviceUUID: service.uuid,
-                    characteristicUUID: characteristic.uuid
-                )
-                if let initialValue = initialValue {
-                    peripheralCharacteristicValues[characteristicValueKey] = initialValue
-                }
-
-                let permissions = try attributePermissions(
-                    for: characteristic,
-                    properties: properties
-                )
-
-                let mutableChar = CBMutableCharacteristic(
-                    type: charUUID,
-                    properties: properties,
-                    value: nil,
-                    permissions: permissions
-                )
-                mutableChar.descriptors = characteristic.descriptors?.compactMap {
-                    makeMutableDescriptor(from: $0)
-                }
-
-                characteristics.append(mutableChar)
-                NSLog("[MunimBluetooth] Characteristic added: %@ with properties: %lu, hasValue: %@",
-                      characteristic.uuid, properties.rawValue, initialValue != nil ? "YES" : "NO")
+                mutableService.characteristics = characteristics
+                createdServices.append((service, mutableService))
             }
 
-            mutableService.characteristics = characteristics
-            createdServices.append((service, mutableService))
-        }
+            let servicesByUUID = Dictionary(
+                uniqueKeysWithValues: createdServices.map { ($0.0.uuid.lowercased(), $0.1) }
+            )
 
-        let servicesByUUID = Dictionary(
-            uniqueKeysWithValues: createdServices.map { ($0.0.uuid.lowercased(), $0.1) }
-        )
+            for (service, mutableService) in createdServices {
+                mutableService.includedServices = service.includedServices?.compactMap {
+                    servicesByUUID[$0.lowercased()]
+                }
+                peripheralServices.append(mutableService)
 
-        for (service, mutableService) in createdServices {
-            mutableService.includedServices = service.includedServices?.compactMap {
-                servicesByUUID[$0.lowercased()]
+                NSLog("[MunimBluetooth] Adding service to peripheral manager: %@", service.uuid)
+                peripheralManager.add(mutableService)
             }
-            peripheralServices.append(mutableService)
 
-            NSLog("[MunimBluetooth] Adding service to peripheral manager: %@", service.uuid)
-            peripheralManager.add(mutableService)
+            NSLog("[MunimBluetooth] All services added successfully")
         }
-
-        NSLog("[MunimBluetooth] All services added successfully")
     }
 
     func updateCharacteristicValue(serviceUUID: String, characteristicUUID: String, value: String, notify: Bool?) throws -> Promise<Void> {
-        let promise = Promise<Void>()
-        guard let data = hexStringToData(value) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
+        try onBluetoothThread {
+            let promise = Promise<Void>()
+            guard let data = hexStringToData(value) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
+                return promise
+            }
+
+            let key = peripheralCharacteristicKey(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
+            peripheralCharacteristicValues[key] = data
+
+            if notify == true {
+                guard let characteristic = findLocalMutableCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Local characteristic not found"]))
+                    return promise
+                }
+
+                guard characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support notify or indicate"]))
+                    return promise
+                }
+
+                sendValueToSubscribedCentrals(characteristic: characteristic, value: data)
+            }
+
+            promise.resolve(withResult: ())
             return promise
         }
-
-        let key = peripheralCharacteristicKey(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-        peripheralCharacteristicValues[key] = data
-
-        if notify == true {
-            guard let characteristic = findLocalMutableCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
-                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Local characteristic not found"]))
-                return promise
-            }
-
-            guard characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) else {
-                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support notify or indicate"]))
-                return promise
-            }
-
-            sendValueToSubscribedCentrals(characteristic: characteristic, value: data)
-        }
-
-        promise.resolve(withResult: ())
-        return promise
     }
 
     func respondToPeripheralReadRequest(requestId: String, value: String?, status: PeripheralRequestStatus?) throws -> Promise<Void> {
-        let promise = Promise<Void>()
-        guard let pending = pendingPeripheralReadRequests.removeValue(forKey: requestId) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral read request is unknown or expired"]))
-            return promise
-        }
-        pending.timeout.cancel()
-
-        guard let peripheralManager = peripheralManager else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"]))
-            return promise
-        }
-
-        let result = attErrorCode(for: status ?? .success)
-        guard result == .success else {
-            peripheralManager.respond(to: pending.request, withResult: result)
-            promise.resolve(withResult: ())
-            return promise
-        }
-
-        let fullValue: Data
-        if let value = value {
-            guard let data = hexStringToData(value) else {
-                peripheralManager.respond(to: pending.request, withResult: .unlikelyError)
-                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
+        try onBluetoothThread {
+            let promise = Promise<Void>()
+            guard let pending = pendingPeripheralReadRequests.removeValue(forKey: requestId) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral read request is unknown or expired"]))
                 return promise
             }
-            fullValue = data
-        } else {
-            let key = peripheralCharacteristicKey(pending.request.characteristic)
-            fullValue = peripheralCharacteristicValues[key] ?? Data()
-        }
+            pending.timeout.cancel()
 
-        guard pending.request.offset <= fullValue.count else {
-            peripheralManager.respond(to: pending.request, withResult: .invalidOffset)
+            guard let peripheralManager = peripheralManager else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"]))
+                return promise
+            }
+
+            let result = attErrorCode(for: status ?? .success)
+            guard result == .success else {
+                peripheralManager.respond(to: pending.request, withResult: result)
+                promise.resolve(withResult: ())
+                return promise
+            }
+
+            let fullValue: Data
+            if let value = value {
+                guard let data = hexStringToData(value) else {
+                    peripheralManager.respond(to: pending.request, withResult: .unlikelyError)
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
+                    return promise
+                }
+                fullValue = data
+            } else {
+                let key = peripheralCharacteristicKey(pending.request.characteristic)
+                fullValue = peripheralCharacteristicValues[key] ?? Data()
+            }
+
+            guard pending.request.offset <= fullValue.count else {
+                peripheralManager.respond(to: pending.request, withResult: .invalidOffset)
+                promise.resolve(withResult: ())
+                return promise
+            }
+
+            pending.request.value = fullValue.subdata(in: pending.request.offset..<fullValue.count)
+            peripheralManager.respond(to: pending.request, withResult: .success)
             promise.resolve(withResult: ())
             return promise
         }
-
-        pending.request.value = fullValue.subdata(in: pending.request.offset..<fullValue.count)
-        peripheralManager.respond(to: pending.request, withResult: .success)
-        promise.resolve(withResult: ())
-        return promise
     }
 
     func respondToPeripheralWriteRequest(requestId: String, accept: Bool, status: PeripheralRequestStatus?) throws -> Promise<Void> {
-        let promise = Promise<Void>()
-        guard let pending = pendingPeripheralWriteRequests.removeValue(forKey: requestId) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral write request is unknown or expired"]))
-            return promise
-        }
-        pending.timeout.cancel()
+        try onBluetoothThread {
+            let promise = Promise<Void>()
+            guard let pending = pendingPeripheralWriteRequests.removeValue(forKey: requestId) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral write request is unknown or expired"]))
+                return promise
+            }
+            pending.timeout.cancel()
 
-        guard let peripheralManager = peripheralManager,
-              let first = pending.requests.first else {
+            guard let peripheralManager = peripheralManager,
+                  let first = pending.requests.first else {
+                promise.resolve(withResult: ())
+                return promise
+            }
+
+            let result = accept
+                ? attErrorCode(for: status ?? .success)
+                : attErrorCode(for: status ?? .writenotpermitted)
+            if result == .success {
+                pending.requests.forEach { applyPeripheralWrite(request: $0) }
+            }
+            peripheralManager.respond(to: first, withResult: result)
             promise.resolve(withResult: ())
             return promise
         }
-
-        let result = accept
-            ? attErrorCode(for: status ?? .success)
-            : attErrorCode(for: status ?? .writenotpermitted)
-        if result == .success {
-            pending.requests.forEach { applyPeripheralWrite(request: $0) }
-        }
-        peripheralManager.respond(to: first, withResult: result)
-        promise.resolve(withResult: ())
-        return promise
     }
 
     func respondToPeripheralExecuteWriteRequest(requestId: String, accept: Bool) throws -> Promise<Void> {
-        // CoreBluetooth delivers executed prepared writes as a single didReceiveWrite
-        // batch, so execute-write responses map onto the pending write batch. When the
-        // request is unknown this resolves for cross-platform API parity with Android.
-        let promise = Promise<Void>()
-        guard let pending = pendingPeripheralWriteRequests.removeValue(forKey: requestId) else {
+        try onBluetoothThread {
+            // CoreBluetooth delivers executed prepared writes as a single didReceiveWrite
+            // batch, so execute-write responses map onto the pending write batch. When the
+            // request is unknown this resolves for cross-platform API parity with Android.
+            let promise = Promise<Void>()
+            guard let pending = pendingPeripheralWriteRequests.removeValue(forKey: requestId) else {
+                promise.resolve(withResult: ())
+                return promise
+            }
+            pending.timeout.cancel()
+
+            if let peripheralManager = peripheralManager,
+               let first = pending.requests.first {
+                if accept {
+                    pending.requests.forEach { applyPeripheralWrite(request: $0) }
+                    peripheralManager.respond(to: first, withResult: .success)
+                } else {
+                    peripheralManager.respond(to: first, withResult: .writeNotPermitted)
+                }
+            }
             promise.resolve(withResult: ())
             return promise
         }
-        pending.timeout.cancel()
-
-        if let peripheralManager = peripheralManager,
-           let first = pending.requests.first {
-            if accept {
-                pending.requests.forEach { applyPeripheralWrite(request: $0) }
-                peripheralManager.respond(to: first, withResult: .success)
-            } else {
-                peripheralManager.respond(to: first, withResult: .writeNotPermitted)
-            }
-        }
-        promise.resolve(withResult: ())
-        return promise
     }
 
     // MARK: - Central/Manager Features
 
     func isBluetoothEnabled() throws -> Promise<Bool> {
-        let promise = Promise<Bool>()
-        let isEnabled = self.centralManager?.state == .poweredOn
-        promise.resolve(withResult: isEnabled)
-        return promise
+        try onBluetoothThread {
+            let promise = Promise<Bool>()
+            let isEnabled = self.centralManager?.state == .poweredOn
+            promise.resolve(withResult: isEnabled)
+            return promise
+        }
     }
 
     func requestBluetoothPermission(permissions: [String]?) throws -> Promise<Bool> {
-        let promise = Promise<Bool>()
-        promise.resolve(withResult: CBManager.authorization == .allowedAlways)
-        return promise
+        try onBluetoothThread {
+            let promise = Promise<Bool>()
+            promise.resolve(withResult: CBManager.authorization == .allowedAlways)
+            return promise
+        }
     }
 
     func getCapabilities() throws -> Promise<BluetoothCapabilities> {
-        let promise = Promise<BluetoothCapabilities>()
-        promise.resolve(withResult: BluetoothCapabilities(
-            platform: "ios",
-            supportsBleCentral: true,
-            supportsBlePeripheral: true,
-            supportsDescriptors: true,
-            supportsIncludedServices: true,
-            supportsMtu: false,
-            supportsPhy: false,
-            supportsBonding: false,
-            supportsExtendedAdvertising: false,
-            supportsL2cap: true,
-            supportsClassicBluetooth: false,
-            supportsBackgroundBle: true,
-            supportsMultipeerConnectivity: true
-        ))
-        return promise
+        try onBluetoothThread {
+            let promise = Promise<BluetoothCapabilities>()
+            promise.resolve(withResult: BluetoothCapabilities(
+                platform: "ios",
+                supportsBleCentral: true,
+                supportsBlePeripheral: true,
+                supportsDescriptors: true,
+                supportsIncludedServices: true,
+                supportsMtu: false,
+                supportsPhy: false,
+                supportsBonding: false,
+                supportsExtendedAdvertising: false,
+                supportsL2cap: true,
+                supportsClassicBluetooth: false,
+                supportsBackgroundBle: true,
+                supportsMultipeerConnectivity: true
+            ))
+            return promise
+        }
     }
 
     func startScan(options: ScanOptions?) throws {
-        guard let centralManager = centralManager,
-              centralManager.state == .poweredOn else {
-            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+        try onBluetoothThread {
+            guard let centralManager = centralManager,
+                  centralManager.state == .poweredOn else {
+                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+            }
+
+            scanOptions = options
+            isScanning = true
+
+            var scanOptions: [String: Any] = [:]
+            if let options = options {
+                scanOptions[CBCentralManagerScanOptionAllowDuplicatesKey] = options.allowDuplicates ?? false
+            }
+
+            let serviceUUIDs = options?.serviceUUIDs?.map { CBUUID(string: $0) }
+            centralManager.scanForPeripherals(
+                withServices: serviceUUIDs?.isEmpty == false ? serviceUUIDs : nil,
+                options: scanOptions as [String : Any]
+            )
         }
-
-        scanOptions = options
-        isScanning = true
-
-        var scanOptions: [String: Any] = [:]
-        if let options = options {
-            scanOptions[CBCentralManagerScanOptionAllowDuplicatesKey] = options.allowDuplicates ?? false
-        }
-
-        let serviceUUIDs = options?.serviceUUIDs?.map { CBUUID(string: $0) }
-        centralManager.scanForPeripherals(
-            withServices: serviceUUIDs?.isEmpty == false ? serviceUUIDs : nil,
-            options: scanOptions as [String : Any]
-        )
     }
 
     func stopScan() throws {
-        centralManager?.stopScan()
-        isScanning = false
+        try onBluetoothThread {
+            centralManager?.stopScan()
+            isScanning = false
+        }
     }
 
     func connect(deviceId: String) throws -> Promise<Void> {
-        let promise = Promise<Void>()
-        if connectedPeripherals[deviceId] != nil {
-            promise.resolve(withResult: ())
+        try onBluetoothThread {
+            let promise = Promise<Void>()
+            if connectedPeripherals[deviceId] != nil {
+                promise.resolve(withResult: ())
+                return promise
+            }
+
+            guard let peripheral = resolvePeripheral(deviceId: deviceId) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not found"]))
+                return promise
+            }
+
+            pendingConnectionPromises[deviceId] = promise
+            scheduleConnectionTimeout(deviceId: deviceId, peripheral: peripheral)
+            peripheral.delegate = peripheralDelegateProxy
+            self.centralManager?.connect(peripheral, options: nil)
             return promise
         }
-
-        guard let peripheral = resolvePeripheral(deviceId: deviceId) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not found"]))
-            return promise
-        }
-
-        pendingConnectionPromises[deviceId] = promise
-        scheduleConnectionTimeout(deviceId: deviceId, peripheral: peripheral)
-        peripheral.delegate = peripheralDelegateProxy
-        self.centralManager?.connect(peripheral, options: nil)
-        return promise
     }
 
     func disconnect(deviceId: String) throws {
-        let peripheral = connectedPeripherals[deviceId] ?? discoveredPeripherals[deviceId]
-        if let peripheral = peripheral {
-            centralManager?.cancelPeripheralConnection(peripheral)
+        try onBluetoothThread {
+            let peripheral = connectedPeripherals[deviceId] ?? discoveredPeripherals[deviceId]
+            if let peripheral = peripheral {
+                centralManager?.cancelPeripheralConnection(peripheral)
+            }
+            connectedPeripherals.removeValue(forKey: deviceId)
+            connectionTimeouts.removeValue(forKey: deviceId)?.cancel()
+            rejectPendingOperations(for: deviceId, error: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Disconnected from \(deviceId)"]))
         }
-        connectedPeripherals.removeValue(forKey: deviceId)
-        connectionTimeouts.removeValue(forKey: deviceId)?.cancel()
-        rejectPendingOperations(for: deviceId, error: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Disconnected from \(deviceId)"]))
     }
 
     func discoverServices(deviceId: String) throws -> Promise<[GATTService]> {
-        let promise = Promise<[GATTService]>()
-        guard let peripheral = self.connectedPeripherals[deviceId] else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
-            return promise
-        }
-
-        if let services = peripheral.services,
-           services.allSatisfy({ $0.characteristics != nil && $0.includedServices != nil }) {
-            promise.resolve(withResult: buildGATTServices(from: services))
-            return promise
-        }
-
-        enqueueGattOperation(
-            deviceId: deviceId,
-            kind: "discoverServices",
-            target: deviceId,
-            start: { [weak self] in
-                self?.pendingServiceDiscoveryPromises[deviceId] = promise
-                peripheral.discoverServices(nil)
-                return true
-            },
-            reject: { [weak self] error in
-                self?.pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)
-                self?.pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
-                promise.reject(withError: error)
+        try onBluetoothThread {
+            let promise = Promise<[GATTService]>()
+            guard let peripheral = self.connectedPeripherals[deviceId] else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return promise
             }
-        )
-        return promise
+
+            if let services = peripheral.services,
+               services.allSatisfy({ $0.characteristics != nil && $0.includedServices != nil }) {
+                promise.resolve(withResult: buildGATTServices(from: services))
+                return promise
+            }
+
+            enqueueGattOperation(
+                deviceId: deviceId,
+                kind: "discoverServices",
+                target: deviceId,
+                start: { [weak self] in
+                    self?.pendingServiceDiscoveryPromises[deviceId] = promise
+                    peripheral.discoverServices(nil)
+                    return true
+                },
+                reject: { [weak self] error in
+                    self?.pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)
+                    self?.pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
+                    promise.reject(withError: error)
+                }
+            )
+            return promise
+        }
     }
 
     func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<CharacteristicValue> {
-        let promise = Promise<CharacteristicValue>()
+        try onBluetoothThread {
+            let promise = Promise<CharacteristicValue>()
 
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
-            return promise
-        }
-
-        guard let characteristic = findCharacteristic(
-            deviceId: deviceId,
-            serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID
-        ) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"]))
-            return promise
-        }
-
-        let key = characteristicKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-        enqueueGattOperation(
-            deviceId: deviceId,
-            kind: "readCharacteristic",
-            target: key,
-            start: { [weak self] in
-                self?.pendingReadPromises[key] = promise
-                peripheral.readValue(for: characteristic)
-                return true
-            },
-            reject: { [weak self] error in
-                self?.pendingReadPromises.removeValue(forKey: key)
-                promise.reject(withError: error)
+            guard let peripheral = connectedPeripherals[deviceId] else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return promise
             }
-        )
-        return promise
+
+            guard let characteristic = findCharacteristic(
+                deviceId: deviceId,
+                serviceUUID: serviceUUID,
+                characteristicUUID: characteristicUUID
+            ) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"]))
+                return promise
+            }
+
+            let key = characteristicKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
+            enqueueGattOperation(
+                deviceId: deviceId,
+                kind: "readCharacteristic",
+                target: key,
+                start: { [weak self] in
+                    self?.pendingReadPromises[key] = promise
+                    peripheral.readValue(for: characteristic)
+                    return true
+                },
+                reject: { [weak self] error in
+                    self?.pendingReadPromises.removeValue(forKey: key)
+                    promise.reject(withError: error)
+                }
+            )
+            return promise
+        }
     }
 
     func readDescriptor(deviceId: String, serviceUUID: String, characteristicUUID: String, descriptorUUID: String) throws -> Promise<DescriptorValue> {
-        let promise = Promise<DescriptorValue>()
-        guard let peripheral = connectedPeripherals[deviceId],
-              let characteristic = findCharacteristic(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device, service, or characteristic not found"]))
+        try onBluetoothThread {
+            let promise = Promise<DescriptorValue>()
+            guard let peripheral = connectedPeripherals[deviceId],
+                  let characteristic = findCharacteristic(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device, service, or characteristic not found"]))
+                return promise
+            }
+
+            let key = descriptorKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID, descriptorUUID: descriptorUUID)
+            enqueueGattOperation(
+                deviceId: deviceId,
+                kind: "readDescriptor",
+                target: key,
+                start: { [weak self] in
+                    self?.pendingDescriptorReadPromises[key] = promise
+                    if let descriptor = self?.findDescriptor(characteristic: characteristic, descriptorUUID: descriptorUUID) {
+                        peripheral.readValue(for: descriptor)
+                    } else {
+                        peripheral.discoverDescriptors(for: characteristic)
+                    }
+                    return true
+                },
+                reject: { [weak self] error in
+                    self?.pendingDescriptorReadPromises.removeValue(forKey: key)
+                    promise.reject(withError: error)
+                }
+            )
             return promise
         }
-
-        let key = descriptorKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID, descriptorUUID: descriptorUUID)
-        enqueueGattOperation(
-            deviceId: deviceId,
-            kind: "readDescriptor",
-            target: key,
-            start: { [weak self] in
-                self?.pendingDescriptorReadPromises[key] = promise
-                if let descriptor = self?.findDescriptor(characteristic: characteristic, descriptorUUID: descriptorUUID) {
-                    peripheral.readValue(for: descriptor)
-                } else {
-                    peripheral.discoverDescriptors(for: characteristic)
-                }
-                return true
-            },
-            reject: { [weak self] error in
-                self?.pendingDescriptorReadPromises.removeValue(forKey: key)
-                promise.reject(withError: error)
-            }
-        )
-        return promise
     }
 
     func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?) throws -> Promise<Void> {
-        let promise = Promise<Void>()
+        try onBluetoothThread {
+            let promise = Promise<Void>()
 
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
-            return promise
-        }
-
-        guard let characteristic = findCharacteristic(
-            deviceId: deviceId,
-            serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID
-        ) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"]))
-            return promise
-        }
-
-        guard let data = hexStringToData(value) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid hex string for characteristic write"]))
-            return promise
-        }
-
-        let cbWriteType: CBCharacteristicWriteType = writeType == .writewithoutresponse ? .withoutResponse : .withResponse
-        if cbWriteType == .withoutResponse {
-            guard characteristic.properties.contains(.writeWithoutResponse) else {
-                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support writeWithoutResponse"]))
+            guard let peripheral = connectedPeripherals[deviceId] else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
                 return promise
             }
-            peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
-            promise.resolve(withResult: ())
-            return promise
-        }
 
-        guard characteristic.properties.contains(.write) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support write"]))
-            return promise
-        }
-
-        let key = characteristicKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-        enqueueGattOperation(
-            deviceId: deviceId,
-            kind: "writeCharacteristic",
-            target: key,
-            start: { [weak self] in
-                self?.pendingWritePromises[key] = promise
-                peripheral.writeValue(data, for: characteristic, type: .withResponse)
-                return true
-            },
-            reject: { [weak self] error in
-                self?.pendingWritePromises.removeValue(forKey: key)
-                promise.reject(withError: error)
+            guard let characteristic = findCharacteristic(
+                deviceId: deviceId,
+                serviceUUID: serviceUUID,
+                characteristicUUID: characteristicUUID
+            ) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"]))
+                return promise
             }
-        )
-        return promise
+
+            guard let data = hexStringToData(value) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid hex string for characteristic write"]))
+                return promise
+            }
+
+            let cbWriteType: CBCharacteristicWriteType = writeType == .writewithoutresponse ? .withoutResponse : .withResponse
+            if cbWriteType == .withoutResponse {
+                guard characteristic.properties.contains(.writeWithoutResponse) else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support writeWithoutResponse"]))
+                    return promise
+                }
+                peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
+                promise.resolve(withResult: ())
+                return promise
+            }
+
+            guard characteristic.properties.contains(.write) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support write"]))
+                return promise
+            }
+
+            let key = characteristicKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
+            enqueueGattOperation(
+                deviceId: deviceId,
+                kind: "writeCharacteristic",
+                target: key,
+                start: { [weak self] in
+                    self?.pendingWritePromises[key] = promise
+                    peripheral.writeValue(data, for: characteristic, type: .withResponse)
+                    return true
+                },
+                reject: { [weak self] error in
+                    self?.pendingWritePromises.removeValue(forKey: key)
+                    promise.reject(withError: error)
+                }
+            )
+            return promise
+        }
     }
 
     func writeDescriptor(deviceId: String, serviceUUID: String, characteristicUUID: String, descriptorUUID: String, value: String) throws -> Promise<Void> {
-        let promise = Promise<Void>()
-        guard let peripheral = connectedPeripherals[deviceId],
-              let characteristic = findCharacteristic(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device, service, or characteristic not found"]))
-            return promise
-        }
-        guard let data = hexStringToData(value) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid hex string for descriptor write"]))
-            return promise
-        }
-
-        let key = descriptorKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID, descriptorUUID: descriptorUUID)
-        enqueueGattOperation(
-            deviceId: deviceId,
-            kind: "writeDescriptor",
-            target: key,
-            start: { [weak self] in
-                self?.pendingDescriptorWritePromises[key] = promise
-                self?.pendingDescriptorWriteValues[key] = data
-                if let descriptor = self?.findDescriptor(characteristic: characteristic, descriptorUUID: descriptorUUID) {
-                    peripheral.writeValue(data, for: descriptor)
-                } else {
-                    peripheral.discoverDescriptors(for: characteristic)
-                }
-                return true
-            },
-            reject: { [weak self] error in
-                self?.pendingDescriptorWriteValues.removeValue(forKey: key)
-                self?.pendingDescriptorWritePromises.removeValue(forKey: key)
-                promise.reject(withError: error)
+        try onBluetoothThread {
+            let promise = Promise<Void>()
+            guard let peripheral = connectedPeripherals[deviceId],
+                  let characteristic = findCharacteristic(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device, service, or characteristic not found"]))
+                return promise
             }
-        )
-        return promise
+            guard let data = hexStringToData(value) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid hex string for descriptor write"]))
+                return promise
+            }
+
+            let key = descriptorKey(deviceId: deviceId, serviceUUID: serviceUUID, characteristicUUID: characteristicUUID, descriptorUUID: descriptorUUID)
+            enqueueGattOperation(
+                deviceId: deviceId,
+                kind: "writeDescriptor",
+                target: key,
+                start: { [weak self] in
+                    self?.pendingDescriptorWritePromises[key] = promise
+                    self?.pendingDescriptorWriteValues[key] = data
+                    if let descriptor = self?.findDescriptor(characteristic: characteristic, descriptorUUID: descriptorUUID) {
+                        peripheral.writeValue(data, for: descriptor)
+                    } else {
+                        peripheral.discoverDescriptors(for: characteristic)
+                    }
+                    return true
+                },
+                reject: { [weak self] error in
+                    self?.pendingDescriptorWriteValues.removeValue(forKey: key)
+                    self?.pendingDescriptorWritePromises.removeValue(forKey: key)
+                    promise.reject(withError: error)
+                }
+            )
+            return promise
+        }
     }
 
     func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<Void> {
-        setNotificationState(
-            enabled: true,
-            kind: "subscribe",
-            deviceId: deviceId,
-            serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID
-        )
+        try onBluetoothThread {
+            setNotificationState(
+                enabled: true,
+                kind: "subscribe",
+                deviceId: deviceId,
+                serviceUUID: serviceUUID,
+                characteristicUUID: characteristicUUID
+            )
+        }
     }
 
     func unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<Void> {
-        setNotificationState(
-            enabled: false,
-            kind: "unsubscribe",
-            deviceId: deviceId,
-            serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID
-        )
+        try onBluetoothThread {
+            setNotificationState(
+                enabled: false,
+                kind: "unsubscribe",
+                deviceId: deviceId,
+                serviceUUID: serviceUUID,
+                characteristicUUID: characteristicUUID
+            )
+        }
     }
 
     private func setNotificationState(
@@ -1082,51 +1127,57 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func getGattQueueDiagnostics() throws -> Promise<[GATTQueueDiagnostic]> {
-        let promise = Promise<[GATTQueueDiagnostic]>()
-        let now = Date()
-        let deviceIds = Set(gattOperationQueues.keys).union(activeGattOperations.keys).sorted()
-        let diagnostics = deviceIds.map { deviceId -> GATTQueueDiagnostic in
-            let active = activeGattOperations[deviceId]
-            return GATTQueueDiagnostic(
-                deviceId: deviceId,
-                activeOperation: active?.kind,
-                activeTarget: active?.target,
-                queuedOperations: Double(gattOperationQueues[deviceId]?.count ?? 0),
-                activeDurationMs: active?.startedAt.map { max(now.timeIntervalSince($0) * 1_000, 0) }
-            )
+        try onBluetoothThread {
+            let promise = Promise<[GATTQueueDiagnostic]>()
+            let now = Date()
+            let deviceIds = Set(gattOperationQueues.keys).union(activeGattOperations.keys).sorted()
+            let diagnostics = deviceIds.map { deviceId -> GATTQueueDiagnostic in
+                let active = activeGattOperations[deviceId]
+                return GATTQueueDiagnostic(
+                    deviceId: deviceId,
+                    activeOperation: active?.kind,
+                    activeTarget: active?.target,
+                    queuedOperations: Double(gattOperationQueues[deviceId]?.count ?? 0),
+                    activeDurationMs: active?.startedAt.map { max(now.timeIntervalSince($0) * 1_000, 0) }
+                )
+            }
+            promise.resolve(withResult: diagnostics)
+            return promise
         }
-        promise.resolve(withResult: diagnostics)
-        return promise
     }
 
     func getConnectedDevices() throws -> Promise<[String]> {
-        let promise = Promise<[String]>()
-        promise.resolve(withResult: Array(self.connectedPeripherals.keys))
-        return promise
+        try onBluetoothThread {
+            let promise = Promise<[String]>()
+            promise.resolve(withResult: Array(self.connectedPeripherals.keys))
+            return promise
+        }
     }
 
     func readRSSI(deviceId: String) throws -> Promise<Double> {
-        let promise = Promise<Double>()
-        guard let peripheral = self.connectedPeripherals[deviceId] else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+        try onBluetoothThread {
+            let promise = Promise<Double>()
+            guard let peripheral = self.connectedPeripherals[deviceId] else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return promise
+            }
+
+            enqueueGattOperation(
+                deviceId: deviceId,
+                kind: "readRSSI",
+                target: deviceId,
+                start: { [weak self] in
+                    self?.pendingRSSIPromises[deviceId] = promise
+                    peripheral.readRSSI()
+                    return true
+                },
+                reject: { [weak self] error in
+                    self?.pendingRSSIPromises.removeValue(forKey: deviceId)
+                    promise.reject(withError: error)
+                }
+            )
             return promise
         }
-
-        enqueueGattOperation(
-            deviceId: deviceId,
-            kind: "readRSSI",
-            target: deviceId,
-            start: { [weak self] in
-                self?.pendingRSSIPromises[deviceId] = promise
-                peripheral.readRSSI()
-                return true
-            },
-            reject: { [weak self] error in
-                self?.pendingRSSIPromises.removeValue(forKey: deviceId)
-                promise.reject(withError: error)
-            }
-        )
-        return promise
     }
 
     func requestMTU(deviceId: String, mtu: Double) throws -> Promise<Double> {
@@ -1162,74 +1213,90 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     func stopExtendedAdvertising(advertisingId: String) throws {}
 
     func publishL2CAPChannel(encryptionRequired: Bool?) throws -> Promise<L2CAPChannel> {
-        let promise = Promise<L2CAPChannel>()
-        guard let peripheralManager = peripheralManager,
-              peripheralManager.state == .poweredOn else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"]))
+        try onBluetoothThread {
+            let promise = Promise<L2CAPChannel>()
+            guard let peripheralManager = peripheralManager,
+                  peripheralManager.state == .poweredOn else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"]))
+                return promise
+            }
+
+            pendingL2CAPPublishPromises.append(promise)
+            peripheralManager.publishL2CAPChannel(withEncryption: encryptionRequired ?? true)
             return promise
         }
-
-        pendingL2CAPPublishPromises.append(promise)
-        peripheralManager.publishL2CAPChannel(withEncryption: encryptionRequired ?? true)
-        return promise
     }
 
     func unpublishL2CAPChannel(psm: Double) throws {
-        let psmValue = CBL2CAPPSM(UInt16(psm))
-        peripheralManager?.unpublishL2CAPChannel(psmValue)
-        publishedL2CAPPSMs.remove(psmValue)
+        try onBluetoothThread {
+            let psmValue = try validatedPSM(psm)
+            peripheralManager?.unpublishL2CAPChannel(psmValue)
+            publishedL2CAPPSMs.remove(psmValue)
+        }
     }
 
     func openL2CAPChannel(deviceId: String, psm: Double, encryptionRequired: Bool?) throws -> Promise<L2CAPChannel> {
-        // encryptionRequired is ignored on iOS — CoreBluetooth has no insecure L2CAP variant;
-        let promise = Promise<L2CAPChannel>()
-        guard let peripheral = connectedPeripherals[deviceId] else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+        try onBluetoothThread {
+            // encryptionRequired is ignored on iOS — CoreBluetooth has no insecure L2CAP variant;
+            let promise = Promise<L2CAPChannel>()
+            guard let peripheral = connectedPeripherals[deviceId] else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return promise
+            }
+
+            let psmValue: CBL2CAPPSM
+            do {
+                psmValue = try validatedPSM(psm)
+            } catch {
+                promise.reject(withError: error)
+                return promise
+            }
+            pendingL2CAPOpenPromises[deviceId] = promise
+            pendingL2CAPOpenPSMs[deviceId] = psmValue
+            scheduleOperationTimeout(key: "l2capOpen|\(deviceId.lowercased())", message: "L2CAP open timed out for \(deviceId)") { [weak self] in
+                self?.pendingL2CAPOpenPSMs.removeValue(forKey: deviceId)
+                self?.pendingL2CAPOpenPromises.removeValue(forKey: deviceId)?.reject(withError: NSError(
+                    domain: "MunimBluetooth",
+                    code: 408,
+                    userInfo: [NSLocalizedDescriptionKey: "L2CAP open timed out for \(deviceId)"]
+                ))
+            }
+            peripheral.openL2CAPChannel(psmValue)
             return promise
         }
-
-        let psmValue = CBL2CAPPSM(UInt16(psm))
-        pendingL2CAPOpenPromises[deviceId] = promise
-        pendingL2CAPOpenPSMs[deviceId] = psmValue
-        scheduleOperationTimeout(key: "l2capOpen|\(deviceId.lowercased())", message: "L2CAP open timed out for \(deviceId)") { [weak self] in
-            self?.pendingL2CAPOpenPSMs.removeValue(forKey: deviceId)
-            self?.pendingL2CAPOpenPromises.removeValue(forKey: deviceId)?.reject(withError: NSError(
-                domain: "MunimBluetooth",
-                code: 408,
-                userInfo: [NSLocalizedDescriptionKey: "L2CAP open timed out for \(deviceId)"]
-            ))
-        }
-        peripheral.openL2CAPChannel(psmValue)
-        return promise
     }
 
     func closeL2CAPChannel(channelId: String) throws {
-        closeL2CAPChannelInternal(channelId: channelId, emitEvent: true)
+        try onBluetoothThread {
+            closeL2CAPChannelInternal(channelId: channelId, emitEvent: true)
+        }
     }
 
     func sendL2CAPData(channelId: String, value: String) throws -> Promise<Void> {
-        let promise = Promise<Void>()
-        guard l2capChannels[channelId] != nil else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "L2CAP channel not open"]))
-            return promise
-        }
-        guard let data = hexStringToData(value) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
-            return promise
-        }
+        try onBluetoothThread {
+            let promise = Promise<Void>()
+            guard l2capChannels[channelId] != nil else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "L2CAP channel not open"]))
+                return promise
+            }
+            guard let data = hexStringToData(value) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
+                return promise
+            }
 
-        let bufferedBytes = l2capOutboundBufferedBytes[channelId] ?? 0
-        guard bufferedBytes + data.count <= Self.maxL2CAPOutboundBufferBytes else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "L2CAP outbound buffer is full"]))
+            let bufferedBytes = l2capOutboundBufferedBytes[channelId] ?? 0
+            guard bufferedBytes + data.count <= Self.maxL2CAPOutboundBufferBytes else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "L2CAP outbound buffer is full"]))
+                return promise
+            }
+
+            l2capOutboundWrites[channelId, default: []].append(
+                PendingL2CAPWrite(data: data, offset: 0, promise: promise)
+            )
+            l2capOutboundBufferedBytes[channelId] = bufferedBytes + data.count
+            drainL2CAPOutbound(channelId: channelId)
             return promise
         }
-
-        l2capOutboundWrites[channelId, default: []].append(
-            PendingL2CAPWrite(data: data, offset: 0, promise: promise)
-        )
-        l2capOutboundBufferedBytes[channelId] = bufferedBytes + data.count
-        drainL2CAPOutbound(channelId: channelId)
-        return promise
     }
 
     private func drainL2CAPOutbound(channelId: String) {
@@ -1299,118 +1366,128 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func startBackgroundSession(options: BackgroundSessionOptions) throws {
-        isBackgroundSessionActive = true
+        try onBluetoothThread {
+            isBackgroundSessionActive = true
 
-        do {
-            let advertisingOptions = AdvertisingOptions(
-                serviceUUIDs: options.serviceUUIDs,
-                localName: options.localName,
-                manufacturerData: nil,
-                manufacturerCompanyId: nil,
-                manufacturerDataEntries: nil,
-                advertisingData: nil
-            )
-
-            try startAdvertising(options: advertisingOptions)
-            try startScan(
-                options: ScanOptions(
+            do {
+                let advertisingOptions = AdvertisingOptions(
                     serviceUUIDs: options.serviceUUIDs,
-                    allowDuplicates: options.allowDuplicates,
-                    scanMode: options.scanMode,
-                    rssiThreshold: nil,
-                    namePrefix: nil
+                    localName: options.localName,
+                    manufacturerData: nil,
+                    manufacturerCompanyId: nil,
+                    manufacturerDataEntries: nil,
+                    advertisingData: nil
                 )
-            )
-            emit("backgroundSessionStarted", body: [
-                "platform": "ios",
-                "serviceUUIDs": options.serviceUUIDs,
-                "localName": options.localName ?? NSNull()
-            ])
-        } catch {
-            isBackgroundSessionActive = false
-            emit("backgroundSessionStartFailed", body: [
-                "platform": "ios",
-                "error": error.localizedDescription
-            ])
-            throw error
+
+                try startAdvertising(options: advertisingOptions)
+                try startScan(
+                    options: ScanOptions(
+                        serviceUUIDs: options.serviceUUIDs,
+                        allowDuplicates: options.allowDuplicates,
+                        scanMode: options.scanMode,
+                        rssiThreshold: nil,
+                        namePrefix: nil
+                    )
+                )
+                emit("backgroundSessionStarted", body: [
+                    "platform": "ios",
+                    "serviceUUIDs": options.serviceUUIDs,
+                    "localName": options.localName ?? NSNull()
+                ])
+            } catch {
+                isBackgroundSessionActive = false
+                emit("backgroundSessionStartFailed", body: [
+                    "platform": "ios",
+                    "error": error.localizedDescription
+                ])
+                throw error
+            }
         }
     }
 
     func stopBackgroundSession() throws {
-        isBackgroundSessionActive = false
-        try stopScan()
-        try stopAdvertising()
-        emit("backgroundSessionStopped", body: ["platform": "ios"])
+        try onBluetoothThread {
+            isBackgroundSessionActive = false
+            try stopScan()
+            try stopAdvertising()
+            emit("backgroundSessionStopped", body: ["platform": "ios"])
+        }
     }
 
     func startMultipeerSession(options: MultipeerSessionOptions) throws {
-        do {
-            let serviceType = try validateMultipeerServiceType(options.serviceType)
-            stopMultipeerSessionInternal(emitEvent: false)
+        try onBluetoothThread {
+            do {
+                let serviceType = try validateMultipeerServiceType(options.serviceType)
+                stopMultipeerSessionInternal(emitEvent: false)
 
-            let peerID = MCPeerID(displayName: normalizedMultipeerDisplayName(options.displayName))
-            let session = MCSession(
-                peer: peerID,
-                securityIdentity: nil,
-                encryptionPreference: multipeerEncryptionPreference(options.encryptionPreference)
-            )
-            session.delegate = multipeerSessionDelegateProxy
+                let peerID = MCPeerID(displayName: normalizedMultipeerDisplayName(options.displayName))
+                let session = MCSession(
+                    peer: peerID,
+                    securityIdentity: nil,
+                    encryptionPreference: multipeerEncryptionPreference(options.encryptionPreference)
+                )
+                session.delegate = multipeerSessionDelegateProxy
 
-            multipeerPeerID = peerID
-            multipeerSession = session
-            multipeerServiceType = serviceType
-            multipeerAutoInvite = options.autoInvite ?? false
-            multipeerAutoAcceptInvitations = options.autoAcceptInvitations ?? false
-            multipeerInviteTimeout = TimeInterval(max(1, options.inviteTimeout ?? 30))
-            multipeerLocalRuntimePeerId = UUID().uuidString
+                multipeerPeerID = peerID
+                multipeerSession = session
+                multipeerServiceType = serviceType
+                multipeerAutoInvite = options.autoInvite ?? false
+                multipeerAutoAcceptInvitations = options.autoAcceptInvitations ?? false
+                multipeerInviteTimeout = TimeInterval(max(1, options.inviteTimeout ?? 30))
+                multipeerLocalRuntimePeerId = UUID().uuidString
 
-            let advertiser = MCNearbyServiceAdvertiser(
-                peer: peerID,
-                discoveryInfo: multipeerDiscoveryInfoDictionary(options.discoveryInfo),
-                serviceType: serviceType
-            )
-            advertiser.delegate = multipeerAdvertiserDelegateProxy
-            multipeerAdvertiser = advertiser
+                let advertiser = MCNearbyServiceAdvertiser(
+                    peer: peerID,
+                    discoveryInfo: multipeerDiscoveryInfoDictionary(options.discoveryInfo),
+                    serviceType: serviceType
+                )
+                advertiser.delegate = multipeerAdvertiserDelegateProxy
+                multipeerAdvertiser = advertiser
 
-            let browser = MCNearbyServiceBrowser(peer: peerID, serviceType: serviceType)
-            browser.delegate = multipeerBrowserDelegateProxy
-            multipeerBrowser = browser
+                let browser = MCNearbyServiceBrowser(peer: peerID, serviceType: serviceType)
+                browser.delegate = multipeerBrowserDelegateProxy
+                multipeerBrowser = browser
 
-            advertiser.startAdvertisingPeer()
-            browser.startBrowsingForPeers()
+                advertiser.startAdvertisingPeer()
+                browser.startBrowsingForPeers()
 
-            NSLog("[MunimBluetooth] Multipeer started service=%@ peer=%@", serviceType, peerID.displayName)
+                NSLog("[MunimBluetooth] Multipeer started service=%@ peer=%@", serviceType, peerID.displayName)
 
-            emit("multipeerStarted", body: [
-                "platform": "ios",
-                "serviceType": serviceType,
-                "peerId": multipeerLocalRuntimePeerId,
-                "displayName": peerID.displayName
-            ])
-        } catch {
-            emit("multipeerStartFailed", body: [
-                "platform": "ios",
-                "error": error.localizedDescription
-            ])
-            throw error
+                emit("multipeerStarted", body: [
+                    "platform": "ios",
+                    "serviceType": serviceType,
+                    "peerId": multipeerLocalRuntimePeerId,
+                    "displayName": peerID.displayName
+                ])
+            } catch {
+                emit("multipeerStartFailed", body: [
+                    "platform": "ios",
+                    "error": error.localizedDescription
+                ])
+                throw error
+            }
         }
     }
 
     func stopMultipeerSession() throws {
-        stopMultipeerSessionInternal(emitEvent: true)
+        try onBluetoothThread {
+            stopMultipeerSessionInternal(emitEvent: true)
+        }
     }
 
     func inviteMultipeerPeer(peerId: String) throws {
-        guard let browser = multipeerBrowser,
-              let session = multipeerSession else {
-            throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Multipeer session is not active"])
-        }
+        try onBluetoothThread {
+            guard let browser = multipeerBrowser,
+                  let session = multipeerSession else {
+                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Multipeer session is not active"])
+            }
 
-        guard let peerID = multipeerPeersById[peerId] else {
-            throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Multipeer peer not found"])
-        }
+            guard let peerID = multipeerPeersById[peerId] else {
+                throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Multipeer peer not found"])
+            }
 
-        browser.invitePeer(peerID, to: session, withContext: nil, timeout: multipeerInviteTimeout)
+            browser.invitePeer(peerID, to: session, withContext: nil, timeout: multipeerInviteTimeout)
+        }
     }
 
     func acceptMultipeerInvitation(invitationId: String) throws {
@@ -1422,47 +1499,51 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func getMultipeerPeers() throws -> Promise<[MultipeerPeer]> {
-        let promise = Promise<[MultipeerPeer]>()
-        let peers = multipeerPeersById.values.map { multipeerPeerPayload(for: $0) }
-            .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
-        promise.resolve(withResult: peers)
-        return promise
+        try onBluetoothThread {
+            let promise = Promise<[MultipeerPeer]>()
+            let peers = multipeerPeersById.values.map { multipeerPeerPayload(for: $0) }
+                .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+            promise.resolve(withResult: peers)
+            return promise
+        }
     }
 
     func sendMultipeerMessage(value: String, peerIds: [String]?, reliable: Bool?) throws -> Promise<Void> {
-        let promise = Promise<Void>()
+        try onBluetoothThread {
+            let promise = Promise<Void>()
 
-        guard let session = multipeerSession else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Multipeer session is not active"]))
+            guard let session = multipeerSession else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Multipeer session is not active"]))
+                return promise
+            }
+
+            guard let data = hexStringToData(value) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
+                return promise
+            }
+
+            let targetPeers: [MCPeerID]
+            if let peerIds = peerIds, !peerIds.isEmpty {
+                let requestedPeers = peerIds.compactMap { multipeerPeersById[$0] }
+                targetPeers = session.connectedPeers.filter { requestedPeers.contains($0) }
+            } else {
+                targetPeers = session.connectedPeers
+            }
+
+            guard !targetPeers.isEmpty else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "No connected Multipeer peers to send to"]))
+                return promise
+            }
+
+            do {
+                try session.send(data, toPeers: targetPeers, with: (reliable ?? true) ? .reliable : .unreliable)
+                promise.resolve(withResult: ())
+            } catch {
+                promise.reject(withError: error)
+            }
+
             return promise
         }
-
-        guard let data = hexStringToData(value) else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Value must be a hex string"]))
-            return promise
-        }
-
-        let targetPeers: [MCPeerID]
-        if let peerIds = peerIds, !peerIds.isEmpty {
-            let requestedPeers = peerIds.compactMap { multipeerPeersById[$0] }
-            targetPeers = session.connectedPeers.filter { requestedPeers.contains($0) }
-        } else {
-            targetPeers = session.connectedPeers
-        }
-
-        guard !targetPeers.isEmpty else {
-            promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "No connected Multipeer peers to send to"]))
-            return promise
-        }
-
-        do {
-            try session.send(data, toPeers: targetPeers, with: (reliable ?? true) ? .reliable : .unreliable)
-            promise.resolve(withResult: ())
-        } catch {
-            promise.reject(withError: error)
-        }
-
-        return promise
     }
 
     func addListener(eventName: String) throws {
@@ -1471,6 +1552,39 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
     func removeListeners(count: Double) throws {
         // Event management
+    }
+
+    // MARK: - Threading
+
+    /// CoreBluetooth delegates, L2CAP stream events and every timer in this
+    /// class run on the main thread, while Nitro invokes the public methods on
+    /// the JS thread. Hopping onto main for the method bodies keeps the
+    /// bookkeeping dictionaries single-threaded instead of racing the delegates.
+    private func onBluetoothThread<T>(_ body: () throws -> T) throws -> T {
+        if Thread.isMainThread {
+            return try body()
+        }
+        return try DispatchQueue.main.sync { try body() }
+    }
+
+    /// L2CAP PSMs are 16-bit; a JS number outside that range would trap in `UInt16(_:)`.
+    private func validatedPSM(_ psm: Double) throws -> CBL2CAPPSM {
+        guard psm.isFinite, psm >= 0, psm <= Double(UInt16.max), psm.rounded(.towardZero) == psm else {
+            throw NSError(
+                domain: "MunimBluetooth",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "PSM must be an integer between 0 and 65535"]
+            )
+        }
+        return CBL2CAPPSM(UInt16(psm))
+    }
+
+    /// Per-packet logging is compiled out of release builds: scan results and
+    /// notifications can arrive hundreds of times per second.
+    private func debugLog(_ message: @autoclosure () -> String) {
+#if DEBUG
+        NSLog("[MunimBluetooth] %@", message())
+#endif
     }
 
     // MARK: - Helper Methods
@@ -2645,7 +2759,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             "displayName": peerID.displayName,
             "value": dataToHex(data)
         ])
-        NSLog("[MunimBluetooth] Multipeer received %ld bytes from peer=%@", data.count, peerID.displayName)
+        debugLog("Multipeer received \(data.count) bytes from peer=\(peerID.displayName)")
     }
 
     func handleMultipeerStartFailed(error: Error) {
@@ -2775,12 +2889,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             pendingPeripheralReadRequests[requestId] = (request, timeout)
         }
 
-        NSLog(
-            "Bluetooth: peripheral read central=%@ characteristic=%@ bytes=%ld",
-            request.central.identifier.uuidString,
-            request.characteristic.uuid.uuidString,
-            value.count
-        )
+        debugLog("peripheral read central=\(request.central.identifier.uuidString) characteristic=\(request.characteristic.uuid.uuidString) bytes=\(value.count)")
         emit("peripheralReadRequest", body: [
             "requestId": requestId,
             "centralId": request.central.identifier.uuidString,
@@ -2840,12 +2949,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 "preparedWrite": preparedWrite,
                 "responseRequired": peripheralRequestMode == .manual
             ])
-            NSLog(
-                "Bluetooth: peripheral write central=%@ characteristic=%@ bytes=%ld",
-                request.central.identifier.uuidString,
-                request.characteristic.uuid.uuidString,
-                incomingValue.count
-            )
+            debugLog("peripheral write central=\(request.central.identifier.uuidString) characteristic=\(request.characteristic.uuid.uuidString) bytes=\(incomingValue.count)")
         }
     }
 
@@ -3060,7 +3164,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         // Emit the device found event
         emitDeviceFound(device: peripheral, advertisementData: advertisementData, rssi: RSSI)
 
-        NSLog("Bluetooth: deviceFound - %@", deviceId)
+        debugLog("deviceFound \(deviceId)")
     }
 
     func handleCentralManagerDidConnect(_ central: CBCentralManager, peripheral: CBPeripheral) {
@@ -3261,12 +3365,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             "value": hexString
         ])
 
-            NSLog(
-                "Bluetooth: characteristic value peripheral=%@ characteristic=%@ bytes=%ld",
-                deviceId,
-                characteristic.uuid.uuidString,
-                data.count
-            )
+            debugLog("characteristic value peripheral=\(deviceId) characteristic=\(characteristic.uuid.uuidString) bytes=\(data.count)")
         }
 
     func handlePeripheralDidUpdateDescriptorValue(_ peripheral: CBPeripheral, descriptor: CBDescriptor, error: Error?) {
@@ -3311,7 +3410,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             NSLog("Bluetooth: writeError")
         } else {
             pendingWritePromises.removeValue(forKey: key)?.resolve(withResult: ())
-            NSLog("Bluetooth: write succeeded characteristic=%@", characteristic.uuid.uuidString)
+            debugLog("write succeeded characteristic=\(characteristic.uuid.uuidString)")
 	        }
 	    }
 
@@ -3398,7 +3497,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
         pendingRSSIPromises.removeValue(forKey: deviceId)?.resolve(withResult: RSSI.doubleValue)
         emit("rssiUpdated", body: ["deviceId": deviceId, "rssi": RSSI.doubleValue])
-        NSLog("Bluetooth: RSSI peripheral=%@ value=%@", deviceId, RSSI)
+        debugLog("RSSI peripheral=\(deviceId) value=\(RSSI)")
     }
 
     private func respondToMultipeerInvitation(invitationId: String, accept: Bool) throws {
