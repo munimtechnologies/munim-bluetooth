@@ -138,8 +138,8 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
     private var advertiser: BluetoothLeAdvertiser? = null
     private var advertiseCallback: AdvertiseCallback? = null
-    private val extendedAdvertisingSets = mutableMapOf<String, AdvertisingSet>()
-    private val extendedAdvertisingCallbacks = mutableMapOf<String, AdvertisingSetCallback>()
+    private val extendedAdvertisingSets = ConcurrentHashMap<String, AdvertisingSet>()
+    private val extendedAdvertisingCallbacks = ConcurrentHashMap<String, AdvertisingSetCallback>()
     private var gattServer: BluetoothGattServer? = null
     private var gattServerReady = false
     private var advertiseJob: Job? = null
@@ -153,8 +153,8 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private var configuredServices: Array<GATTService> = emptyArray()
     private var peripheralRequestMode = PeripheralRequestMode.AUTOMATIC
     private var peripheralRequestTimeoutMs = DEFAULT_PERIPHERAL_REQUEST_TIMEOUT_MS
-    private val pendingPeripheralRequests = mutableMapOf<String, PendingPeripheralRequest>()
-    private val preparedWrites = mutableMapOf<String, MutableList<PreparedWriteFragment>>()
+    private val pendingPeripheralRequests = ConcurrentHashMap<String, PendingPeripheralRequest>()
+    private val preparedWrites = ConcurrentHashMap<String, MutableList<PreparedWriteFragment>>()
     private val pendingServicePublications = ArrayDeque<BluetoothGattService>()
     private var bluetoothManager: BluetoothManager? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -165,37 +165,37 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private var scanAllowDuplicates = false
     private var scanRssiThreshold: Double? = null
     private var scanNamePrefix: String? = null
-    private val discoveredDevices = mutableMapOf<String, BluetoothDevice>()
-    private val connectedDevices = mutableMapOf<String, BluetoothGatt>()
-    private val pendingConnections = mutableMapOf<String, Promise<Unit>>()
-    private val pendingServiceDiscoveries = mutableMapOf<String, Promise<Array<GATTService>>>()
-    private val pendingReads = mutableMapOf<String, Promise<CharacteristicValue>>()
-    private val pendingWrites = mutableMapOf<String, Promise<Unit>>()
-    private val pendingDescriptorReads = mutableMapOf<String, Promise<DescriptorValue>>()
-    private val pendingDescriptorWrites = mutableMapOf<String, Promise<Unit>>()
-    private val pendingMtuRequests = mutableMapOf<String, Promise<Double>>()
-    private val pendingPhyReads = mutableMapOf<String, Promise<PhyStatus>>()
-    private val pendingPhyWrites = mutableMapOf<String, Promise<Unit>>()
-    private val pendingRssiReads = mutableMapOf<String, Promise<Double>>()
-    private val pendingConnectionTimeouts = mutableMapOf<String, Job>()
-    private val pendingConnectionAttempts = mutableMapOf<String, Int>()
-    private val pendingOperationTimeouts = mutableMapOf<String, Job>()
-    private val gattOperationQueues = mutableMapOf<String, ArrayDeque<QueuedGattOperation>>()
-    private val activeGattOperations = mutableMapOf<String, QueuedGattOperation>()
-    private val gattOperationTimeouts = mutableMapOf<String, Job>()
-    private val pendingConnectionGatts = mutableMapOf<String, BluetoothGatt>()
-    private val lastCharacteristicValues = mutableMapOf<String, CharacteristicValue>()
-    private val lastRssiValues = mutableMapOf<String, Double>()
-    private val subscribedDevices = mutableMapOf<UUID, MutableSet<BluetoothDevice>>()
+    private val discoveredDevices = ConcurrentHashMap<String, BluetoothDevice>()
+    private val connectedDevices = ConcurrentHashMap<String, BluetoothGatt>()
+    private val pendingConnections = ConcurrentHashMap<String, Promise<Unit>>()
+    private val pendingServiceDiscoveries = ConcurrentHashMap<String, Promise<Array<GATTService>>>()
+    private val pendingReads = ConcurrentHashMap<String, Promise<CharacteristicValue>>()
+    private val pendingWrites = ConcurrentHashMap<String, Promise<Unit>>()
+    private val pendingDescriptorReads = ConcurrentHashMap<String, Promise<DescriptorValue>>()
+    private val pendingDescriptorWrites = ConcurrentHashMap<String, Promise<Unit>>()
+    private val pendingMtuRequests = ConcurrentHashMap<String, Promise<Double>>()
+    private val pendingPhyReads = ConcurrentHashMap<String, Promise<PhyStatus>>()
+    private val pendingPhyWrites = ConcurrentHashMap<String, Promise<Unit>>()
+    private val pendingRssiReads = ConcurrentHashMap<String, Promise<Double>>()
+    private val pendingConnectionTimeouts = ConcurrentHashMap<String, Job>()
+    private val pendingConnectionAttempts = ConcurrentHashMap<String, Int>()
+    private val pendingOperationTimeouts = ConcurrentHashMap<String, Job>()
+    private val gattOperationQueues = ConcurrentHashMap<String, ArrayDeque<QueuedGattOperation>>()
+    private val activeGattOperations = ConcurrentHashMap<String, QueuedGattOperation>()
+    private val gattOperationTimeouts = ConcurrentHashMap<String, Job>()
+    private val pendingConnectionGatts = ConcurrentHashMap<String, BluetoothGatt>()
+    private val lastCharacteristicValues = ConcurrentHashMap<String, CharacteristicValue>()
+    private val lastRssiValues = ConcurrentHashMap<String, Double>()
+    private val subscribedDevices = ConcurrentHashMap<UUID, MutableSet<BluetoothDevice>>()
     private var bondStateReceiver: BroadcastReceiver? = null
-    private val pendingBondPromises = mutableMapOf<String, Promise<BondState>>()
-    private val pendingBondTimeouts = mutableMapOf<String, Job>()
+    private val pendingBondPromises = ConcurrentHashMap<String, Promise<BondState>>()
+    private val pendingBondTimeouts = ConcurrentHashMap<String, Job>()
     private var classicScanReceiver: BroadcastReceiver? = null
-    private val classicDevices = mutableMapOf<String, BluetoothDevice>()
-    private val classicSockets = mutableMapOf<String, BluetoothSocket>()
-    private val classicReadJobs = mutableMapOf<String, Job>()
-    private val classicServerSockets = mutableMapOf<String, BluetoothServerSocket>()
-    private val classicServerJobs = mutableMapOf<String, Job>()
+    private val classicDevices = ConcurrentHashMap<String, BluetoothDevice>()
+    private val classicSockets = ConcurrentHashMap<String, BluetoothSocket>()
+    private val classicReadJobs = ConcurrentHashMap<String, Job>()
+    private val classicServerSockets = ConcurrentHashMap<String, BluetoothServerSocket>()
+    private val classicServerJobs = ConcurrentHashMap<String, Job>()
     private val l2capServerSockets = ConcurrentHashMap<Int, BluetoothServerSocket>()
     private val l2capAcceptJobs = ConcurrentHashMap<Int, Job>()
     private val l2capSockets = ConcurrentHashMap<String, BluetoothSocket>()
@@ -526,7 +526,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
         if (result == BluetoothGatt.GATT_SUCCESS) {
             if (request.preparedWrite) {
-                preparedWrites.getOrPut(request.device.address) { mutableListOf() }.add(
+                preparedWrites.getOrPut(request.device.address) { java.util.Collections.synchronizedList(mutableListOf()) }.add(
                     PreparedWriteFragment(
                         request.characteristic,
                         request.offset,
@@ -600,14 +600,37 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             return Promise.resolved(true)
         }
 
-        val activity = context.currentActivity as? PermissionAwareActivity
-        if (activity == null) {
-            Log.w(TAG, "Unable to request Bluetooth permissions: current activity unavailable")
-            return Promise.resolved(false)
-        }
-
         val requestCode = nextPermissionRequestCode++
         val promise = Promise<Boolean>()
+        requestPermissionsWhenActivityReady(missingPermissions, requestCode, promise, attempt = 0)
+        return promise
+    }
+
+    /**
+     * The React context has no current Activity for a short window after
+     * launch, which is exactly when apps tend to ask for permissions. Retry on
+     * the main thread for a little while before giving up.
+     */
+    private fun requestPermissionsWhenActivityReady(
+        missingPermissions: Array<String>,
+        requestCode: Int,
+        promise: Promise<Boolean>,
+        attempt: Int
+    ) {
+        val context = NitroModules.applicationContext
+        val activity = context?.currentActivity as? PermissionAwareActivity
+        if (activity == null) {
+            if (attempt >= PERMISSION_ACTIVITY_RETRIES) {
+                Log.w(TAG, "Unable to request Bluetooth permissions: current activity unavailable")
+                promise.resolve(false)
+                return
+            }
+            bluetoothScope.launch {
+                delay(PERMISSION_ACTIVITY_RETRY_DELAY_MS)
+                requestPermissionsWhenActivityReady(missingPermissions, requestCode, promise, attempt + 1)
+            }
+            return
+        }
 
         try {
             activity.requestPermissions(
@@ -629,8 +652,6 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             Log.w(TAG, "Unable to request Bluetooth permissions", error)
             promise.resolve(false)
         }
-
-        return promise
     }
 
     override fun getCapabilities(): Promise<BluetoothCapabilities> {
@@ -1038,6 +1059,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 }
             },
             reject = { error ->
+                pendingDescriptorWrites.remove(key)
                 gatt.setCharacteristicNotification(characteristic, false)
                 promise.reject(error)
             }
@@ -2125,7 +2147,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 val opaqueRequestId = UUID.randomUUID().toString()
                 if (peripheralRequestMode == PeripheralRequestMode.AUTOMATIC) {
                     if (preparedWrite) {
-                        preparedWrites.getOrPut(device.address) { mutableListOf() }.add(
+                        preparedWrites.getOrPut(device.address) { java.util.Collections.synchronizedList(mutableListOf()) }.add(
                             PreparedWriteFragment(
                                 characteristic,
                                 offset,
@@ -2325,7 +2347,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                     requestedValue.contentEquals(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
 
                 if (enabled) {
-                    subscribedDevices.getOrPut(characteristic.uuid) { mutableSetOf() }.add(device)
+                    subscribedDevices.getOrPut(characteristic.uuid) { ConcurrentHashMap.newKeySet() }.add(device)
                     setDescriptorValue(descriptor, requestedValue)
                     eventEmitter.emit(
                         "peripheralSubscribed",
@@ -2472,7 +2494,11 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 if (status != BluetoothGatt.GATT_SUCCESS && newState != BluetoothProfile.STATE_CONNECTED) {
-                    if (retryPendingConnection(deviceId, gatt, status)) {
+                    // An established link that drops (supervision timeout, remote
+                    // disconnect, status 133) also lands here with a non-success
+                    // status. Only a link that never came up is a failed connect.
+                    val wasConnected = connectedDevices.containsKey(deviceId)
+                    if (!wasConnected && retryPendingConnection(deviceId, gatt, status)) {
                         return
                     }
                     pendingConnectionTimeouts.remove(deviceId)?.cancel()
@@ -2481,13 +2507,24 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                         IllegalStateException("Failed to connect to $deviceId (status=$status)")
                     )
                     (pendingConnectionGatts.remove(deviceId) ?: connectedDevices.remove(deviceId))?.close()
+                    val reason = if (wasConnected) "remoteOrLinkLoss" else "connectionFailed"
+                    if (wasConnected) {
+                        rejectPendingOperationsForDevice(
+                            deviceId,
+                            IllegalStateException("Disconnected from $deviceId (status=$status)")
+                        )
+                        eventEmitter.emit(
+                            "deviceDisconnected",
+                            mapOf("deviceId" to deviceId, "status" to status, "reason" to reason)
+                        )
+                    }
                     eventEmitter.emit(
                         "connectionStateChanged",
                         mapOf(
                             "deviceId" to deviceId,
                             "state" to "disconnected",
                             "status" to status,
-                            "reason" to "connectionFailed"
+                            "reason" to reason
                         )
                     )
                     return
@@ -2586,7 +2623,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 )
                 completeGattOperation(
                     deviceId,
-                    setOf("writeCharacteristic"),
+                    setOf("writeCharacteristic", "writeWithoutResponse"),
                     key,
                     status
                 ) {
@@ -4059,6 +4096,8 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         // ATT "Unlikely Error" (0x0E); not exposed as a constant by the Android SDK
         private const val GATT_UNLIKELY_ERROR = 0x0E
         private const val BLUETOOTH_PERMISSION_REQUEST_CODE = 9137
+        private const val PERMISSION_ACTIVITY_RETRIES = 15
+        private const val PERMISSION_ACTIVITY_RETRY_DELAY_MS = 200L
         private const val CONNECTION_TIMEOUT_MS = 15_000L
         private const val CONNECTION_RETRY_DELAY_MS = 350L
         private const val MAX_CONNECTION_RETRIES = 2
@@ -4098,6 +4137,9 @@ private class NitroEventEmitter(private val tag: String) {
         }
 
         UiThreadUtil.runOnUiThread {
+            if (!context.hasActiveReactInstance()) {
+                return@runOnUiThread
+            }
             val writable = Arguments.createMap()
             payload.forEach { (key, value) ->
                 writeValue(writable, key, value)
