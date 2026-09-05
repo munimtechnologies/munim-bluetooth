@@ -1,3 +1,21 @@
+## [0.7.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.6.1...v0.7.0) (2026-09-05)
+
+### ✨ Features
+
+* complete iOS parity - peripheral manual request mode, GATT operation queue, manufacturer data entries, bond state events, scan filters, and L2CAP write backpressure ([8902b0d](https://github.com/munimtechnologies/munim-bluetooth/commit/8902b0d5e7c32c35ab3629f121f9c72c35135860))
+
+### 🐛 Bug Fixes
+
+* **android:** report link loss on established connections and guard shared state ([8be7d65](https://github.com/munimtechnologies/munim-bluetooth/commit/8be7d65a21b0e86e934957f8fcd4ded1ba311dcf))
+* **ios:** run CoreBluetooth calls on the main thread and validate L2CAP PSMs ([08c8704](https://github.com/munimtechnologies/munim-bluetooth/commit/08c8704b1bbb027fe37861b6db645ab77681984d))
+
+### 🛠️ Other changes
+
+* drop GitHub Actions; release locally via release:local ([d2b10a7](https://github.com/munimtechnologies/munim-bluetooth/commit/d2b10a7367d94f68a2b89c03134ba4bb2a1405f9))
+* **release:** 0.7.0 [skip ci] ([5617c9e](https://github.com/munimtechnologies/munim-bluetooth/commit/5617c9ed4e7ffc778758692c68ac26080024c471))
+* restore GitHub Actions workflows ([6d19e23](https://github.com/munimtechnologies/munim-bluetooth/commit/6d19e23a839fa8cac6e12e294253567a52e179cb))
+* upgrade Nitro to 0.36.5 and regenerate bindings ([2c4b62b](https://github.com/munimtechnologies/munim-bluetooth/commit/2c4b62bfea57cda1de078fd343afec254fa18818)), closes [margelo/nitro#1573](https://github.com/margelo/nitro/issues/1573)
+
 ## [0.7.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.6.1...v0.7.0) (2026-08-12)
 
 ### ✨ Features
