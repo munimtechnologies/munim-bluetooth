@@ -397,10 +397,18 @@ function App(): React.JSX.Element {
       addLog('L2CAP: publishing encrypted channel…', 'info');
       const channel = await MunimBluetooth.publishL2CAPChannel(true);
       addLog(`L2CAP: channel published on PSM ${channel.psm}`, 'success');
-      setTimeout(() => {
-        MunimBluetooth.unpublishL2CAPChannel(channel.psm);
-        addLog(`L2CAP: unpublished PSM ${channel.psm}`, 'info');
-      }, 4000);
+      // Broadcast the PSM to subscribed peers over the test characteristic so
+      // a central can open the channel and stream data back ("psm:<n>").
+      const psmPayload = Array.from(`psm:${channel.psm}`)
+        .map((c) => c.charCodeAt(0).toString(16).padStart(2, '0'))
+        .join('');
+      MunimBluetooth.updateCharacteristicValue(
+        TEST_SERVICE_UUID,
+        TEST_CHARACTERISTIC_UUID,
+        psmPayload,
+        true,
+      );
+      addLog(`L2CAP: PSM ${channel.psm} broadcast to subscribers`, 'info');
     } catch (error) {
       addLog(`L2CAP publish failed: ${formatError(error)}`, 'warning');
     }
@@ -528,6 +536,41 @@ function App(): React.JSX.Element {
       MunimBluetooth.addEventListener('characteristicValueChanged', (event) => {
         addLog(
           `Characteristic update ${event.characteristicUUID}: ${event.value}`,
+          'success'
+        );
+        // Peer broadcast an L2CAP PSM ("psm:<n>") — open the channel and
+        // stream a payload through it to exercise real L2CAP data transfer.
+        const decoded = (event.value.match(/.{2}/g) ?? [])
+          .map((byte) => String.fromCharCode(parseInt(byte, 16)))
+          .join('');
+        const psmMatch = decoded.match(/^psm:(\d+)$/);
+        if (psmMatch && event.deviceId) {
+          const psm = Number(psmMatch[1]);
+          addLog(`L2CAP: peer PSM ${psm} received, opening channel…`, 'info');
+          MunimBluetooth.openL2CAPChannel(event.deviceId, psm, true)
+            .then((channel) => {
+              addLog(`L2CAP: channel ${channel.id} open, streaming…`, 'success');
+              // "munim-l2cap-stream" in hex
+              return MunimBluetooth.sendL2CAPData(
+                channel.id,
+                '6d756e696d2d6c326361702d73747265616d'
+              );
+            })
+            .then(() => addLog('L2CAP: payload sent', 'success'))
+            .catch((error) =>
+              addLog(`L2CAP stream failed: ${formatError(error)}`, 'warning')
+            );
+        }
+      }),
+      MunimBluetooth.addEventListener('l2capChannelOpened', (event) => {
+        addLog(
+          `L2CAP: channel opened ${event.channelId} (psm ${event.psm})`,
+          'success'
+        );
+      }),
+      MunimBluetooth.addEventListener('l2capDataReceived', (event) => {
+        addLog(
+          `L2CAP: data received on ${event.channelId}: ${event.value}`,
           'success'
         );
       }),
