@@ -89,13 +89,44 @@ class MunimBluetoothBackgroundService : Service() {
         notificationTitle = config.notificationTitle
         notificationText = config.notificationText
 
-        startForeground(
-            NOTIFICATION_ID,
-            buildNotification(neighborCount = discoveredDeviceIds.size)
-        )
+        if (!promoteToForeground()) {
+            // Android 12+ refuses foreground promotion when the service was
+            // started from the background. The common case is the system
+            // re-delivering a sticky start (null intent) after process death
+            // while the app is not on screen. There is nothing useful to do
+            // from here: stand down without a sticky restart, and the app
+            // will start the session again the next time it is foregrounded.
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
         startBleSession(config)
         return START_STICKY
+    }
+
+    /**
+     * Wraps startForeground so a ForegroundServiceStartNotAllowedException
+     * (API 31+) or the pre-31 IllegalStateException is a handled outcome
+     * rather than a process crash in onStartCommand.
+     */
+    private fun promoteToForeground(): Boolean {
+        return try {
+            startForeground(
+                NOTIFICATION_ID,
+                buildNotification(neighborCount = discoveredDeviceIds.size)
+            )
+            true
+        } catch (error: IllegalStateException) {
+            // ForegroundServiceStartNotAllowedException extends
+            // IllegalStateException, so this also covers API 31+ without
+            // referencing a class that older platforms do not have.
+            Log.w(TAG, "Foreground promotion refused; stopping background BLE service", error)
+            false
+        } catch (error: SecurityException) {
+            // Missing FOREGROUND_SERVICE_* permission on API 34+.
+            Log.w(TAG, "Foreground promotion denied; stopping background BLE service", error)
+            false
+        }
     }
 
     override fun onDestroy() {
