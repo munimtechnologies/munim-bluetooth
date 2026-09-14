@@ -1,3 +1,15 @@
+## [0.7.2](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.7.1...v0.7.2) (2026-09-14)
+
+### 🐛 Bug Fixes
+
+* **android:** survive a refused foreground start instead of crashing ([5dd9d65](https://github.com/munimtechnologies/munim-bluetooth/commit/5dd9d650347a65f65cc3ce447b0d54561434e723))
+
+### 🛠️ Other changes
+
+* **deps:** patch js-yaml and joi Dependabot alerts ([1746b60](https://github.com/munimtechnologies/munim-bluetooth/commit/1746b6061178bc142bb5ae0e4033ed3c8aff0636))
+* **deps:** update browserslist to 4.28.9 for GHSA-c83g-rgw3-j3cx and GHSA-73wf-gq98-2v4g ([ead8ac6](https://github.com/munimtechnologies/munim-bluetooth/commit/ead8ac6091fde472a0cb112b73b2c6d771717608))
+* sync package-lock with the release ([a9dd814](https://github.com/munimtechnologies/munim-bluetooth/commit/a9dd81441702afd549265967627fe00d5e605f63))
+
 ## [0.7.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.7.0...v0.7.1) (2026-09-05)
 
 ### 🐛 Bug Fixes
