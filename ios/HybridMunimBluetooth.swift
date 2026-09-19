@@ -343,9 +343,29 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private lazy var multipeerAdvertiserDelegateProxy = MultipeerAdvertiserDelegateProxy(owner: self)
     private lazy var multipeerBrowserDelegateProxy = MultipeerBrowserDelegateProxy(owner: self)
 
+    /// Every CoreBluetooth manager, delegate callback, L2CAP stream event,
+    /// Multipeer callback and timer runs on this private serial queue, and
+    /// every piece of mutable state below is only touched on it.
+    private let bleQueue = DispatchQueue(label: "com.munimbluetooth.ble", qos: .userInitiated)
+    private static let bleQueueKey = DispatchSpecificKey<UnsafeMutableRawPointer>()
+    private var bleQueueToken: UnsafeMutableRawPointer { Unmanaged.passUnretained(self).toOpaque() }
+
     override init() {
         super.init()
-        initializeBluetoothManagers()
+        bleQueue.setSpecific(key: Self.bleQueueKey, value: bleQueueToken)
+        // Creating a CBCentralManager/CBPeripheralManager is what shows the
+        // Bluetooth permission prompt, so managers are created lazily on
+        // first use. When permission was already granted there is no prompt
+        // to trigger, so create them now: CoreBluetooth state restoration
+        // needs the managers to exist early after a background relaunch, and
+        // the first startScan()/startAdvertising() should not race a manager
+        // still reporting .unknown.
+        bleQueue.sync {
+            if CBManager.authorization == .allowedAlways {
+                _ = ensureCentralManager()
+                _ = ensurePeripheralManager()
+            }
+        }
     }
 
     // MARK: - Event Emission
@@ -397,13 +417,11 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // MARK: - Peripheral Features
 
     func startAdvertising(options: AdvertisingOptions) throws {
+        settlePeripheralManager()
         try onBluetoothThread {
-            guard let peripheralManager = peripheralManager else {
-                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
-            }
-
+            let peripheralManager = ensurePeripheralManager()
             guard peripheralManager.state == .poweredOn else {
-                throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
+                throw notPoweredOnError(peripheralManager.state)
             }
 
             // Stop any existing advertising first
@@ -477,10 +495,11 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func updateAdvertisingData(advertisingData: AdvertisingDataTypes) throws {
+        settlePeripheralManager()
         try onBluetoothThread {
-            guard let peripheralManager = peripheralManager,
-                  peripheralManager.state == .poweredOn else {
-                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+            let peripheralManager = ensurePeripheralManager()
+            guard peripheralManager.state == .poweredOn else {
+                throw notPoweredOnError(peripheralManager.state, code: 1)
             }
 
             peripheralManager.stopAdvertising()
@@ -515,13 +534,11 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func setServices(services: [GATTService], requestOptions: PeripheralRequestOptions?) throws {
+        settlePeripheralManager()
         try onBluetoothThread {
-            guard let peripheralManager = peripheralManager else {
-                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"])
-            }
-
+            let peripheralManager = ensurePeripheralManager()
             guard peripheralManager.state == .poweredOn else {
-                throw NSError(domain: "MunimBluetooth", code: 2, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on. Current state: \(peripheralManager.state.rawValue)"])
+                throw notPoweredOnError(peripheralManager.state)
             }
 
             peripheralRequestMode = requestOptions?.mode ?? .automatic
@@ -760,8 +777,16 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     func isBluetoothEnabled() throws -> Promise<Bool> {
         try onBluetoothThread {
             let promise = Promise<Bool>()
-            let isEnabled = self.centralManager?.state == .poweredOn
-            promise.resolve(withResult: isEnabled)
+            // A new manager reports .unknown until CoreBluetooth delivers its
+            // first state (and for as long as the permission prompt is up).
+            // Answer once the state is known instead of reporting "off".
+            let central = ensureCentralManager()
+            whenReady(
+                timeout: Self.adapterStateTimeout,
+                condition: { central.state != .unknown }
+            ) {
+                promise.resolve(withResult: central.state == .poweredOn)
+            }
             return promise
         }
     }
@@ -769,7 +794,28 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     func requestBluetoothPermission(permissions: [String]?) throws -> Promise<Bool> {
         try onBluetoothThread {
             let promise = Promise<Bool>()
-            promise.resolve(withResult: CBManager.authorization == .allowedAlways)
+            switch CBManager.authorization {
+            case .allowedAlways:
+                ensureCentralManager()
+                ensurePeripheralManager()
+                promise.resolve(withResult: true)
+            case .denied, .restricted:
+                promise.resolve(withResult: false)
+            default:
+                // Creating the manager shows the system prompt; the
+                // authorization is decided once the user answers it.
+                ensureCentralManager()
+                whenReady(
+                    timeout: Self.permissionPromptTimeout,
+                    condition: { CBManager.authorization != .notDetermined }
+                ) { [weak self] in
+                    let granted = CBManager.authorization == .allowedAlways
+                    if granted {
+                        self?.ensurePeripheralManager()
+                    }
+                    promise.resolve(withResult: granted)
+                }
+            }
             return promise
         }
     }
@@ -797,10 +843,11 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func startScan(options: ScanOptions?) throws {
+        settleCentralManager()
         try onBluetoothThread {
-            guard let centralManager = centralManager,
-                  centralManager.state == .poweredOn else {
-                throw NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"])
+            let centralManager = ensureCentralManager()
+            guard centralManager.state == .poweredOn else {
+                throw notPoweredOnError(centralManager.state, code: 1)
             }
 
             scanOptions = options
@@ -827,10 +874,17 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func connect(deviceId: String) throws -> Promise<Void> {
-        try onBluetoothThread {
+        settleCentralManager()
+        return try onBluetoothThread {
             let promise = Promise<Void>()
             if connectedPeripherals[deviceId] != nil {
                 promise.resolve(withResult: ())
+                return promise
+            }
+
+            let centralManager = ensureCentralManager()
+            guard centralManager.state == .poweredOn else {
+                promise.reject(withError: notPoweredOnError(centralManager.state, code: 1))
                 return promise
             }
 
@@ -842,7 +896,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             pendingConnectionPromises[deviceId] = promise
             scheduleConnectionTimeout(deviceId: deviceId, peripheral: peripheral)
             peripheral.delegate = peripheralDelegateProxy
-            self.centralManager?.connect(peripheral, options: nil)
+            centralManager.connect(peripheral, options: nil)
             return promise
         }
     }
@@ -1213,11 +1267,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     func stopExtendedAdvertising(advertisingId: String) throws {}
 
     func publishL2CAPChannel(encryptionRequired: Bool?) throws -> Promise<L2CAPChannel> {
-        try onBluetoothThread {
+        settlePeripheralManager()
+        return try onBluetoothThread {
             let promise = Promise<L2CAPChannel>()
-            guard let peripheralManager = peripheralManager,
-                  peripheralManager.state == .poweredOn else {
-                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"]))
+            let peripheralManager = ensurePeripheralManager()
+            guard peripheralManager.state == .poweredOn else {
+                promise.reject(withError: notPoweredOnError(peripheralManager.state, code: 1))
                 return promise
             }
 
@@ -1366,6 +1421,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func startBackgroundSession(options: BackgroundSessionOptions) throws {
+        settlePeripheralManager()
+        settleCentralManager()
         try onBluetoothThread {
             isBackgroundSessionActive = true
 
@@ -1556,15 +1613,83 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
     // MARK: - Threading
 
-    /// CoreBluetooth delegates, L2CAP stream events and every timer in this
-    /// class run on the main thread, while Nitro invokes the public methods on
-    /// the JS thread. Hopping onto main for the method bodies keeps the
-    /// bookkeeping dictionaries single-threaded instead of racing the delegates.
+    private var isOnBluetoothQueue: Bool {
+        DispatchQueue.getSpecific(key: Self.bleQueueKey) == bleQueueToken
+    }
+
+    /// Nitro invokes the public methods on the JS thread while CoreBluetooth
+    /// delivers delegate callbacks on `bleQueue`. Running method bodies on
+    /// that same serial queue keeps the bookkeeping single-threaded. Nothing
+    /// on `bleQueue` ever waits on the JS or main thread, so a synchronous hop
+    /// cannot deadlock (unlike the previous `DispatchQueue.main.sync`, which
+    /// could stall whenever main was itself waiting on the JS thread).
     private func onBluetoothThread<T>(_ body: () throws -> T) throws -> T {
-        if Thread.isMainThread {
+        if isOnBluetoothQueue {
             return try body()
         }
-        return try DispatchQueue.main.sync { try body() }
+        return try bleQueue.sync { try body() }
+    }
+
+    /// Runs `completion` on `bleQueue` once `condition` holds or `timeout`
+    /// elapses. Must be called on `bleQueue`.
+    private func whenReady(
+        timeout: TimeInterval,
+        condition: @escaping () -> Bool,
+        completion: @escaping () -> Void
+    ) {
+        if condition() {
+            completion()
+            return
+        }
+        let deadline = Date().addingTimeInterval(timeout)
+        func poll() {
+            bleQueue.asyncAfter(deadline: .now() + 0.05) {
+                if condition() || Date() >= deadline {
+                    completion()
+                } else {
+                    poll()
+                }
+            }
+        }
+        poll()
+    }
+
+    /// A freshly created manager reports `.unknown` for a few milliseconds
+    /// even when permission is already granted. Synchronous entry points
+    /// (startScan, startAdvertising, ...) give it a short grace period from
+    /// the calling thread, never from `bleQueue`, which must stay free to
+    /// deliver the state update. With permission undetermined the system
+    /// prompt is showing, so there is nothing worth waiting for.
+    private func settleManager(_ state: @escaping () -> CBManagerState) {
+        guard !isOnBluetoothQueue else { return }
+        let deadline = Date().addingTimeInterval(Self.managerSettleTimeout)
+        while true {
+            let settled = bleQueue.sync {
+                state() != .unknown || CBManager.authorization != .allowedAlways
+            }
+            if settled || Date() >= deadline {
+                return
+            }
+            Thread.sleep(forTimeInterval: 0.02)
+        }
+    }
+
+    private func settleCentralManager() {
+        settleManager { [unowned self] in self.ensureCentralManager().state }
+    }
+
+    private func settlePeripheralManager() {
+        settleManager { [unowned self] in self.ensurePeripheralManager().state }
+    }
+
+    private func notPoweredOnError(_ state: CBManagerState, code: Int = 2) -> NSError {
+        let message: String
+        if state == .unknown && CBManager.authorization == .notDetermined {
+            message = "Bluetooth permission has not been granted yet. Call requestBluetoothPermission() first."
+        } else {
+            message = "Bluetooth is not powered on. Current state: \(adapterStateString(state))"
+        }
+        return NSError(domain: "MunimBluetooth", code: code, userInfo: [NSLocalizedDescriptionKey: message])
     }
 
     /// L2CAP PSMs are 16-bit; a JS number outside that range would trap in `UInt16(_:)`.
@@ -1829,33 +1954,45 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         return data.isEmpty ? nil : data
     }
 
-    private func initializeBluetoothManagers() {
-        let createManagers = {
-            self.peripheralManager = CBPeripheralManager(
-                delegate: self.peripheralManagerDelegateProxy,
-                queue: nil,
-                options: self.coreBluetoothOptions(
-                    restoreIdentifier: peripheralRestoreIdentifier,
-                    requiredBackgroundMode: "bluetooth-peripheral",
-                    optionKey: CBPeripheralManagerOptionRestoreIdentifierKey
-                )
-            )
-            self.centralManager = CBCentralManager(
-                delegate: self.centralManagerDelegateProxy,
-                queue: nil,
-                options: self.coreBluetoothOptions(
-                    restoreIdentifier: centralRestoreIdentifier,
-                    requiredBackgroundMode: "bluetooth-central",
-                    optionKey: CBCentralManagerOptionRestoreIdentifierKey
-                )
-            )
+    /// Returns the central manager, creating it on first use. Must be called
+    /// on `bleQueue`. Creation shows the Bluetooth permission prompt when the
+    /// user has not decided yet.
+    @discardableResult
+    private func ensureCentralManager() -> CBCentralManager {
+        if let centralManager {
+            return centralManager
         }
+        let manager = CBCentralManager(
+            delegate: centralManagerDelegateProxy,
+            queue: bleQueue,
+            options: coreBluetoothOptions(
+                restoreIdentifier: centralRestoreIdentifier,
+                requiredBackgroundMode: "bluetooth-central",
+                optionKey: CBCentralManagerOptionRestoreIdentifierKey
+            )
+        )
+        centralManager = manager
+        return manager
+    }
 
-        if Thread.isMainThread {
-            createManagers()
-        } else {
-            DispatchQueue.main.sync(execute: createManagers)
+    /// Returns the peripheral manager, creating it on first use. Must be
+    /// called on `bleQueue`.
+    @discardableResult
+    private func ensurePeripheralManager() -> CBPeripheralManager {
+        if let peripheralManager {
+            return peripheralManager
         }
+        let manager = CBPeripheralManager(
+            delegate: peripheralManagerDelegateProxy,
+            queue: bleQueue,
+            options: coreBluetoothOptions(
+                restoreIdentifier: peripheralRestoreIdentifier,
+                requiredBackgroundMode: "bluetooth-peripheral",
+                optionKey: CBPeripheralManagerOptionRestoreIdentifierKey
+            )
+        )
+        peripheralManager = manager
+        return manager
     }
 
     private func coreBluetoothOptions(
@@ -2153,7 +2290,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
 
         connectionTimeouts[deviceId] = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0, execute: workItem)
+        bleQueue.asyncAfter(deadline: .now() + 15.0, execute: workItem)
     }
 
     private func scheduleOperationTimeout(key: String, message: String, onTimeout: @escaping () -> Void) {
@@ -2166,7 +2303,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
 
         operationTimeouts[key] = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0, execute: workItem)
+        bleQueue.asyncAfter(deadline: .now() + 15.0, execute: workItem)
     }
 
     private func cancelOperationTimeout(key: String) {
@@ -2238,7 +2375,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             self?.timeoutGattOperation(deviceId: deviceId, expected: operation)
         }
         gattOperationTimeouts[deviceId] = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.gattOperationTimeout, execute: workItem)
+        bleQueue.asyncAfter(deadline: .now() + Self.gattOperationTimeout, execute: workItem)
     }
 
     private func timeoutGattOperation(deviceId: String, expected: QueuedGattOperation) {
@@ -2320,7 +2457,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 onTimeout()
             }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + peripheralRequestTimeout, execute: workItem)
+        bleQueue.asyncAfter(deadline: .now() + peripheralRequestTimeout, execute: workItem)
         return workItem
     }
 
@@ -2524,11 +2661,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         l2capInputStreamIds[ObjectIdentifier(channel.inputStream)] = channelId
         l2capOutputStreamIds[ObjectIdentifier(channel.outputStream)] = channelId
 
+        // Deliver stream events on bleQueue (there is no run loop to schedule
+        // on); NSStream is toll-free bridged to CFReadStream/CFWriteStream.
         channel.inputStream.delegate = l2capStreamDelegateProxy
-        channel.inputStream.schedule(in: .main, forMode: .default)
+        CFReadStreamSetDispatchQueue(unsafeBitCast(channel.inputStream, to: CFReadStream.self), bleQueue)
         channel.inputStream.open()
         channel.outputStream.delegate = l2capStreamDelegateProxy
-        channel.outputStream.schedule(in: .main, forMode: .default)
+        CFWriteStreamSetDispatchQueue(unsafeBitCast(channel.outputStream, to: CFWriteStream.self), bleQueue)
         channel.outputStream.open()
 
         let l2capChannel = L2CAPChannel(id: channelId, psm: Double(channel.psm), deviceId: deviceId)
@@ -2549,10 +2688,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         l2capInputStreamIds.removeValue(forKey: ObjectIdentifier(channel.inputStream))
         l2capOutputStreamIds.removeValue(forKey: ObjectIdentifier(channel.outputStream))
         channel.inputStream.delegate = nil
-        channel.inputStream.remove(from: .main, forMode: .default)
+        CFReadStreamSetDispatchQueue(unsafeBitCast(channel.inputStream, to: CFReadStream.self), nil)
         channel.inputStream.close()
         channel.outputStream.delegate = nil
-        channel.outputStream.remove(from: .main, forMode: .default)
+        CFWriteStreamSetDispatchQueue(unsafeBitCast(channel.outputStream, to: CFWriteStream.self), nil)
         channel.outputStream.close()
 
         let failedWrites = l2capOutboundWrites.removeValue(forKey: channelId) ?? []
@@ -2635,8 +2774,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func handleMultipeerFoundPeer(_ peerID: MCPeerID, discoveryInfo: [String: String]?) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
+        guard isOnBluetoothQueue else {
+            bleQueue.async { [weak self] in
                 self?.handleMultipeerFoundPeer(peerID, discoveryInfo: discoveryInfo)
             }
             return
@@ -2664,8 +2803,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func handleMultipeerLostPeer(_ peerID: MCPeerID) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
+        guard isOnBluetoothQueue else {
+            bleQueue.async { [weak self] in
                 self?.handleMultipeerLostPeer(peerID)
             }
             return
@@ -2686,8 +2825,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func handleMultipeerInvitation(fromPeer peerID: MCPeerID, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
+        guard isOnBluetoothQueue else {
+            bleQueue.async { [weak self] in
                 self?.handleMultipeerInvitation(fromPeer: peerID, invitationHandler: invitationHandler)
             }
             return
@@ -2724,7 +2863,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             "expiresAt": expiresAt.timeIntervalSince1970 * 1_000
         ])
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + ttl) { [weak self] in
+        bleQueue.asyncAfter(deadline: .now() + ttl) { [weak self] in
             guard let invitation = self?.pendingMultipeerInvitations.removeValue(forKey: invitationId) else {
                 return
             }
@@ -2733,8 +2872,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func handleMultipeerStateChanged(peerID: MCPeerID, state: MCSessionState) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
+        guard isOnBluetoothQueue else {
+            bleQueue.async { [weak self] in
                 self?.handleMultipeerStateChanged(peerID: peerID, state: state)
             }
             return
@@ -2747,8 +2886,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func handleMultipeerReceivedData(_ data: Data, fromPeer peerID: MCPeerID) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
+        guard isOnBluetoothQueue else {
+            bleQueue.async { [weak self] in
                 self?.handleMultipeerReceivedData(data, fromPeer: peerID)
             }
             return
@@ -2763,8 +2902,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func handleMultipeerStartFailed(error: Error) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
+        guard isOnBluetoothQueue else {
+            bleQueue.async { [weak self] in
                 self?.handleMultipeerStartFailed(error: error)
             }
             return
@@ -2819,7 +2958,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     // MARK: - CoreBluetooth Delegate Forwarding
 
     func handlePeripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-        // Handle state updates
+        // Peripheral-only apps never create the central manager, so report
+        // adapter changes from here in that case (the central reports them
+        // otherwise, to avoid duplicate events).
+        guard centralManager == nil else { return }
+        emit("adapterStateChanged", body: [
+            "state": adapterStateString(peripheral.state),
+            "authorization": adapterAuthorizationString()
+        ])
     }
 
     func handlePeripheralManagerWillRestoreState(_ peripheral: CBPeripheralManager, state: [String: Any]) {
@@ -3064,6 +3210,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
     func handleCentralManagerDidUpdateState(_ central: CBCentralManager) {
         NSLog("Bluetooth: central state updated - %ld", central.state.rawValue)
+        if CBManager.authorization == .allowedAlways && peripheralManager == nil {
+            // Permission was just granted: the peripheral manager can be
+            // created without another prompt, so it is ready (not .unknown)
+            // by the time the app calls startAdvertising()/setServices().
+            ensurePeripheralManager()
+        }
         emit("adapterStateChanged", body: [
             "state": adapterStateString(central.state),
             "authorization": adapterAuthorizationString()
@@ -3501,15 +3653,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     private func respondToMultipeerInvitation(invitationId: String, accept: Bool) throws {
-        if !Thread.isMainThread {
-            let result: Result<Void, Error> = DispatchQueue.main.sync {
-                Result {
-                    try self.respondToMultipeerInvitation(invitationId: invitationId, accept: accept)
-                }
-            }
-            return try result.get()
+        try onBluetoothThread {
+            try respondToMultipeerInvitationOnQueue(invitationId: invitationId, accept: accept)
         }
+    }
 
+    private func respondToMultipeerInvitationOnQueue(invitationId: String, accept: Bool) throws {
         guard let invitation = pendingMultipeerInvitations.removeValue(forKey: invitationId) else {
             throw NSError(
                 domain: "MunimBluetooth",
@@ -3535,5 +3684,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private static let maxInboundL2CAPChannelsPerPeer = 4
     private static let defaultPeripheralRequestTimeoutMs: Double = 10_000
     private static let gattOperationTimeout: TimeInterval = 15.0
+    private static let managerSettleTimeout: TimeInterval = 2.0
+    private static let adapterStateTimeout: TimeInterval = 10.0
+    private static let permissionPromptTimeout: TimeInterval = 60.0
     private static let maxL2CAPOutboundBufferBytes = 1_048_576
 }
