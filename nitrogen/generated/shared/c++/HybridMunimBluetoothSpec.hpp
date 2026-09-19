@@ -68,8 +68,8 @@ namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 #include "GATTService.hpp"
 #include <vector>
 #include "PeripheralRequestOptions.hpp"
-#include <optional>
 #include <string>
+#include <optional>
 #include "PeripheralRequestStatus.hpp"
 #include "BluetoothCapabilities.hpp"
 #include "ScanOptions.hpp"
@@ -126,23 +126,23 @@ namespace margelo::nitro::munimbluetooth {
       virtual void updateAdvertisingData(const AdvertisingDataTypes& advertisingData) = 0;
       virtual std::shared_ptr<Promise<AdvertisingDataTypes>> getAdvertisingData() = 0;
       virtual void stopAdvertising() = 0;
-      virtual void setServices(const std::vector<GATTService>& services, const std::optional<PeripheralRequestOptions>& requestOptions) = 0;
+      virtual void setServices(const std::vector<GATTService>& services, const PeripheralRequestOptions& requestOptions) = 0;
       virtual std::shared_ptr<Promise<void>> updateCharacteristicValue(const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<bool> notify) = 0;
-      virtual std::shared_ptr<Promise<void>> respondToPeripheralReadRequest(const std::string& requestId, const std::optional<std::string>& value, std::optional<PeripheralRequestStatus> status) = 0;
-      virtual std::shared_ptr<Promise<void>> respondToPeripheralWriteRequest(const std::string& requestId, bool accept, std::optional<PeripheralRequestStatus> status) = 0;
+      virtual std::shared_ptr<Promise<void>> respondToPeripheralReadRequest(const std::string& requestId, const std::string& value, bool useStoredValue, PeripheralRequestStatus status) = 0;
+      virtual std::shared_ptr<Promise<void>> respondToPeripheralWriteRequest(const std::string& requestId, bool accept, PeripheralRequestStatus status) = 0;
       virtual std::shared_ptr<Promise<void>> respondToPeripheralExecuteWriteRequest(const std::string& requestId, bool accept) = 0;
       virtual std::shared_ptr<Promise<bool>> isBluetoothEnabled() = 0;
       virtual std::shared_ptr<Promise<bool>> requestEnable() = 0;
       virtual std::shared_ptr<Promise<bool>> requestBluetoothPermission(const std::optional<std::vector<std::string>>& permissions) = 0;
       virtual std::shared_ptr<Promise<BluetoothCapabilities>> getCapabilities() = 0;
-      virtual void startScan(const std::optional<ScanOptions>& options) = 0;
+      virtual void startScan(const ScanOptions& options) = 0;
       virtual void stopScan() = 0;
-      virtual std::shared_ptr<Promise<void>> connect(const std::string& deviceId, const std::optional<ConnectOptions>& options) = 0;
+      virtual std::shared_ptr<Promise<void>> connect(const std::string& deviceId, const ConnectOptions& options) = 0;
       virtual void disconnect(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<std::vector<GATTService>>> discoverServices(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<CharacteristicValue>> readCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
       virtual std::shared_ptr<Promise<DescriptorValue>> readDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID) = 0;
-      virtual std::shared_ptr<Promise<void>> writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<WriteType> writeType) = 0;
+      virtual std::shared_ptr<Promise<void>> writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, WriteType writeType) = 0;
       virtual std::shared_ptr<Promise<void>> writeDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID, const std::string& value) = 0;
       virtual std::shared_ptr<Promise<void>> subscribeToCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
       virtual std::shared_ptr<Promise<void>> unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
@@ -153,7 +153,7 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<double>> requestMTU(const std::string& deviceId, double mtu) = 0;
       virtual std::shared_ptr<Promise<double>> getMaximumWriteLength(const std::string& deviceId, WriteLengthType type) = 0;
       virtual std::shared_ptr<Promise<bool>> requestConnectionPriority(const std::string& deviceId, ConnectionPriority priority) = 0;
-      virtual std::shared_ptr<Promise<void>> setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, std::optional<BluetoothPhyOption> phyOption) = 0;
+      virtual std::shared_ptr<Promise<void>> setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, BluetoothPhyOption phyOption) = 0;
       virtual std::shared_ptr<Promise<PhyStatus>> readPhy(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<BondState>> getBondState(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<BondState>> createBond(const std::string& deviceId) = 0;

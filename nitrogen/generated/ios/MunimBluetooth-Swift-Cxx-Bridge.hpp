@@ -14,8 +14,6 @@ namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
 namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
 // Forward declaration of `BluetoothDeviceType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothDeviceType; }
-// Forward declaration of `BluetoothPhyOption` to properly resolve imports.
-namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
 // Forward declaration of `BluetoothPhy` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 // Forward declaration of `BondState` to properly resolve imports.
@@ -24,8 +22,6 @@ namespace margelo::nitro::munimbluetooth { enum class BondState; }
 namespace margelo::nitro::munimbluetooth { struct BondedDevice; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
-// Forward declaration of `ConnectOptions` to properly resolve imports.
-namespace margelo::nitro::munimbluetooth { struct ConnectOptions; }
 // Forward declaration of `DescriptorValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
 // Forward declaration of `GATTCharacteristicPermission` to properly resolve imports.
@@ -54,10 +50,6 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
 namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 // Forward declaration of `PeripheralRequestMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class PeripheralRequestMode; }
-// Forward declaration of `PeripheralRequestOptions` to properly resolve imports.
-namespace margelo::nitro::munimbluetooth { struct PeripheralRequestOptions; }
-// Forward declaration of `PeripheralRequestStatus` to properly resolve imports.
-namespace margelo::nitro::munimbluetooth { enum class PeripheralRequestStatus; }
 // Forward declaration of `PhyStatus` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
 // Forward declaration of `ScanCallbackType` to properly resolve imports.
@@ -66,14 +58,10 @@ namespace margelo::nitro::munimbluetooth { enum class ScanCallbackType; }
 namespace margelo::nitro::munimbluetooth { enum class ScanMatchMode; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
-// Forward declaration of `ScanOptions` to properly resolve imports.
-namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 // Forward declaration of `ScanPhy` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanPhy; }
 // Forward declaration of `ServiceDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ServiceDataEntry; }
-// Forward declaration of `WriteType` to properly resolve imports.
-namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 
 // Forward declarations of Swift defined types
 // Forward declaration of `HybridMunimBluetoothSpec_cxx` to properly resolve imports.
@@ -84,11 +72,9 @@ namespace MunimBluetooth { class HybridMunimBluetoothSpec_cxx; }
 #include "BluetoothCapabilities.hpp"
 #include "BluetoothDeviceType.hpp"
 #include "BluetoothPhy.hpp"
-#include "BluetoothPhyOption.hpp"
 #include "BondState.hpp"
 #include "BondedDevice.hpp"
 #include "CharacteristicValue.hpp"
-#include "ConnectOptions.hpp"
 #include "DescriptorValue.hpp"
 #include "GATTCharacteristic.hpp"
 #include "GATTCharacteristicPermission.hpp"
@@ -103,16 +89,12 @@ namespace MunimBluetooth { class HybridMunimBluetoothSpec_cxx; }
 #include "MultipeerPeer.hpp"
 #include "MultipeerPeerState.hpp"
 #include "PeripheralRequestMode.hpp"
-#include "PeripheralRequestOptions.hpp"
-#include "PeripheralRequestStatus.hpp"
 #include "PhyStatus.hpp"
 #include "ScanCallbackType.hpp"
 #include "ScanMatchMode.hpp"
 #include "ScanMode.hpp"
-#include "ScanOptions.hpp"
 #include "ScanPhy.hpp"
 #include "ServiceDataEntry.hpp"
-#include "WriteType.hpp"
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/PromiseHolder.hpp>
 #include <NitroModules/Result.hpp>
@@ -397,21 +379,6 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.value();
   }
   
-  // pragma MARK: std::optional<PeripheralRequestOptions>
-  /**
-   * Specialized version of `std::optional<PeripheralRequestOptions>`.
-   */
-  using std__optional_PeripheralRequestOptions_ = std::optional<PeripheralRequestOptions>;
-  inline std::optional<PeripheralRequestOptions> create_std__optional_PeripheralRequestOptions_(const PeripheralRequestOptions& value) noexcept {
-    return std::optional<PeripheralRequestOptions>(value);
-  }
-  inline bool has_value_std__optional_PeripheralRequestOptions_(const std::optional<PeripheralRequestOptions>& optional) noexcept {
-    return optional.has_value();
-  }
-  inline PeripheralRequestOptions get_std__optional_PeripheralRequestOptions_(const std::optional<PeripheralRequestOptions>& optional) noexcept {
-    return optional.value();
-  }
-  
   // pragma MARK: std::shared_ptr<Promise<void>>
   /**
    * Specialized version of `std::shared_ptr<Promise<void>>`.
@@ -458,21 +425,6 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline bool get_std__optional_bool_(const std::optional<bool>& optional) noexcept {
-    return optional.value();
-  }
-  
-  // pragma MARK: std::optional<PeripheralRequestStatus>
-  /**
-   * Specialized version of `std::optional<PeripheralRequestStatus>`.
-   */
-  using std__optional_PeripheralRequestStatus_ = std::optional<PeripheralRequestStatus>;
-  inline std::optional<PeripheralRequestStatus> create_std__optional_PeripheralRequestStatus_(const PeripheralRequestStatus& value) noexcept {
-    return std::optional<PeripheralRequestStatus>(value);
-  }
-  inline bool has_value_std__optional_PeripheralRequestStatus_(const std::optional<PeripheralRequestStatus>& optional) noexcept {
-    return optional.has_value();
-  }
-  inline PeripheralRequestStatus get_std__optional_PeripheralRequestStatus_(const std::optional<PeripheralRequestStatus>& optional) noexcept {
     return optional.value();
   }
   
@@ -604,36 +556,6 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.value();
   }
   
-  // pragma MARK: std::optional<ScanOptions>
-  /**
-   * Specialized version of `std::optional<ScanOptions>`.
-   */
-  using std__optional_ScanOptions_ = std::optional<ScanOptions>;
-  inline std::optional<ScanOptions> create_std__optional_ScanOptions_(const ScanOptions& value) noexcept {
-    return std::optional<ScanOptions>(value);
-  }
-  inline bool has_value_std__optional_ScanOptions_(const std::optional<ScanOptions>& optional) noexcept {
-    return optional.has_value();
-  }
-  inline ScanOptions get_std__optional_ScanOptions_(const std::optional<ScanOptions>& optional) noexcept {
-    return optional.value();
-  }
-  
-  // pragma MARK: std::optional<ConnectOptions>
-  /**
-   * Specialized version of `std::optional<ConnectOptions>`.
-   */
-  using std__optional_ConnectOptions_ = std::optional<ConnectOptions>;
-  inline std::optional<ConnectOptions> create_std__optional_ConnectOptions_(const ConnectOptions& value) noexcept {
-    return std::optional<ConnectOptions>(value);
-  }
-  inline bool has_value_std__optional_ConnectOptions_(const std::optional<ConnectOptions>& optional) noexcept {
-    return optional.has_value();
-  }
-  inline ConnectOptions get_std__optional_ConnectOptions_(const std::optional<ConnectOptions>& optional) noexcept {
-    return optional.value();
-  }
-  
   // pragma MARK: std::shared_ptr<Promise<std::vector<GATTService>>>
   /**
    * Specialized version of `std::shared_ptr<Promise<std::vector<GATTService>>>`.
@@ -734,21 +656,6 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   Func_void_DescriptorValue create_Func_void_DescriptorValue(void* NON_NULL swiftClosureWrapper) noexcept;
   inline Func_void_DescriptorValue_Wrapper wrap_Func_void_DescriptorValue(Func_void_DescriptorValue value) noexcept {
     return Func_void_DescriptorValue_Wrapper(std::move(value));
-  }
-  
-  // pragma MARK: std::optional<WriteType>
-  /**
-   * Specialized version of `std::optional<WriteType>`.
-   */
-  using std__optional_WriteType_ = std::optional<WriteType>;
-  inline std::optional<WriteType> create_std__optional_WriteType_(const WriteType& value) noexcept {
-    return std::optional<WriteType>(value);
-  }
-  inline bool has_value_std__optional_WriteType_(const std::optional<WriteType>& optional) noexcept {
-    return optional.has_value();
-  }
-  inline WriteType get_std__optional_WriteType_(const std::optional<WriteType>& optional) noexcept {
-    return optional.value();
   }
   
   // pragma MARK: std::vector<GATTQueueDiagnostic>
@@ -862,21 +769,6 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   Func_void_double create_Func_void_double(void* NON_NULL swiftClosureWrapper) noexcept;
   inline Func_void_double_Wrapper wrap_Func_void_double(Func_void_double value) noexcept {
     return Func_void_double_Wrapper(std::move(value));
-  }
-  
-  // pragma MARK: std::optional<BluetoothPhyOption>
-  /**
-   * Specialized version of `std::optional<BluetoothPhyOption>`.
-   */
-  using std__optional_BluetoothPhyOption_ = std::optional<BluetoothPhyOption>;
-  inline std::optional<BluetoothPhyOption> create_std__optional_BluetoothPhyOption_(const BluetoothPhyOption& value) noexcept {
-    return std::optional<BluetoothPhyOption>(value);
-  }
-  inline bool has_value_std__optional_BluetoothPhyOption_(const std::optional<BluetoothPhyOption>& optional) noexcept {
-    return optional.has_value();
-  }
-  inline BluetoothPhyOption get_std__optional_BluetoothPhyOption_(const std::optional<BluetoothPhyOption>& optional) noexcept {
-    return optional.value();
   }
   
   // pragma MARK: std::shared_ptr<Promise<PhyStatus>>

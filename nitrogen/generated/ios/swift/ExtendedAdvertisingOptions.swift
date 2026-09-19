@@ -186,7 +186,7 @@ public extension ExtendedAdvertisingOptions {
   
   @inline(__always)
   var advertisingData: AdvertisingDataTypes? {
-    return self.__advertisingData.value
+    return (bridge.has_value_std__optional_AdvertisingDataTypes_(self.__advertisingData) ? bridge.get_std__optional_AdvertisingDataTypes_(self.__advertisingData) : nil)
   }
   
   @inline(__always)
@@ -275,11 +275,11 @@ public extension ExtendedAdvertisingOptions {
   
   @inline(__always)
   var primaryPhy: BluetoothPhy? {
-    return self.__primaryPhy.value
+    return (bridge.has_value_std__optional_BluetoothPhy_(self.__primaryPhy) ? bridge.get_std__optional_BluetoothPhy_(self.__primaryPhy) : nil)
   }
   
   @inline(__always)
   var secondaryPhy: BluetoothPhy? {
-    return self.__secondaryPhy.value
+    return (bridge.has_value_std__optional_BluetoothPhy_(self.__secondaryPhy) ? bridge.get_std__optional_BluetoothPhy_(self.__secondaryPhy) : nil)
   }
 }

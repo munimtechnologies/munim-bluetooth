@@ -119,6 +119,6 @@ public extension AdvertisingOptions {
   
   @inline(__always)
   var advertisingData: AdvertisingDataTypes? {
-    return self.__advertisingData.value
+    return (bridge.has_value_std__optional_AdvertisingDataTypes_(self.__advertisingData) ? bridge.get_std__optional_AdvertisingDataTypes_(self.__advertisingData) : nil)
   }
 }

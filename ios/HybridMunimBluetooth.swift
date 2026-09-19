@@ -574,7 +574,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    func setServices(services: [GATTService], requestOptions: PeripheralRequestOptions?) throws {
+    func setServices(services: [GATTService], requestOptions: PeripheralRequestOptions) throws {
+        let requestOptions: PeripheralRequestOptions? = requestOptions
         settlePeripheralManager()
         try onBluetoothThread {
             let peripheralManager = ensurePeripheralManager()
@@ -713,8 +714,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    func respondToPeripheralReadRequest(requestId: String, value: String?, status: PeripheralRequestStatus?) throws -> Promise<Void> {
-        try onBluetoothThread {
+    func respondToPeripheralReadRequest(requestId: String, value: String, useStoredValue: Bool, status: PeripheralRequestStatus) throws -> Promise<Void> {
+        let value: String? = useStoredValue ? nil : value
+        let status: PeripheralRequestStatus? = status
+        return try onBluetoothThread {
             let promise = Promise<Void>()
             guard let pending = pendingPeripheralReadRequests.removeValue(forKey: requestId) else {
                 promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral read request is unknown or expired"]))
@@ -760,8 +763,9 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    func respondToPeripheralWriteRequest(requestId: String, accept: Bool, status: PeripheralRequestStatus?) throws -> Promise<Void> {
-        try onBluetoothThread {
+    func respondToPeripheralWriteRequest(requestId: String, accept: Bool, status: PeripheralRequestStatus) throws -> Promise<Void> {
+        let status: PeripheralRequestStatus? = status
+        return try onBluetoothThread {
             let promise = Promise<Void>()
             guard let pending = pendingPeripheralWriteRequests.removeValue(forKey: requestId) else {
                 promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral write request is unknown or expired"]))
@@ -889,7 +893,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    func startScan(options: ScanOptions?) throws {
+    func startScan(options: ScanOptions) throws {
+        let options: ScanOptions? = options
         settleCentralManager()
         try onBluetoothThread {
             let centralManager = ensureCentralManager()
@@ -982,7 +987,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    func connect(deviceId: String, options: ConnectOptions?) throws -> Promise<Void> {
+    func connect(deviceId: String, options: ConnectOptions) throws -> Promise<Void> {
+        let options: ConnectOptions? = options
         settleCentralManager()
         return try onBluetoothThread {
             let promise = Promise<Void>()
@@ -1137,7 +1143,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?) throws -> Promise<Void> {
+    func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType) throws -> Promise<Void> {
         try onBluetoothThread {
             let promise = Promise<Void>()
 
@@ -1466,7 +1472,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         return promise
     }
 
-    func setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?) throws -> Promise<Void> {
+    func setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption) throws -> Promise<Void> {
         unsupportedPromise("setPreferredPhy is not exposed by CoreBluetooth on iOS")
     }
 

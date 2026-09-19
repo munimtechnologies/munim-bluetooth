@@ -304,7 +304,7 @@ export function setServices(
   services: GATTService[],
   requestOptions?: PeripheralRequestOptions
 ): void {
-  return MunimBluetooth.setServices(services, requestOptions)
+  return MunimBluetooth.setServices(services, requestOptions ?? {})
 }
 
 /**
@@ -330,7 +330,12 @@ export function respondToPeripheralReadRequest(
   value?: string,
   status?: PeripheralRequestStatus
 ): Promise<void> {
-  return MunimBluetooth.respondToPeripheralReadRequest(requestId, value, status)
+  return MunimBluetooth.respondToPeripheralReadRequest(
+    requestId,
+    value ?? '',
+    value === undefined,
+    status ?? 'success'
+  )
 }
 
 export function respondToPeripheralWriteRequest(
@@ -338,7 +343,11 @@ export function respondToPeripheralWriteRequest(
   accept: boolean,
   status?: PeripheralRequestStatus
 ): Promise<void> {
-  return MunimBluetooth.respondToPeripheralWriteRequest(requestId, accept, status)
+  return MunimBluetooth.respondToPeripheralWriteRequest(
+    requestId,
+    accept,
+    status ?? (accept ? 'success' : 'writeNotPermitted')
+  )
 }
 
 export function respondToPeripheralExecuteWriteRequest(
@@ -393,7 +402,7 @@ export function getCapabilities(): Promise<BluetoothCapabilities> {
  * @param options - Optional scan configuration including service UUIDs to filter by.
  */
 export function startScan(options?: ScanOptions): void {
-  return MunimBluetooth.startScan(options)
+  return MunimBluetooth.startScan(options ?? {})
 }
 
 /**
@@ -415,7 +424,7 @@ export function connect(
   deviceId: string,
   options?: ConnectOptions
 ): Promise<void> {
-  return MunimBluetooth.connect(deviceId, options)
+  return MunimBluetooth.connect(deviceId, options ?? {})
 }
 
 /**
@@ -496,7 +505,7 @@ export function writeCharacteristic(
     serviceUUID,
     characteristicUUID,
     value,
-    writeType
+    writeType ?? 'write'
   )
 }
 
@@ -627,7 +636,7 @@ export function setPreferredPhy(
   rxPhy: BluetoothPhy,
   phyOption?: BluetoothPhyOption
 ): Promise<void> {
-  return MunimBluetooth.setPreferredPhy(deviceId, txPhy, rxPhy, phyOption)
+  return MunimBluetooth.setPreferredPhy(deviceId, txPhy, rxPhy, phyOption ?? 'none')
 }
 
 /**

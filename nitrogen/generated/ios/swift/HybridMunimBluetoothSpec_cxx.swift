@@ -177,9 +177,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func setServices(services: bridge.std__vector_GATTService_, requestOptions: bridge.std__optional_PeripheralRequestOptions_) -> bridge.Result_void_ {
+  public final func setServices(services: bridge.std__vector_GATTService_, requestOptions: PeripheralRequestOptions) -> bridge.Result_void_ {
     do {
-      try self.__implementation.setServices(services: services.map({ __item in __item }), requestOptions: requestOptions.value)
+      try self.__implementation.setServices(services: services.map({ __item in __item }), requestOptions: requestOptions)
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()
@@ -214,16 +214,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func respondToPeripheralReadRequest(requestId: std.string, value: bridge.std__optional_std__string_, status: bridge.std__optional_PeripheralRequestStatus_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+  public final func respondToPeripheralReadRequest(requestId: std.string, value: std.string, useStoredValue: Bool, status: Int32) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
-      let __result = try self.__implementation.respondToPeripheralReadRequest(requestId: String(requestId), value: { () -> String? in
-        if bridge.has_value_std__optional_std__string_(value) {
-          let __unwrapped = bridge.get_std__optional_std__string_(value)
-          return String(__unwrapped)
-        } else {
-          return nil
-        }
-      }(), status: status.value)
+      let __result = try self.__implementation.respondToPeripheralReadRequest(requestId: String(requestId), value: String(value), useStoredValue: useStoredValue, status: margelo.nitro.munimbluetooth.PeripheralRequestStatus(rawValue: status)!)
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
         let __promise = bridge.create_std__shared_ptr_Promise_void__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
@@ -240,9 +233,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func respondToPeripheralWriteRequest(requestId: std.string, accept: Bool, status: bridge.std__optional_PeripheralRequestStatus_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+  public final func respondToPeripheralWriteRequest(requestId: std.string, accept: Bool, status: Int32) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
-      let __result = try self.__implementation.respondToPeripheralWriteRequest(requestId: String(requestId), accept: accept, status: status.value)
+      let __result = try self.__implementation.respondToPeripheralWriteRequest(requestId: String(requestId), accept: accept, status: margelo.nitro.munimbluetooth.PeripheralRequestStatus(rawValue: status)!)
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
         let __promise = bridge.create_std__shared_ptr_Promise_void__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
@@ -361,9 +354,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func startScan(options: bridge.std__optional_ScanOptions_) -> bridge.Result_void_ {
+  public final func startScan(options: ScanOptions) -> bridge.Result_void_ {
     do {
-      try self.__implementation.startScan(options: options.value)
+      try self.__implementation.startScan(options: options)
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()
@@ -383,9 +376,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func connect(deviceId: std.string, options: bridge.std__optional_ConnectOptions_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+  public final func connect(deviceId: std.string, options: ConnectOptions) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
-      let __result = try self.__implementation.connect(deviceId: String(deviceId), options: options.value)
+      let __result = try self.__implementation.connect(deviceId: String(deviceId), options: options)
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
         let __promise = bridge.create_std__shared_ptr_Promise_void__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
@@ -476,9 +469,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func writeCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string, value: std.string, writeType: bridge.std__optional_WriteType_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+  public final func writeCharacteristic(deviceId: std.string, serviceUUID: std.string, characteristicUUID: std.string, value: std.string, writeType: Int32) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
-      let __result = try self.__implementation.writeCharacteristic(deviceId: String(deviceId), serviceUUID: String(serviceUUID), characteristicUUID: String(characteristicUUID), value: String(value), writeType: writeType.value)
+      let __result = try self.__implementation.writeCharacteristic(deviceId: String(deviceId), serviceUUID: String(serviceUUID), characteristicUUID: String(characteristicUUID), value: String(value), writeType: margelo.nitro.munimbluetooth.WriteType(rawValue: writeType)!)
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
         let __promise = bridge.create_std__shared_ptr_Promise_void__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
@@ -697,9 +690,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func setPreferredPhy(deviceId: std.string, txPhy: Int32, rxPhy: Int32, phyOption: bridge.std__optional_BluetoothPhyOption_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+  public final func setPreferredPhy(deviceId: std.string, txPhy: Int32, rxPhy: Int32, phyOption: Int32) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
-      let __result = try self.__implementation.setPreferredPhy(deviceId: String(deviceId), txPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: txPhy)!, rxPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: rxPhy)!, phyOption: phyOption.value)
+      let __result = try self.__implementation.setPreferredPhy(deviceId: String(deviceId), txPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: txPhy)!, rxPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: rxPhy)!, phyOption: margelo.nitro.munimbluetooth.BluetoothPhyOption(rawValue: phyOption)!)
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
         let __promise = bridge.create_std__shared_ptr_Promise_void__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)

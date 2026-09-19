@@ -101,7 +101,7 @@ public extension BackgroundSessionOptions {
   
   @inline(__always)
   var scanMode: ScanMode? {
-    return self.__scanMode.value
+    return (bridge.has_value_std__optional_ScanMode_(self.__scanMode) ? bridge.get_std__optional_ScanMode_(self.__scanMode) : nil)
   }
   
   @inline(__always)

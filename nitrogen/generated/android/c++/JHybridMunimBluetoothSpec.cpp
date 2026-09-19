@@ -228,7 +228,7 @@ namespace margelo::nitro::munimbluetooth {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopAdvertising");
     method(_javaPart);
   }
-  void JHybridMunimBluetoothSpec::setServices(const std::vector<GATTService>& services, const std::optional<PeripheralRequestOptions>& requestOptions) {
+  void JHybridMunimBluetoothSpec::setServices(const std::vector<GATTService>& services, const PeripheralRequestOptions& requestOptions) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JArrayClass<JGATTService>> /* services */, jni::alias_ref<JPeripheralRequestOptions> /* requestOptions */)>("setServices");
     method(_javaPart, [&](auto&& __input) {
       size_t __size = __input.size();
@@ -239,7 +239,7 @@ namespace margelo::nitro::munimbluetooth {
         __array->setElement(__i, *__elementJni);
       }
       return __array;
-    }(services), requestOptions.has_value() ? JPeripheralRequestOptions::fromCpp(requestOptions.value()) : nullptr);
+    }(services), JPeripheralRequestOptions::fromCpp(requestOptions));
   }
   std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::updateCharacteristicValue(const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<bool> notify) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* serviceUUID */, jni::alias_ref<jni::JString> /* characteristicUUID */, jni::alias_ref<jni::JString> /* value */, jni::alias_ref<jni::JBoolean> /* notify */)>("updateCharacteristicValue");
@@ -256,9 +256,9 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
-  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::respondToPeripheralReadRequest(const std::string& requestId, const std::optional<std::string>& value, std::optional<PeripheralRequestStatus> status) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* requestId */, jni::alias_ref<jni::JString> /* value */, jni::alias_ref<JPeripheralRequestStatus> /* status */)>("respondToPeripheralReadRequest");
-    auto __result = method(_javaPart, jni::make_jstring(requestId), value.has_value() ? jni::make_jstring(value.value()) : nullptr, status.has_value() ? JPeripheralRequestStatus::fromCpp(status.value()) : nullptr);
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::respondToPeripheralReadRequest(const std::string& requestId, const std::string& value, bool useStoredValue, PeripheralRequestStatus status) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* requestId */, jni::alias_ref<jni::JString> /* value */, jboolean /* useStoredValue */, jni::alias_ref<JPeripheralRequestStatus> /* status */)>("respondToPeripheralReadRequest");
+    auto __result = method(_javaPart, jni::make_jstring(requestId), jni::make_jstring(value), useStoredValue, JPeripheralRequestStatus::fromCpp(status));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
@@ -271,9 +271,9 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
-  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::respondToPeripheralWriteRequest(const std::string& requestId, bool accept, std::optional<PeripheralRequestStatus> status) {
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::respondToPeripheralWriteRequest(const std::string& requestId, bool accept, PeripheralRequestStatus status) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* requestId */, jboolean /* accept */, jni::alias_ref<JPeripheralRequestStatus> /* status */)>("respondToPeripheralWriteRequest");
-    auto __result = method(_javaPart, jni::make_jstring(requestId), accept, status.has_value() ? JPeripheralRequestStatus::fromCpp(status.value()) : nullptr);
+    auto __result = method(_javaPart, jni::make_jstring(requestId), accept, JPeripheralRequestStatus::fromCpp(status));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
@@ -374,17 +374,17 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
-  void JHybridMunimBluetoothSpec::startScan(const std::optional<ScanOptions>& options) {
+  void JHybridMunimBluetoothSpec::startScan(const ScanOptions& options) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JScanOptions> /* options */)>("startScan");
-    method(_javaPart, options.has_value() ? JScanOptions::fromCpp(options.value()) : nullptr);
+    method(_javaPart, JScanOptions::fromCpp(options));
   }
   void JHybridMunimBluetoothSpec::stopScan() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopScan");
     method(_javaPart);
   }
-  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::connect(const std::string& deviceId, const std::optional<ConnectOptions>& options) {
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::connect(const std::string& deviceId, const ConnectOptions& options) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<JConnectOptions> /* options */)>("connect");
-    auto __result = method(_javaPart, jni::make_jstring(deviceId), options.has_value() ? JConnectOptions::fromCpp(options.value()) : nullptr);
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), JConnectOptions::fromCpp(options));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
@@ -458,9 +458,9 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
-  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<WriteType> writeType) {
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, WriteType writeType) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<jni::JString> /* serviceUUID */, jni::alias_ref<jni::JString> /* characteristicUUID */, jni::alias_ref<jni::JString> /* value */, jni::alias_ref<JWriteType> /* writeType */)>("writeCharacteristic");
-    auto __result = method(_javaPart, jni::make_jstring(deviceId), jni::make_jstring(serviceUUID), jni::make_jstring(characteristicUUID), jni::make_jstring(value), writeType.has_value() ? JWriteType::fromCpp(writeType.value()) : nullptr);
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), jni::make_jstring(serviceUUID), jni::make_jstring(characteristicUUID), jni::make_jstring(value), JWriteType::fromCpp(writeType));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
@@ -648,9 +648,9 @@ namespace margelo::nitro::munimbluetooth {
       return __promise;
     }();
   }
-  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, std::optional<BluetoothPhyOption> phyOption) {
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, BluetoothPhyOption phyOption) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<JBluetoothPhy> /* txPhy */, jni::alias_ref<JBluetoothPhy> /* rxPhy */, jni::alias_ref<JBluetoothPhyOption> /* phyOption */)>("setPreferredPhy");
-    auto __result = method(_javaPart, jni::make_jstring(deviceId), JBluetoothPhy::fromCpp(txPhy), JBluetoothPhy::fromCpp(rxPhy), phyOption.has_value() ? JBluetoothPhyOption::fromCpp(phyOption.value()) : nullptr);
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), JBluetoothPhy::fromCpp(txPhy), JBluetoothPhy::fromCpp(rxPhy), JBluetoothPhyOption::fromCpp(phyOption));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
