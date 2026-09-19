@@ -55,6 +55,7 @@ import com.margelo.nitro.munimbluetooth.BluetoothPhy
 import com.margelo.nitro.munimbluetooth.BluetoothPhyOption
 import com.margelo.nitro.munimbluetooth.BondState
 import com.margelo.nitro.munimbluetooth.CharacteristicValue
+import com.margelo.nitro.munimbluetooth.ConnectionPriority
 import com.margelo.nitro.munimbluetooth.DescriptorValue
 import com.margelo.nitro.munimbluetooth.ExtendedAdvertisingOptions
 import com.margelo.nitro.munimbluetooth.GATTCharacteristic
@@ -1242,6 +1243,24 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             // With-response writes above MTU-3 become a long (prepared) write,
             // bounded by the 512-byte maximum attribute value length.
             WriteLengthType.WITHRESPONSE -> MAX_ATTRIBUTE_VALUE_LENGTH
+        }
+    }
+
+    override fun requestConnectionPriority(
+        deviceId: String,
+        priority: ConnectionPriority
+    ): Promise<Boolean> {
+        val gatt = connectedDevices[deviceId]
+            ?: return Promise.rejected(IllegalStateException("Device not connected: $deviceId"))
+        val nativePriority = when (priority) {
+            ConnectionPriority.HIGH -> BluetoothGatt.CONNECTION_PRIORITY_HIGH
+            ConnectionPriority.LOWPOWER -> BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER
+            ConnectionPriority.BALANCED -> BluetoothGatt.CONNECTION_PRIORITY_BALANCED
+        }
+        return try {
+            Promise.resolved(gatt.requestConnectionPriority(nativePriority))
+        } catch (error: SecurityException) {
+            Promise.rejected(error)
         }
     }
 

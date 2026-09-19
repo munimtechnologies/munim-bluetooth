@@ -1357,6 +1357,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         drainWritesWithoutResponse(deviceId: peripheral.identifier.uuidString, peripheral: peripheral)
     }
 
+    func requestConnectionPriority(deviceId: String, priority: ConnectionPriority) throws -> Promise<Bool> {
+        // CoreBluetooth chooses connection parameters itself and exposes no
+        // way to influence them; report that nothing was applied.
+        let promise = Promise<Bool>()
+        promise.resolve(withResult: false)
+        return promise
+    }
+
     func setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?) throws -> Promise<Void> {
         unsupportedPromise("setPreferredPhy is not exposed by CoreBluetooth on iOS")
     }

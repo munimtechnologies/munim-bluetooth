@@ -184,6 +184,8 @@ export interface PhyStatus {
   rxPhy: BluetoothPhy
 }
 
+export type ConnectionPriority = 'balanced' | 'high' | 'lowPower'
+
 export type BondState = 'none' | 'bonding' | 'bonded' | 'unsupported'
 
 export interface BluetoothCapabilities {
@@ -539,6 +541,17 @@ export interface MunimBluetooth
     deviceId: string,
     type: WriteLengthType
   ): Promise<number>
+
+  /**
+   * Ask for a connection interval profile. Android forwards this to
+   * BluetoothGatt.requestConnectionPriority() and resolves with whether the
+   * request was accepted. iOS picks connection parameters itself; it resolves
+   * false without changing anything.
+   */
+  requestConnectionPriority(
+    deviceId: string,
+    priority: ConnectionPriority
+  ): Promise<boolean>
 
   /**
    * Set preferred BLE PHY where supported.
