@@ -32,6 +32,7 @@ import type {
   PeripheralRequestOptions,
   PeripheralRequestStatus,
   GATTQueueDiagnostic,
+  WriteLengthType,
 } from './specs/munim-bluetooth.nitro'
 
 /** Android Bluetooth Class of Device metadata reported during Classic discovery. */
@@ -531,10 +532,22 @@ export function readRSSI(deviceId: string): Promise<number> {
 }
 
 /**
- * Request an ATT MTU. Android supports this directly; iOS rejects with unsupported.
+ * Request an ATT MTU. Android negotiates the requested value; iOS negotiates
+ * the MTU itself and resolves with the MTU currently in effect.
  */
 export function requestMTU(deviceId: string, mtu: number): Promise<number> {
   return MunimBluetooth.requestMTU(deviceId, mtu)
+}
+
+/**
+ * Largest value (bytes) one characteristic write of the given type can carry
+ * on this connection. Use it to chunk write-without-response payloads.
+ */
+export function getMaximumWriteLength(
+  deviceId: string,
+  type: WriteLengthType
+): Promise<number> {
+  return MunimBluetooth.getMaximumWriteLength(deviceId, type)
 }
 
 /**
@@ -866,6 +879,7 @@ export type {
   PeripheralRequestOptions,
   PeripheralRequestStatus,
   GATTQueueDiagnostic,
+  WriteLengthType,
 }
 
 // Default export for convenience
@@ -899,6 +913,7 @@ export default {
   getConnectedDevices,
   readRSSI,
   requestMTU,
+  getMaximumWriteLength,
   setPreferredPhy,
   readPhy,
   getBondState,
