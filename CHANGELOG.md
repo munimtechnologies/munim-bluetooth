@@ -1,3 +1,31 @@
+## [0.8.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.7.2...v0.8.0) (2026-09-19)
+
+### ✨ Features
+
+* accept connect options (timeoutMs, autoConnect) ([f68723e](https://github.com/munimtechnologies/munim-bluetooth/commit/f68723e868c589f94a2f46c5cc794ff66f8d524a))
+* add getBondedDevices ([825ca23](https://github.com/munimtechnologies/munim-bluetooth/commit/825ca23b854a259095ad02dba7c13c910df9377c))
+* add requestConnectionPriority ([fe7a49d](https://github.com/munimtechnologies/munim-bluetooth/commit/fe7a49d683cd078ac66df85ecdd5ab2d6443099d))
+* add requestEnable and Android adapterStateChanged events ([964e84d](https://github.com/munimtechnologies/munim-bluetooth/commit/964e84d2fef0d6f24c334b8759353e04e884fc74))
+* add scan filters, Android scan settings, and throttle reporting ([cf4013e](https://github.com/munimtechnologies/munim-bluetooth/commit/cf4013e8158bcb59910b736a4075d610893f95ea))
+* emit servicesChanged and add refreshGattCache ([736eadb](https://github.com/munimtechnologies/munim-bluetooth/commit/736eadb19c2fd489f93c6786519411648c49588a))
+* flow-control write-without-response and add getMaximumWriteLength ([c392e35](https://github.com/munimtechnologies/munim-bluetooth/commit/c392e35f79271e849b73431b14a4088e011629c3))
+
+### 🐛 Bug Fixes
+
+* **android:** read GATT queue diagnostics under the queue lock ([bcac2c3](https://github.com/munimtechnologies/munim-bluetooth/commit/bcac2c3defe427c3ec0e3f9b260388485839fb26))
+* **android:** start the background service as connectedDevice only ([141c641](https://github.com/munimtechnologies/munim-bluetooth/commit/141c6417e61e657d08ed340fa673b2db796e5140))
+* **android:** stop requiring BLE hardware in the merged manifest ([5ca4d55](https://github.com/munimtechnologies/munim-bluetooth/commit/5ca4d555b4da2175a02a97d7c4607f74d55e85c2))
+* **example:** adopt the UIScene lifecycle for Xcode 27 builds ([11f1d85](https://github.com/munimtechnologies/munim-bluetooth/commit/11f1d856d989cd3350cd738d4733c0525a3537c6))
+* **ios:** run CoreBluetooth on a private serial queue with lazy managers ([d7e7fd7](https://github.com/munimtechnologies/munim-bluetooth/commit/d7e7fd763fb81d576c974356e223bd7d676b018a))
+
+### 📚 Documentation
+
+* update the platform support matrix for the new APIs ([f5ec106](https://github.com/munimtechnologies/munim-bluetooth/commit/f5ec1062539a4654c86e6e8eaccb2ba9de6bf950))
+
+### 🛠️ Other changes
+
+* sync package-lock with the release ([128134f](https://github.com/munimtechnologies/munim-bluetooth/commit/128134f6e9861400da846fc356598c15071f4a9d))
+
 ## [0.7.2](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.7.1...v0.7.2) (2026-09-14)
 
 ### 🐛 Bug Fixes
