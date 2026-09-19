@@ -23,6 +23,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func respondToPeripheralWriteRequest(requestId: String, accept: Bool, status: PeripheralRequestStatus?) throws -> Promise<Void>
   func respondToPeripheralExecuteWriteRequest(requestId: String, accept: Bool) throws -> Promise<Void>
   func isBluetoothEnabled() throws -> Promise<Bool>
+  func requestEnable() throws -> Promise<Bool>
   func requestBluetoothPermission(permissions: [String]?) throws -> Promise<Bool>
   func getCapabilities() throws -> Promise<BluetoothCapabilities>
   func startScan(options: ScanOptions?) throws -> Void

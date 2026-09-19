@@ -433,6 +433,14 @@ export interface MunimBluetooth
   isBluetoothEnabled(): Promise<boolean>
 
   /**
+   * Ask the user to turn Bluetooth on. Android shows the system
+   * ACTION_REQUEST_ENABLE dialog (needs a foreground Activity and, on
+   * Android 12+, BLUETOOTH_CONNECT) and resolves true when the user accepts.
+   * iOS apps cannot enable Bluetooth; iOS resolves with whether it is on.
+   */
+  requestEnable(): Promise<boolean>
+
+  /**
    * Request selected Bluetooth permissions (Android) or check authorization status (iOS).
    *
    * @param permissions - Android capabilities to request.

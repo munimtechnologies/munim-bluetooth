@@ -24,6 +24,7 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("respondToPeripheralWriteRequest", &HybridMunimBluetoothSpec::respondToPeripheralWriteRequest);
       prototype.registerHybridMethod("respondToPeripheralExecuteWriteRequest", &HybridMunimBluetoothSpec::respondToPeripheralExecuteWriteRequest);
       prototype.registerHybridMethod("isBluetoothEnabled", &HybridMunimBluetoothSpec::isBluetoothEnabled);
+      prototype.registerHybridMethod("requestEnable", &HybridMunimBluetoothSpec::requestEnable);
       prototype.registerHybridMethod("requestBluetoothPermission", &HybridMunimBluetoothSpec::requestBluetoothPermission);
       prototype.registerHybridMethod("getCapabilities", &HybridMunimBluetoothSpec::getCapabilities);
       prototype.registerHybridMethod("startScan", &HybridMunimBluetoothSpec::startScan);

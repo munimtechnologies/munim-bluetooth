@@ -832,6 +832,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
+    func requestEnable() throws -> Promise<Bool> {
+        // iOS offers no way for an app to switch Bluetooth on; report the
+        // current power state once it is known.
+        try isBluetoothEnabled()
+    }
+
     func requestBluetoothPermission(permissions: [String]?) throws -> Promise<Bool> {
         try onBluetoothThread {
             let promise = Promise<Bool>()
