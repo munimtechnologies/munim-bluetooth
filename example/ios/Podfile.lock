@@ -8,7 +8,7 @@ PODS:
   - hermes-engine (0.14.0):
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
-  - MunimBluetooth (0.7.0):
+  - MunimBluetooth (0.7.2):
     - boost
     - DoubleConversion
     - fast_float
@@ -2857,7 +2857,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: d1ede0c42e6816212b1cc199d55e9d5678db086a
-  MunimBluetooth: ad820a72916e8d946fe2e43d9975f9de5cfcfed4
+  MunimBluetooth: f7c0caa6f50852306d7a63039fad0e2cc3dfa819
   NitroModules: ab089a25876d6510138cc21fbf2e36e872f7d607
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: a41bbdd9af30bf2e5715796b313e44ec43eefff1
