@@ -187,7 +187,7 @@ function withMunimBluetooth(config, options = {}) {
       .concat(ANDROID_SERVICE_PERMISSIONS)
       .forEach((permission) => ensureAndroidPermission(manifest, permission));
     ensureAndroidFeature(manifest, 'android.hardware.bluetooth', false);
-    ensureAndroidFeature(manifest, 'android.hardware.bluetooth_le', true);
+    ensureAndroidFeature(manifest, 'android.hardware.bluetooth_le', false);
     ensureBackgroundService(manifest);
     return pluginConfig;
   });

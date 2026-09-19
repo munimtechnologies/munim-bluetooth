@@ -1311,6 +1311,11 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
 
         val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        // Must stay RECEIVER_EXPORTED: Bluetooth broadcasts are sent by the
+        // privileged Bluetooth app, not the system UID, and Android documents
+        // that RECEIVER_NOT_EXPORTED receivers do not get broadcasts from
+        // "highly privileged apps, such as Bluetooth". The action is protected,
+        // so other apps cannot spoof it.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
         } else {
