@@ -35,6 +35,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
+import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.Keep
 import com.facebook.react.bridge.Arguments
@@ -73,7 +74,10 @@ import com.margelo.nitro.munimbluetooth.PeripheralRequestMode
 import com.margelo.nitro.munimbluetooth.PeripheralRequestOptions
 import com.margelo.nitro.munimbluetooth.PeripheralRequestStatus
 import com.margelo.nitro.munimbluetooth.PhyStatus
+import com.margelo.nitro.munimbluetooth.ScanCallbackType
+import com.margelo.nitro.munimbluetooth.ScanMatchMode
 import com.margelo.nitro.munimbluetooth.ScanMode
+import com.margelo.nitro.munimbluetooth.ScanPhy
 import com.margelo.nitro.munimbluetooth.ScanOptions
 import com.margelo.nitro.munimbluetooth.ServiceDataEntry
 import com.margelo.nitro.munimbluetooth.WriteLengthType
@@ -168,6 +172,9 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private var scanAllowDuplicates = false
     private var scanRssiThreshold: Double? = null
     private var scanNamePrefix: String? = null
+    // Android silently ignores the 6th scan start within 30 s per app;
+    // track our own starts so the app hears about it.
+    private val recentScanStarts = ArrayDeque<Long>()
     private val discoveredDevices = ConcurrentHashMap<String, BluetoothDevice>()
     private val connectedDevices = ConcurrentHashMap<String, BluetoothGatt>()
     private val pendingConnections = ConcurrentHashMap<String, Promise<Unit>>()
@@ -709,20 +716,21 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             return
         }
 
-        val scanFilters = try {
-            options?.serviceUUIDs
-                ?.takeIf { it.isNotEmpty() }
-                ?.map { uuid ->
-                    ScanFilter.Builder()
-                        .setServiceUuid(ParcelUuid.fromString(uuid))
-                        .build()
-                }
-                ?: emptyList()
-        } catch (error: IllegalArgumentException) {
-            throw IllegalArgumentException(
-                "Invalid scan filter service UUID: ${error.message}",
-                error
+        val scanFilters = buildScanFilters(options)
+        val scanSettings = buildScanSettings(options)
+
+        val retryAfterMs = scanThrottleRetryAfterMs()
+        if (retryAfterMs > 0) {
+            Log.w(TAG, "Not starting scan: Android allows 5 scan starts per 30 s (retry in ${retryAfterMs} ms)")
+            eventEmitter.emit(
+                "scanFailed",
+                mapOf(
+                    "errorCode" to ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY,
+                    "message" to "Scanning too frequently: Android allows 5 scan starts per 30 seconds; the platform would silently ignore this one",
+                    "retryAfterMs" to retryAfterMs
+                )
             )
+            return
         }
 
         isScanning = true
@@ -732,18 +740,16 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         discoveredDevices.clear()
         bluetoothLeScanner = scanner
 
-        val scanMode = when (options?.scanMode) {
-            ScanMode.LOWPOWER -> ScanSettings.SCAN_MODE_LOW_POWER
-            ScanMode.LOWLATENCY -> ScanSettings.SCAN_MODE_LOW_LATENCY
-            else -> ScanSettings.SCAN_MODE_BALANCED
-        }
-
-        val scanSettings = ScanSettings.Builder()
-            .setScanMode(scanMode)
-            .build()
-
         scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
+                if (callbackType == ScanSettings.CALLBACK_TYPE_MATCH_LOST) {
+                    discoveredDevices.remove(result.device.address)
+                    eventEmitter.emit(
+                        "deviceLost",
+                        mapOf("id" to result.device.address, "rssi" to result.rssi)
+                    )
+                    return
+                }
                 handleScanResult(result)
             }
 
@@ -766,7 +772,128 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             }
         }
 
+        recordScanStart()
         scanner.startScan(scanFilters, scanSettings, scanCallback)
+    }
+
+    private fun scanThrottleRetryAfterMs(): Long {
+        val now = SystemClock.elapsedRealtime()
+        synchronized(recentScanStarts) {
+            while (recentScanStarts.isNotEmpty() && now - recentScanStarts.first() >= SCAN_THROTTLE_WINDOW_MS) {
+                recentScanStarts.removeFirst()
+            }
+            if (recentScanStarts.size < SCAN_THROTTLE_MAX_STARTS) return 0
+            return (SCAN_THROTTLE_WINDOW_MS - (now - recentScanStarts.first())).coerceAtLeast(1)
+        }
+    }
+
+    private fun recordScanStart() {
+        synchronized(recentScanStarts) {
+            recentScanStarts.addLast(SystemClock.elapsedRealtime())
+        }
+    }
+
+    /**
+     * Android ORs the filters in the list and ANDs the criteria inside one
+     * filter, so each service UUID gets its own filter carrying the shared
+     * name/address/manufacturer criteria.
+     */
+    private fun buildScanFilters(options: ScanOptions?): List<ScanFilter> {
+        options ?: return emptyList()
+        try {
+            val manufacturerId = options.manufacturerId?.let { id ->
+                require(id.isFinite() && id >= 0 && id <= 0xFFFF && id % 1.0 == 0.0) {
+                    "manufacturerId must be an integer between 0 and 65535"
+                }
+                id.toInt()
+            }
+            val manufacturerData = options.manufacturerData?.takeIf { it.isNotEmpty() }?.let {
+                hexStringToByteArray(it) ?: throw IllegalArgumentException("manufacturerData must be an even-length hex string")
+            }
+            val manufacturerMask = options.manufacturerDataMask?.takeIf { it.isNotEmpty() }?.let {
+                hexStringToByteArray(it) ?: throw IllegalArgumentException("manufacturerDataMask must be an even-length hex string")
+            }
+            require(manufacturerId != null || (manufacturerData == null && manufacturerMask == null)) {
+                "manufacturerData/manufacturerDataMask require manufacturerId"
+            }
+            require(manufacturerMask == null || manufacturerMask.size == manufacturerData?.size) {
+                "manufacturerDataMask must be the same length as manufacturerData"
+            }
+            val deviceName = options.deviceName?.takeIf { it.isNotEmpty() }
+            val deviceAddress = options.deviceAddress?.takeIf { it.isNotEmpty() }?.uppercase()
+            val serviceUUIDs = options.serviceUUIDs?.takeIf { it.isNotEmpty() }?.toList()
+
+            val hasSharedCriteria = manufacturerId != null || deviceName != null || deviceAddress != null
+            if (serviceUUIDs == null && !hasSharedCriteria) return emptyList()
+
+            fun filter(serviceUUID: String?): ScanFilter {
+                val builder = ScanFilter.Builder()
+                serviceUUID?.let { builder.setServiceUuid(ParcelUuid.fromString(it)) }
+                deviceName?.let { builder.setDeviceName(it) }
+                deviceAddress?.let { builder.setDeviceAddress(it) }
+                if (manufacturerId != null) {
+                    // An empty data array matches any payload for the id.
+                    val data = manufacturerData ?: byteArrayOf()
+                    if (manufacturerMask != null) {
+                        builder.setManufacturerData(manufacturerId, data, manufacturerMask)
+                    } else {
+                        builder.setManufacturerData(manufacturerId, data)
+                    }
+                }
+                return builder.build()
+            }
+
+            return serviceUUIDs?.map { filter(it) } ?: listOf(filter(null))
+        } catch (error: IllegalArgumentException) {
+            throw IllegalArgumentException("Invalid scan filter: ${error.message}", error)
+        }
+    }
+
+    private fun buildScanSettings(options: ScanOptions?): ScanSettings {
+        val builder = ScanSettings.Builder()
+            .setScanMode(
+                when (options?.scanMode) {
+                    ScanMode.LOWPOWER -> ScanSettings.SCAN_MODE_LOW_POWER
+                    ScanMode.LOWLATENCY -> ScanSettings.SCAN_MODE_LOW_LATENCY
+                    else -> ScanSettings.SCAN_MODE_BALANCED
+                }
+            )
+        options?.reportDelayMs?.let { delayMs ->
+            require(delayMs >= 0) { "reportDelayMs must be >= 0" }
+            builder.setReportDelay(delayMs.toLong())
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            options?.callbackType?.let { callbackType ->
+                builder.setCallbackType(
+                    when (callbackType) {
+                        ScanCallbackType.ALLMATCHES -> ScanSettings.CALLBACK_TYPE_ALL_MATCHES
+                        ScanCallbackType.FIRSTMATCH -> ScanSettings.CALLBACK_TYPE_FIRST_MATCH
+                        ScanCallbackType.MATCHLOST -> ScanSettings.CALLBACK_TYPE_MATCH_LOST
+                    }
+                )
+            }
+            options?.matchMode?.let { matchMode ->
+                builder.setMatchMode(
+                    when (matchMode) {
+                        ScanMatchMode.AGGRESSIVE -> ScanSettings.MATCH_MODE_AGGRESSIVE
+                        ScanMatchMode.STICKY -> ScanSettings.MATCH_MODE_STICKY
+                    }
+                )
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            options?.legacy?.let { builder.setLegacy(it) }
+            options?.phy?.let { phy ->
+                builder.setPhy(
+                    when (phy) {
+                        ScanPhy.LE1M -> BluetoothDevice.PHY_LE_1M
+                        ScanPhy.LECODED -> BluetoothDevice.PHY_LE_CODED
+                        ScanPhy.ALLSUPPORTED -> ScanSettings.PHY_LE_ALL_SUPPORTED
+                    }
+                )
+            }
+        }
+        return builder.build()
     }
 
     override fun stopScan() {
@@ -4328,6 +4455,8 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         private const val CONNECTION_RETRY_DELAY_MS = 350L
         private const val MAX_CONNECTION_RETRIES = 2
         private const val OPERATION_TIMEOUT_MS = 15_000L
+        private const val SCAN_THROTTLE_WINDOW_MS = 30_000L
+        private const val SCAN_THROTTLE_MAX_STARTS = 5
         private const val DEFAULT_ATT_MTU = 23
         private const val GATT_REFRESH_SETTLE_MS = 300L
         private const val MAX_ATTRIBUTE_VALUE_LENGTH = 512

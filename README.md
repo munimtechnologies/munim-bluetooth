@@ -705,6 +705,23 @@ Starts scanning for BLE devices.
   - `serviceUUIDs?` (string[]): Filter by service UUIDs
   - `allowDuplicates?` (boolean): Allow duplicate scan results
   - `scanMode?` ('lowPower' | 'balanced' | 'lowLatency'): Scan mode
+  - `rssiThreshold?` (number): Drop results weaker than this RSSI (dBm), filtered in-process
+  - `namePrefix?` (string): Only report names starting with this prefix, filtered in-process
+  - `deviceName?` (string): Only report this exact advertised/local name. Android `ScanFilter.setDeviceName`; iOS filters in-process.
+  - `deviceAddress?` (string): Android only. Only report this MAC address (`ScanFilter.setDeviceAddress`). Ignored on iOS, which has no MAC addresses.
+  - `manufacturerId?` (number): Only report devices advertising manufacturer data for this company identifier. Android `ScanFilter.setManufacturerData`; iOS filters in-process.
+  - `manufacturerData?` (hex string): Prefix the manufacturer payload (after the company identifier) must match. Requires `manufacturerId`.
+  - `manufacturerDataMask?` (hex string): Same length as `manufacturerData`; 1 bits must match, 0 bits are ignored.
+  - Android `ScanSettings` (ignored on iOS):
+    - `reportDelayMs?` (number): Batch results and deliver them every N ms. Needs offloaded batch scanning; unsupported hardware reports `scanFailed`.
+    - `callbackType?` (`'allMatches' | 'firstMatch' | 'matchLost'`): `firstMatch`/`matchLost` need at least one filter and hardware filter support. `matchLost` results arrive as a `deviceLost` event.
+    - `matchMode?` (`'aggressive' | 'sticky'`)
+    - `legacy?` (boolean, Android 8+): Defaults to `true`. Set `false` to also receive extended advertisements.
+    - `phy?` (`'le1m' | 'leCoded' | 'allSupported'`, Android 8+): Only applies when `legacy` is `false`.
+
+Android filters are combined the way the platform does it: service UUIDs are alternatives (one `ScanFilter` each), and the name/address/manufacturer criteria apply to every one of them.
+
+Android allows an app only 5 scan starts per 30 seconds and silently ignores further starts. The library counts its own starts; a 6th start inside the window is not attempted and emits `scanFailed` with `errorCode: 6` and `retryAfterMs` instead of leaving the app waiting for results that never come.
 
 On Android, an unfiltered scan can be more reliable for iOS peripherals whose
 128-bit service UUID was moved out of the primary legacy advertisement because
@@ -816,7 +833,8 @@ Use `addEventListener(eventName, callback)` for BLE status and data events.
 | --- | --- |
 | `deviceFound` | Discovered BLE device payload: `{ id, name?, localName?, rssi?, serviceUUIDs?, serviceData?, manufacturerData?, txPowerLevel?, isConnectable?, advertisingData? }`. |
 | `onDeviceFound`, `scanResult` | Legacy aliases for `deviceFound`. |
-| `scanFailed` | `{ errorCode, message }` on Android scan callback failure. |
+| `scanFailed` | `{ errorCode, message, retryAfterMs? }` on Android scan callback failure, or when a start would exceed Android's 5-starts-per-30-seconds limit (`errorCode: 6`). |
+| `deviceLost` | Android `callbackType: 'matchLost'`: `{ id, rssi? }` when a matching device stops advertising. |
 | `advertisingStarted` | Empty payload when advertising starts. |
 | `advertisingStartFailed` | Android: `{ errorCode, message }`; iOS: `{ error }`. |
 | `classicDeviceFound` | Android Classic discovery result: `{ id, name, bondState, rssi?, bluetoothClass?, serviceUUIDs? }`. |

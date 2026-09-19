@@ -30,11 +30,20 @@
 
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
+// Forward declaration of `ScanCallbackType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanCallbackType; }
+// Forward declaration of `ScanMatchMode` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanMatchMode; }
+// Forward declaration of `ScanPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanPhy; }
 
 #include <string>
 #include <vector>
 #include <optional>
 #include "ScanMode.hpp"
+#include "ScanCallbackType.hpp"
+#include "ScanMatchMode.hpp"
+#include "ScanPhy.hpp"
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -48,10 +57,20 @@ namespace margelo::nitro::munimbluetooth {
     std::optional<ScanMode> scanMode     SWIFT_PRIVATE;
     std::optional<double> rssiThreshold     SWIFT_PRIVATE;
     std::optional<std::string> namePrefix     SWIFT_PRIVATE;
+    std::optional<std::string> deviceName     SWIFT_PRIVATE;
+    std::optional<std::string> deviceAddress     SWIFT_PRIVATE;
+    std::optional<double> manufacturerId     SWIFT_PRIVATE;
+    std::optional<std::string> manufacturerData     SWIFT_PRIVATE;
+    std::optional<std::string> manufacturerDataMask     SWIFT_PRIVATE;
+    std::optional<double> reportDelayMs     SWIFT_PRIVATE;
+    std::optional<ScanCallbackType> callbackType     SWIFT_PRIVATE;
+    std::optional<ScanMatchMode> matchMode     SWIFT_PRIVATE;
+    std::optional<bool> legacy     SWIFT_PRIVATE;
+    std::optional<ScanPhy> phy     SWIFT_PRIVATE;
 
   public:
     ScanOptions() = default;
-    explicit ScanOptions(std::optional<std::vector<std::string>> serviceUUIDs, std::optional<bool> allowDuplicates, std::optional<ScanMode> scanMode, std::optional<double> rssiThreshold, std::optional<std::string> namePrefix): serviceUUIDs(serviceUUIDs), allowDuplicates(allowDuplicates), scanMode(scanMode), rssiThreshold(rssiThreshold), namePrefix(namePrefix) {}
+    explicit ScanOptions(std::optional<std::vector<std::string>> serviceUUIDs, std::optional<bool> allowDuplicates, std::optional<ScanMode> scanMode, std::optional<double> rssiThreshold, std::optional<std::string> namePrefix, std::optional<std::string> deviceName, std::optional<std::string> deviceAddress, std::optional<double> manufacturerId, std::optional<std::string> manufacturerData, std::optional<std::string> manufacturerDataMask, std::optional<double> reportDelayMs, std::optional<ScanCallbackType> callbackType, std::optional<ScanMatchMode> matchMode, std::optional<bool> legacy, std::optional<ScanPhy> phy): serviceUUIDs(serviceUUIDs), allowDuplicates(allowDuplicates), scanMode(scanMode), rssiThreshold(rssiThreshold), namePrefix(namePrefix), deviceName(deviceName), deviceAddress(deviceAddress), manufacturerId(manufacturerId), manufacturerData(manufacturerData), manufacturerDataMask(manufacturerDataMask), reportDelayMs(reportDelayMs), callbackType(callbackType), matchMode(matchMode), legacy(legacy), phy(phy) {}
 
   public:
     friend bool operator==(const ScanOptions& lhs, const ScanOptions& rhs) = default;
@@ -71,7 +90,17 @@ namespace margelo::nitro {
         JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "allowDuplicates"))),
         JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMode>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "scanMode"))),
         JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "rssiThreshold"))),
-        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "namePrefix")))
+        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "namePrefix"))),
+        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "deviceName"))),
+        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "deviceAddress"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerId"))),
+        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData"))),
+        JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataMask"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "reportDelayMs"))),
+        JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanCallbackType>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "callbackType"))),
+        JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMatchMode>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "matchMode"))),
+        JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "legacy"))),
+        JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanPhy>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "phy")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::munimbluetooth::ScanOptions& arg) {
@@ -81,6 +110,16 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "scanMode"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMode>>::toJSI(runtime, arg.scanMode));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "rssiThreshold"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.rssiThreshold));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "namePrefix"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.namePrefix));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "deviceName"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.deviceName));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "deviceAddress"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.deviceAddress));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerId"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.manufacturerId));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.manufacturerData));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataMask"), JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.manufacturerDataMask));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "reportDelayMs"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.reportDelayMs));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "callbackType"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanCallbackType>>::toJSI(runtime, arg.callbackType));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "matchMode"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMatchMode>>::toJSI(runtime, arg.matchMode));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "legacy"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.legacy));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "phy"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanPhy>>::toJSI(runtime, arg.phy));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -96,6 +135,16 @@ namespace margelo::nitro {
       if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMode>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "scanMode")))) return false;
       if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "rssiThreshold")))) return false;
       if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "namePrefix")))) return false;
+      if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "deviceName")))) return false;
+      if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "deviceAddress")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerId")))) return false;
+      if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerData")))) return false;
+      if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "manufacturerDataMask")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "reportDelayMs")))) return false;
+      if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanCallbackType>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "callbackType")))) return false;
+      if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanMatchMode>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "matchMode")))) return false;
+      if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "legacy")))) return false;
+      if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::ScanPhy>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "phy")))) return false;
       return true;
     }
   };

@@ -40,6 +40,12 @@ namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
+// Forward declaration of `ScanCallbackType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanCallbackType; }
+// Forward declaration of `ScanMatchMode` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanMatchMode; }
+// Forward declaration of `ScanPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanPhy; }
 // Forward declaration of `ConnectOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ConnectOptions; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
@@ -97,6 +103,9 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
 #include "BluetoothCapabilities.hpp"
 #include "ScanOptions.hpp"
 #include "ScanMode.hpp"
+#include "ScanCallbackType.hpp"
+#include "ScanMatchMode.hpp"
+#include "ScanPhy.hpp"
 #include "ConnectOptions.hpp"
 #include "CharacteristicValue.hpp"
 #include "DescriptorValue.hpp"

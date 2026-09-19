@@ -35,6 +35,9 @@ import type {
   WriteLengthType,
   ConnectionPriority,
   ConnectOptions,
+  ScanCallbackType,
+  ScanMatchMode,
+  ScanPhy,
 } from './specs/munim-bluetooth.nitro'
 
 /** Android Bluetooth Class of Device metadata reported during Classic discovery. */
@@ -62,7 +65,14 @@ export type BluetoothEventMap = {
   deviceFound: BLEDevice
   onDeviceFound: BLEDevice
   scanResult: BLEDevice
-  scanFailed: { errorCode: number; message: string }
+  scanFailed: {
+    errorCode: number
+    message: string
+    /** Android throttle (errorCode 6): when the next start will be allowed. */
+    retryAfterMs?: number
+  }
+  /** Android callbackType 'matchLost': a matching device stopped advertising. */
+  deviceLost: { id: string; rssi?: number }
   advertisingStarted: Record<string, never>
   advertisingStartFailed: { error?: string; errorCode?: number; message?: string }
   classicDeviceFound: ClassicDevice
@@ -920,6 +930,9 @@ export type {
   WriteLengthType,
   ConnectionPriority,
   ConnectOptions,
+  ScanCallbackType,
+  ScanMatchMode,
+  ScanPhy,
 }
 
 // Default export for convenience
