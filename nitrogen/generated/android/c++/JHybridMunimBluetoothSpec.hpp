@@ -64,6 +64,7 @@ namespace margelo::nitro::munimbluetooth {
     std::shared_ptr<Promise<void>> respondToPeripheralWriteRequest(const std::string& requestId, bool accept, std::optional<PeripheralRequestStatus> status) override;
     std::shared_ptr<Promise<void>> respondToPeripheralExecuteWriteRequest(const std::string& requestId, bool accept) override;
     std::shared_ptr<Promise<bool>> isBluetoothEnabled() override;
+    std::shared_ptr<Promise<bool>> requestEnable() override;
     std::shared_ptr<Promise<bool>> requestBluetoothPermission(const std::optional<std::vector<std::string>>& permissions) override;
     std::shared_ptr<Promise<BluetoothCapabilities>> getCapabilities() override;
     void startScan(const std::optional<ScanOptions>& options) override;

@@ -248,6 +248,14 @@ namespace margelo::nitro::munimbluetooth {
       auto __value = std::move(__result.value());
       return __value;
     }
+    inline std::shared_ptr<Promise<bool>> requestEnable() override {
+      auto __result = _swiftPart.requestEnable();
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
     inline std::shared_ptr<Promise<bool>> requestBluetoothPermission(const std::optional<std::vector<std::string>>& permissions) override {
       auto __result = _swiftPart.requestBluetoothPermission(permissions);
       if (__result.hasError()) [[unlikely]] {

@@ -85,7 +85,16 @@ export type BluetoothEventMap = {
   classicServerStopped: { serviceUUID: string }
   classicDataReceived: { deviceId: string; value: string }
   adapterStateChanged: {
-    state: 'unknown' | 'resetting' | 'unsupported' | 'unauthorized' | 'poweredOff' | 'poweredOn'
+    /** `turningOn`/`turningOff` are Android-only transitional states. */
+    state:
+      | 'unknown'
+      | 'resetting'
+      | 'unsupported'
+      | 'unauthorized'
+      | 'poweredOff'
+      | 'poweredOn'
+      | 'turningOn'
+      | 'turningOff'
     authorization: 'notDetermined' | 'restricted' | 'denied' | 'allowedAlways' | 'unknown'
   }
   deviceConnected: { deviceId: string; status?: number }
@@ -346,6 +355,15 @@ export function respondToPeripheralExecuteWriteRequest(
  */
 export function isBluetoothEnabled(): Promise<boolean> {
   return MunimBluetooth.isBluetoothEnabled()
+}
+
+/**
+ * Ask the user to turn Bluetooth on (Android system dialog). Resolves true
+ * when Bluetooth is on afterwards. iOS cannot enable Bluetooth and resolves
+ * with the current state.
+ */
+export function requestEnable(): Promise<boolean> {
+  return MunimBluetooth.requestEnable()
 }
 
 /**
@@ -949,6 +967,7 @@ export default {
   respondToPeripheralExecuteWriteRequest,
   // Central
   isBluetoothEnabled,
+  requestEnable,
   requestBluetoothPermission,
   getCapabilities,
   startScan,

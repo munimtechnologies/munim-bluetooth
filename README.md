@@ -624,13 +624,21 @@ Updates a local peripheral characteristic value. When `notify` is `true`, the ne
 
 #### `isBluetoothEnabled()`
 
-Checks if Bluetooth is enabled on the device.
+Checks if Bluetooth is enabled on the device. On iOS the answer waits (up to 10 seconds) for CoreBluetooth to report its first real state instead of returning `false` while the state is still unknown.
+
+**Returns:** Promise<boolean>
+
+#### `requestEnable()`
+
+Asks the user to turn Bluetooth on. Android shows the system `ACTION_REQUEST_ENABLE` dialog and resolves `true` if the user accepts (`true` immediately if Bluetooth is already on). It needs a foreground Activity and, on Android 12+, the `connect` permission. iOS apps cannot switch Bluetooth on, so iOS resolves with whether it is currently on.
 
 **Returns:** Promise<boolean>
 
 #### `requestBluetoothPermission(permissions?)`
 
-Requests only the selected Android capabilities or checks authorization status on iOS. Supported capabilities are `scan`, `connect`, and `advertise`. The default is `['scan', 'connect']`; advertising is never requested implicitly.
+Requests only the selected Android capabilities, or the Bluetooth permission on iOS. Supported capabilities are `scan`, `connect`, and `advertise`. The default is `['scan', 'connect']`; advertising is never requested implicitly.
+
+On iOS, importing the package no longer shows the Bluetooth permission prompt: CoreBluetooth managers are created on first use. `requestBluetoothPermission()` shows the prompt when the user has not decided yet and resolves once they answer (up to 60 seconds); it resolves `false` immediately when access was denied or restricted. Any other central or peripheral call (`isBluetoothEnabled()`, `startScan()`, `startAdvertising()`, ...) also creates the manager and can show the prompt, so call `requestBluetoothPermission()` first to control when that happens. Until permission is granted, synchronous calls such as `startScan()` throw a "permission has not been granted yet" error.
 
 ```typescript
 await requestBluetoothPermission(['connect'])
@@ -843,6 +851,7 @@ Use `addEventListener(eventName, callback)` for BLE status and data events.
 | `classicConnectionReceived` | Android Classic RFCOMM inbound connection: `{ deviceId }`. |
 | `classicServerStarted`, `classicServerStopped` | Android Classic RFCOMM listener status. |
 | `classicDataReceived` | Android Classic RFCOMM data: `{ deviceId, value }`. |
+| `adapterStateChanged` | `{ state, authorization }` when the Bluetooth adapter changes state. `state` is `poweredOn`, `poweredOff`, `resetting`, `unauthorized`, `unsupported`, or `unknown`; Android also reports `turningOn`/`turningOff`. Android's `authorization` is `allowedAlways` when `BLUETOOTH_CONNECT` is granted, otherwise `unknown`. |
 | `deviceConnected` | `{ deviceId }` |
 | `deviceDisconnected` | `{ deviceId }` |
 | `servicesDiscovered` | `{ deviceId, services }` |

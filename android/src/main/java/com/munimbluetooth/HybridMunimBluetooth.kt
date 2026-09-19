@@ -28,6 +28,7 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanRecord
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -39,6 +40,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.Keep
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.BaseActivityEventListener
 import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
@@ -203,6 +205,8 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val lastRssiValues = ConcurrentHashMap<String, Double>()
     private val subscribedDevices = ConcurrentHashMap<UUID, MutableSet<BluetoothDevice>>()
     private var bondStateReceiver: BroadcastReceiver? = null
+    private var adapterStateReceiver: BroadcastReceiver? = null
+    private var pendingEnableRequest: Promise<Boolean>? = null
     private val pendingBondPromises = ConcurrentHashMap<String, Promise<BondState>>()
     private val pendingBondTimeouts = ConcurrentHashMap<String, Job>()
     private var classicScanReceiver: BroadcastReceiver? = null
@@ -222,6 +226,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val eventEmitter = NitroEventEmitter(TAG)
     private var nextPermissionRequestCode = BLUETOOTH_PERMISSION_REQUEST_CODE
 
+    init {
+        ensureAdapterStateReceiver()
+    }
+
     private fun getBluetoothManager(): BluetoothManager? {
         val context = NitroModules.applicationContext ?: return null
         return context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -231,6 +239,52 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         if (bluetoothManager == null) {
             bluetoothManager = getBluetoothManager()
             bluetoothAdapter = bluetoothManager?.adapter
+        }
+        ensureAdapterStateReceiver()
+    }
+
+    /** Emits adapterStateChanged for BluetoothAdapter.ACTION_STATE_CHANGED. */
+    @Synchronized
+    private fun ensureAdapterStateReceiver() {
+        if (adapterStateReceiver != null) return
+        val context = NitroModules.applicationContext ?: return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action != BluetoothAdapter.ACTION_STATE_CHANGED) return
+                val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                eventEmitter.emit(
+                    "adapterStateChanged",
+                    mapOf(
+                        "state" to adapterStateName(state),
+                        "authorization" to if (hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
+                            "allowedAlways"
+                        } else {
+                            "unknown"
+                        }
+                    )
+                )
+            }
+        }
+        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        // Exported for the same reason as the bond receiver: the broadcast
+        // comes from the privileged Bluetooth app, which NOT_EXPORTED
+        // receivers do not hear.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            context.registerReceiver(receiver, filter)
+        }
+        adapterStateReceiver = receiver
+    }
+
+    private fun adapterStateName(state: Int): String {
+        return when (state) {
+            BluetoothAdapter.STATE_ON -> "poweredOn"
+            BluetoothAdapter.STATE_OFF -> "poweredOff"
+            BluetoothAdapter.STATE_TURNING_ON -> "turningOn"
+            BluetoothAdapter.STATE_TURNING_OFF -> "turningOff"
+            else -> "unknown"
         }
     }
 
@@ -594,6 +648,69 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
         ensureBluetoothManager()
         return Promise.resolved(bluetoothAdapter?.isEnabled == true)
+    }
+
+    override fun requestEnable(): Promise<Boolean> {
+        ensureBluetoothManager()
+        val adapter = bluetoothAdapter
+            ?: return unsupportedPromise("Bluetooth is not available on this device")
+        val isEnabled = try {
+            adapter.isEnabled
+        } catch (error: SecurityException) {
+            false
+        }
+        if (isEnabled) {
+            return Promise.resolved(true)
+        }
+        if (!hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
+            return Promise.rejected(
+                SecurityException("BLUETOOTH_CONNECT is required to request enabling Bluetooth; call requestBluetoothPermission(['connect']) first")
+            )
+        }
+        val context = NitroModules.applicationContext
+            ?: return Promise.rejected(IllegalStateException("React context unavailable"))
+        val activity = context.currentActivity
+            ?: return Promise.rejected(IllegalStateException("requestEnable() needs a foreground Activity"))
+
+        synchronized(this) {
+            if (pendingEnableRequest != null) {
+                return Promise.rejected(IllegalStateException("An enable request is already showing"))
+            }
+            val promise = Promise<Boolean>()
+            pendingEnableRequest = promise
+            val listener = object : BaseActivityEventListener() {
+                override fun onActivityResult(
+                    activity: Activity,
+                    requestCode: Int,
+                    resultCode: Int,
+                    data: Intent?
+                ) {
+                    if (requestCode != REQUEST_ENABLE_BLUETOOTH_CODE) return
+                    context.removeActivityEventListener(this)
+                    val pending = synchronized(this@HybridMunimBluetooth) {
+                        pendingEnableRequest.also { pendingEnableRequest = null }
+                    }
+                    pending?.resolve(resultCode == Activity.RESULT_OK)
+                }
+            }
+            context.addActivityEventListener(listener)
+            UiThreadUtil.runOnUiThread {
+                try {
+                    activity.startActivityForResult(
+                        Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
+                        REQUEST_ENABLE_BLUETOOTH_CODE
+                    )
+                } catch (error: RuntimeException) {
+                    // ActivityNotFoundException / SecurityException.
+                    context.removeActivityEventListener(listener)
+                    val pending = synchronized(this@HybridMunimBluetooth) {
+                        pendingEnableRequest.also { pendingEnableRequest = null }
+                    }
+                    pending?.reject(error)
+                }
+            }
+            return promise
+        }
     }
 
     override fun requestBluetoothPermission(permissions: Array<String>?): Promise<Boolean> {
@@ -4449,6 +4566,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         // ATT "Unlikely Error" (0x0E); not exposed as a constant by the Android SDK
         private const val GATT_UNLIKELY_ERROR = 0x0E
         private const val BLUETOOTH_PERMISSION_REQUEST_CODE = 9137
+        private const val REQUEST_ENABLE_BLUETOOTH_CODE = 0x4D42
         private const val PERMISSION_ACTIVITY_RETRIES = 15
         private const val PERMISSION_ACTIVITY_RETRY_DELAY_MS = 200L
         private const val CONNECTION_TIMEOUT_MS = 15_000L
