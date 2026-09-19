@@ -1,7 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   
   <!-- Feature declarations -->
@@ -13,6 +12,6 @@
       android:name=".MunimBluetoothBackgroundService"
       android:enabled="true"
       android:exported="false"
-      android:foregroundServiceType="connectedDevice|location" />
+      android:foregroundServiceType="connectedDevice" />
   </application>
 </manifest>

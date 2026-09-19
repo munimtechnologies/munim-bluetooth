@@ -24,7 +24,6 @@ const ANDROID_BLUETOOTH_PERMISSIONS = {
 const ANDROID_SERVICE_PERMISSIONS = [
   { name: 'android.permission.FOREGROUND_SERVICE' },
   { name: 'android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE' },
-  { name: 'android.permission.FOREGROUND_SERVICE_LOCATION' },
   { name: 'android.permission.POST_NOTIFICATIONS' },
 ];
 
@@ -108,7 +107,7 @@ function ensureBackgroundService(manifest) {
         'android:name': serviceName,
         'android:enabled': 'true',
         'android:exported': 'false',
-        'android:foregroundServiceType': 'connectedDevice|location',
+        'android:foregroundServiceType': 'connectedDevice',
       },
     });
   }

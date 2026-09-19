@@ -24,10 +24,12 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.core.app.ServiceCompat
 import com.margelo.nitro.munimbluetooth.ScanMode
 import org.json.JSONArray
 import java.util.Locale
@@ -111,9 +113,21 @@ class MunimBluetoothBackgroundService : Service() {
      */
     private fun promoteToForeground(): Boolean {
         return try {
-            startForeground(
+            // Android 14+ requires the runtime type to be a subset of the
+            // manifest's foregroundServiceType, and each type carries its own
+            // permission gate. connectedDevice is satisfied by the BLE runtime
+            // permissions this service already requires; the library does not
+            // declare a location type, so an app without location permission
+            // no longer hits a SecurityException here.
+            ServiceCompat.startForeground(
+                this,
                 NOTIFICATION_ID,
-                buildNotification(neighborCount = discoveredDeviceIds.size)
+                buildNotification(neighborCount = discoveredDeviceIds.size),
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                } else {
+                    0
+                }
             )
             true
         } catch (error: IllegalStateException) {
