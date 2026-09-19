@@ -1100,6 +1100,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return promise
     }
 
+    // The per-device ArrayDeques are only safe under the same monitor as
+    // enqueue/startNext/complete (all @Synchronized on this instance); an
+    // unsynchronized size() read could observe a deque mid-mutation.
+    @Synchronized
     override fun getGattQueueDiagnostics(): Promise<Array<GATTQueueDiagnostic>> {
         val now = System.currentTimeMillis()
         val deviceIds = (gattOperationQueues.keys + activeGattOperations.keys).toSortedSet()
@@ -2946,6 +2950,9 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return true
     }
 
+    // Every function that touches gattOperationQueues/activeGattOperations is
+    // @Synchronized on this instance, so JS-thread enqueues and binder-thread
+    // GATT callbacks serialize on one monitor.
     @Synchronized
     private fun enqueueGattOperation(
         deviceId: String,
