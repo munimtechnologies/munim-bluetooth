@@ -714,15 +714,18 @@ of payload limits. Filter the emitted devices in application code when needed.
 
 Stops scanning for BLE devices.
 
-#### `connect(deviceId)`
+#### `connect(deviceId, options?)`
 
 Connects to a BLE device.
 
 **Parameters:**
 
 - `deviceId` (string): The unique identifier of the device
+- `options?` (object):
+  - `timeoutMs?` (number): Cancel the attempt and reject after this many milliseconds. Defaults to 15000, or no timeout when `autoConnect` is true. `0` waits indefinitely.
+  - `autoConnect?` (boolean): Android passes `autoConnect = true` to `connectGatt`, a background connection that completes whenever the device is next in range (slower, but it does not give up). iOS 17+ sets `CBConnectPeripheralOptionEnableAutoReconnect`, so the system reconnects after a link loss: `deviceDisconnected` then carries `isReconnecting: true`, `connectionStateChanged` reports `connecting`, and `deviceConnected` fires again when the link is back. Ignored on older iOS.
 
-**Returns:** Promise<void>. The promise rejects if the native connection does not complete within 15 seconds.
+**Returns:** Promise<void>. Rejects when the timeout elapses first.
 
 #### `disconnect(deviceId)`
 

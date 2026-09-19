@@ -27,6 +27,8 @@ namespace margelo::nitro::munimbluetooth { enum class PeripheralRequestStatus; }
 namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
+// Forward declaration of `ConnectOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ConnectOptions; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
 // Forward declaration of `DescriptorValue` to properly resolve imports.
@@ -69,6 +71,7 @@ namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 #include "PeripheralRequestStatus.hpp"
 #include "BluetoothCapabilities.hpp"
 #include "ScanOptions.hpp"
+#include "ConnectOptions.hpp"
 #include "CharacteristicValue.hpp"
 #include "DescriptorValue.hpp"
 #include "WriteType.hpp"
@@ -130,7 +133,7 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<BluetoothCapabilities>> getCapabilities() = 0;
       virtual void startScan(const std::optional<ScanOptions>& options) = 0;
       virtual void stopScan() = 0;
-      virtual std::shared_ptr<Promise<void>> connect(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<void>> connect(const std::string& deviceId, const std::optional<ConnectOptions>& options) = 0;
       virtual void disconnect(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<std::vector<GATTService>>> discoverServices(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<CharacteristicValue>> readCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;

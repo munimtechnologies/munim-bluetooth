@@ -34,6 +34,7 @@ import type {
   GATTQueueDiagnostic,
   WriteLengthType,
   ConnectionPriority,
+  ConnectOptions,
 } from './specs/munim-bluetooth.nitro'
 
 /** Android Bluetooth Class of Device metadata reported during Classic discovery. */
@@ -78,7 +79,13 @@ export type BluetoothEventMap = {
     authorization: 'notDetermined' | 'restricted' | 'denied' | 'allowedAlways' | 'unknown'
   }
   deviceConnected: { deviceId: string; status?: number }
-  deviceDisconnected: { deviceId: string; status?: number; reason?: string }
+  deviceDisconnected: {
+    deviceId: string
+    status?: number
+    reason?: string
+    /** iOS 17+ with autoConnect: the system is already reconnecting. */
+    isReconnecting?: boolean
+  }
   connectionStateChanged: {
     deviceId: string
     state: 'connecting' | 'connected' | 'disconnecting' | 'disconnected'
@@ -370,10 +377,15 @@ export function stopScan(): void {
  * Connect to a BLE device.
  *
  * @param deviceId - The unique identifier of the device to connect to.
+ * @param options - Optional `timeoutMs` (default 15000; 0 = none) and
+ *   `autoConnect` (Android background connect / iOS 17+ auto-reconnect).
  * @returns Promise resolving when connection is established or rejected.
  */
-export function connect(deviceId: string): Promise<void> {
-  return MunimBluetooth.connect(deviceId)
+export function connect(
+  deviceId: string,
+  options?: ConnectOptions
+): Promise<void> {
+  return MunimBluetooth.connect(deviceId, options)
 }
 
 /**
@@ -907,6 +919,7 @@ export type {
   GATTQueueDiagnostic,
   WriteLengthType,
   ConnectionPriority,
+  ConnectOptions,
 }
 
 // Default export for convenience

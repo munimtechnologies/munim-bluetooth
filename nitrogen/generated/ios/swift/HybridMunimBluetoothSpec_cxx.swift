@@ -364,9 +364,9 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
-  public final func connect(deviceId: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
+  public final func connect(deviceId: std.string, options: bridge.std__optional_ConnectOptions_) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
-      let __result = try self.__implementation.connect(deviceId: String(deviceId))
+      let __result = try self.__implementation.connect(deviceId: String(deviceId), options: options.value)
       let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
         let __promise = bridge.create_std__shared_ptr_Promise_void__()
         let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)

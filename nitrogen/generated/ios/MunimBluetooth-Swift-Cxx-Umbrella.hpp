@@ -24,6 +24,8 @@ namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 namespace margelo::nitro::munimbluetooth { enum class BondState; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
+// Forward declaration of `ConnectOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ConnectOptions; }
 // Forward declaration of `ConnectionPriority` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ConnectionPriority; }
 // Forward declaration of `DescriptorValue` to properly resolve imports.
@@ -84,6 +86,7 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include "BluetoothPhyOption.hpp"
 #include "BondState.hpp"
 #include "CharacteristicValue.hpp"
+#include "ConnectOptions.hpp"
 #include "ConnectionPriority.hpp"
 #include "DescriptorValue.hpp"
 #include "ExtendedAdvertisingOptions.hpp"

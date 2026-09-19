@@ -20,6 +20,8 @@ namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 namespace margelo::nitro::munimbluetooth { enum class BondState; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
+// Forward declaration of `ConnectOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ConnectOptions; }
 // Forward declaration of `DescriptorValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
 // Forward declaration of `GATTCharacteristicPermission` to properly resolve imports.
@@ -74,6 +76,7 @@ namespace MunimBluetooth { class HybridMunimBluetoothSpec_cxx; }
 #include "BluetoothPhyOption.hpp"
 #include "BondState.hpp"
 #include "CharacteristicValue.hpp"
+#include "ConnectOptions.hpp"
 #include "DescriptorValue.hpp"
 #include "GATTCharacteristic.hpp"
 #include "GATTCharacteristicPermission.hpp"
@@ -553,6 +556,21 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline ScanOptions get_std__optional_ScanOptions_(const std::optional<ScanOptions>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<ConnectOptions>
+  /**
+   * Specialized version of `std::optional<ConnectOptions>`.
+   */
+  using std__optional_ConnectOptions_ = std::optional<ConnectOptions>;
+  inline std::optional<ConnectOptions> create_std__optional_ConnectOptions_(const ConnectOptions& value) noexcept {
+    return std::optional<ConnectOptions>(value);
+  }
+  inline bool has_value_std__optional_ConnectOptions_(const std::optional<ConnectOptions>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline ConnectOptions get_std__optional_ConnectOptions_(const std::optional<ConnectOptions>& optional) noexcept {
     return optional.value();
   }
   

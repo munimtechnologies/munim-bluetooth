@@ -55,6 +55,8 @@ namespace margelo::nitro::munimbluetooth { enum class PeripheralRequestStatus; }
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
+// Forward declaration of `ConnectOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ConnectOptions; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 // Forward declaration of `WriteLengthType` to properly resolve imports.
@@ -126,6 +128,8 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPrefere
 #include "JScanOptions.hpp"
 #include "ScanMode.hpp"
 #include "JScanMode.hpp"
+#include "ConnectOptions.hpp"
+#include "JConnectOptions.hpp"
 #include "WriteType.hpp"
 #include "JWriteType.hpp"
 #include "WriteLengthType.hpp"
@@ -342,9 +346,9 @@ namespace margelo::nitro::munimbluetooth {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopScan");
     method(_javaPart);
   }
-  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::connect(const std::string& deviceId) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */)>("connect");
-    auto __result = method(_javaPart, jni::make_jstring(deviceId));
+  std::shared_ptr<Promise<void>> JHybridMunimBluetoothSpec::connect(const std::string& deviceId, const std::optional<ConnectOptions>& options) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<JConnectOptions> /* options */)>("connect");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), options.has_value() ? JConnectOptions::fromCpp(options.value()) : nullptr);
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {

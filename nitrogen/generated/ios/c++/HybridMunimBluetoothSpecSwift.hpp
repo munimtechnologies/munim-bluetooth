@@ -40,6 +40,8 @@ namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
+// Forward declaration of `ConnectOptions` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct ConnectOptions; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
 // Forward declaration of `DescriptorValue` to properly resolve imports.
@@ -95,6 +97,7 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
 #include "BluetoothCapabilities.hpp"
 #include "ScanOptions.hpp"
 #include "ScanMode.hpp"
+#include "ConnectOptions.hpp"
 #include "CharacteristicValue.hpp"
 #include "DescriptorValue.hpp"
 #include "WriteType.hpp"
@@ -264,8 +267,8 @@ namespace margelo::nitro::munimbluetooth {
         std::rethrow_exception(__result.error());
       }
     }
-    inline std::shared_ptr<Promise<void>> connect(const std::string& deviceId) override {
-      auto __result = _swiftPart.connect(deviceId);
+    inline std::shared_ptr<Promise<void>> connect(const std::string& deviceId, const std::optional<ConnectOptions>& options) override {
+      auto __result = _swiftPart.connect(deviceId, options);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
