@@ -395,7 +395,7 @@ export interface MunimBluetooth
    * @param services - An array of service objects, each with a uuid and an array of characteristics.
    *                  This must be serializable to a plain JS array (no Maps/Sets/functions).
    */
-  setServices(services: GATTService[], requestOptions?: PeripheralRequestOptions): void
+  setServices(services: GATTService[], requestOptions: PeripheralRequestOptions): void
 
   /**
    * Update a local peripheral characteristic value and optionally notify/indicate
@@ -413,18 +413,22 @@ export interface MunimBluetooth
     notify?: boolean
   ): Promise<void>
 
-  /** Complete a pending manual peripheral read request. */
+  /**
+   * Complete a pending manual peripheral read request. `useStoredValue`
+   * answers with the characteristic's stored value and ignores `value`.
+   */
   respondToPeripheralReadRequest(
     requestId: string,
-    value?: string,
-    status?: PeripheralRequestStatus
+    value: string,
+    useStoredValue: boolean,
+    status: PeripheralRequestStatus
   ): Promise<void>
 
   /** Accept or reject a pending manual peripheral write request. */
   respondToPeripheralWriteRequest(
     requestId: string,
     accept: boolean,
-    status?: PeripheralRequestStatus
+    status: PeripheralRequestStatus
   ): Promise<void>
 
   /** Commit or cancel an Android prepared-write transaction. */
@@ -468,7 +472,7 @@ export interface MunimBluetooth
    *
    * @param options - Optional scan configuration including service UUIDs to filter by.
    */
-  startScan(options?: ScanOptions): void
+  startScan(options: ScanOptions): void
 
   /**
    * Stop scanning for BLE devices.
@@ -482,7 +486,7 @@ export interface MunimBluetooth
    * @param options - Optional timeout and auto-connect behaviour.
    * @returns Promise resolving when connection is established or rejected.
    */
-  connect(deviceId: string, options?: ConnectOptions): Promise<void>
+  connect(deviceId: string, options: ConnectOptions): Promise<void>
 
   /**
    * Disconnect from a BLE device.
@@ -538,7 +542,7 @@ export interface MunimBluetooth
     serviceUUID: string,
     characteristicUUID: string,
     value: string,
-    writeType?: WriteType
+    writeType: WriteType
   ): Promise<void>
 
   /**
@@ -640,7 +644,7 @@ export interface MunimBluetooth
     deviceId: string,
     txPhy: BluetoothPhy,
     rxPhy: BluetoothPhy,
-    phyOption?: BluetoothPhyOption
+    phyOption: BluetoothPhyOption
   ): Promise<void>
 
   /**

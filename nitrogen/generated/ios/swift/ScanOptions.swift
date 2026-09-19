@@ -144,7 +144,7 @@ public extension ScanOptions {
   
   @inline(__always)
   var scanMode: ScanMode? {
-    return self.__scanMode.value
+    return (bridge.has_value_std__optional_ScanMode_(self.__scanMode) ? bridge.get_std__optional_ScanMode_(self.__scanMode) : nil)
   }
   
   @inline(__always)
@@ -245,12 +245,12 @@ public extension ScanOptions {
   
   @inline(__always)
   var callbackType: ScanCallbackType? {
-    return self.__callbackType.value
+    return (bridge.has_value_std__optional_ScanCallbackType_(self.__callbackType) ? bridge.get_std__optional_ScanCallbackType_(self.__callbackType) : nil)
   }
   
   @inline(__always)
   var matchMode: ScanMatchMode? {
-    return self.__matchMode.value
+    return (bridge.has_value_std__optional_ScanMatchMode_(self.__matchMode) ? bridge.get_std__optional_ScanMatchMode_(self.__matchMode) : nil)
   }
   
   @inline(__always)
@@ -267,6 +267,6 @@ public extension ScanOptions {
   
   @inline(__always)
   var phy: ScanPhy? {
-    return self.__phy.value
+    return (bridge.has_value_std__optional_ScanPhy_(self.__phy) ? bridge.get_std__optional_ScanPhy_(self.__phy) : nil)
   }
 }

@@ -36,7 +36,7 @@ public extension PeripheralRequestOptions {
 
   @inline(__always)
   var mode: PeripheralRequestMode? {
-    return self.__mode.value
+    return (bridge.has_value_std__optional_PeripheralRequestMode_(self.__mode) ? bridge.get_std__optional_PeripheralRequestMode_(self.__mode) : nil)
   }
   
   @inline(__always)

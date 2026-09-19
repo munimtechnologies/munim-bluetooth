@@ -131,6 +131,6 @@ public extension MultipeerSessionOptions {
   
   @inline(__always)
   var encryptionPreference: MultipeerEncryptionPreference? {
-    return self.__encryptionPreference.value
+    return (bridge.has_value_std__optional_MultipeerEncryptionPreference_(self.__encryptionPreference) ? bridge.get_std__optional_MultipeerEncryptionPreference_(self.__encryptionPreference) : nil)
   }
 }

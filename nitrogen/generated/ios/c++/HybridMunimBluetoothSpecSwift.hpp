@@ -208,8 +208,8 @@ namespace margelo::nitro::munimbluetooth {
         std::rethrow_exception(__result.error());
       }
     }
-    inline void setServices(const std::vector<GATTService>& services, const std::optional<PeripheralRequestOptions>& requestOptions) override {
-      auto __result = _swiftPart.setServices(services, requestOptions);
+    inline void setServices(const std::vector<GATTService>& services, const PeripheralRequestOptions& requestOptions) override {
+      auto __result = _swiftPart.setServices(services, std::forward<decltype(requestOptions)>(requestOptions));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
@@ -222,16 +222,16 @@ namespace margelo::nitro::munimbluetooth {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<Promise<void>> respondToPeripheralReadRequest(const std::string& requestId, const std::optional<std::string>& value, std::optional<PeripheralRequestStatus> status) override {
-      auto __result = _swiftPart.respondToPeripheralReadRequest(requestId, value, status);
+    inline std::shared_ptr<Promise<void>> respondToPeripheralReadRequest(const std::string& requestId, const std::string& value, bool useStoredValue, PeripheralRequestStatus status) override {
+      auto __result = _swiftPart.respondToPeripheralReadRequest(requestId, value, std::forward<decltype(useStoredValue)>(useStoredValue), static_cast<int>(status));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<Promise<void>> respondToPeripheralWriteRequest(const std::string& requestId, bool accept, std::optional<PeripheralRequestStatus> status) override {
-      auto __result = _swiftPart.respondToPeripheralWriteRequest(requestId, std::forward<decltype(accept)>(accept), status);
+    inline std::shared_ptr<Promise<void>> respondToPeripheralWriteRequest(const std::string& requestId, bool accept, PeripheralRequestStatus status) override {
+      auto __result = _swiftPart.respondToPeripheralWriteRequest(requestId, std::forward<decltype(accept)>(accept), static_cast<int>(status));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
@@ -278,8 +278,8 @@ namespace margelo::nitro::munimbluetooth {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline void startScan(const std::optional<ScanOptions>& options) override {
-      auto __result = _swiftPart.startScan(options);
+    inline void startScan(const ScanOptions& options) override {
+      auto __result = _swiftPart.startScan(std::forward<decltype(options)>(options));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
@@ -290,8 +290,8 @@ namespace margelo::nitro::munimbluetooth {
         std::rethrow_exception(__result.error());
       }
     }
-    inline std::shared_ptr<Promise<void>> connect(const std::string& deviceId, const std::optional<ConnectOptions>& options) override {
-      auto __result = _swiftPart.connect(deviceId, options);
+    inline std::shared_ptr<Promise<void>> connect(const std::string& deviceId, const ConnectOptions& options) override {
+      auto __result = _swiftPart.connect(deviceId, std::forward<decltype(options)>(options));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
@@ -328,8 +328,8 @@ namespace margelo::nitro::munimbluetooth {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<Promise<void>> writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, std::optional<WriteType> writeType) override {
-      auto __result = _swiftPart.writeCharacteristic(deviceId, serviceUUID, characteristicUUID, value, writeType);
+    inline std::shared_ptr<Promise<void>> writeCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& value, WriteType writeType) override {
+      auto __result = _swiftPart.writeCharacteristic(deviceId, serviceUUID, characteristicUUID, value, static_cast<int>(writeType));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
@@ -416,8 +416,8 @@ namespace margelo::nitro::munimbluetooth {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<Promise<void>> setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, std::optional<BluetoothPhyOption> phyOption) override {
-      auto __result = _swiftPart.setPreferredPhy(deviceId, static_cast<int>(txPhy), static_cast<int>(rxPhy), phyOption);
+    inline std::shared_ptr<Promise<void>> setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, BluetoothPhyOption phyOption) override {
+      auto __result = _swiftPart.setPreferredPhy(deviceId, static_cast<int>(txPhy), static_cast<int>(rxPhy), static_cast<int>(phyOption));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

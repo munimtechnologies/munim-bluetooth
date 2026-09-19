@@ -387,7 +387,14 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
         if (!gattServerReady) {
             if (configuredServices.isNotEmpty()) {
-                setServices(configuredServices, null)
+                // Keep the request mode and timeout the services were set up with.
+                setServices(
+                    configuredServices,
+                    PeripheralRequestOptions(
+                        peripheralRequestMode,
+                        peripheralRequestTimeoutMs.toDouble()
+                    )
+                )
             } else {
                 setServicesFromOptions(options.serviceUUIDs)
             }
@@ -438,7 +445,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
     override fun setServices(
         services: Array<GATTService>,
-        requestOptions: PeripheralRequestOptions?
+        requestOptions: PeripheralRequestOptions
     ) {
         if (!ensureBluetoothPermissions("set GATT services", BluetoothPermission.CONNECT)) {
             return
@@ -544,9 +551,11 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
     override fun respondToPeripheralReadRequest(
         requestId: String,
-        value: String?,
-        status: PeripheralRequestStatus?
+        value: String,
+        useStoredValue: Boolean,
+        status: PeripheralRequestStatus
     ): Promise<Unit> {
+        val value: String? = if (useStoredValue) null else value
         val request = pendingPeripheralRequests.remove(requestId) as? PendingPeripheralRequest.Read
             ?: return Promise.rejected(IllegalArgumentException("Peripheral read request is unknown or expired"))
         request.timeout.cancel()
@@ -585,7 +594,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     override fun respondToPeripheralWriteRequest(
         requestId: String,
         accept: Boolean,
-        status: PeripheralRequestStatus?
+        status: PeripheralRequestStatus
     ): Promise<Unit> {
         val request = pendingPeripheralRequests.remove(requestId) as? PendingPeripheralRequest.Write
             ?: return Promise.rejected(IllegalArgumentException("Peripheral write request is unknown or expired"))
@@ -811,7 +820,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         )
     }
 
-    override fun startScan(options: ScanOptions?) {
+    override fun startScan(options: ScanOptions) {
         if (!ensureBluetoothPermissions(
                 "start scanning",
                 BluetoothPermission.SCAN,
@@ -1054,7 +1063,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return true
     }
 
-    override fun connect(deviceId: String, options: ConnectOptions?): Promise<Unit> {
+    override fun connect(deviceId: String, options: ConnectOptions): Promise<Unit> {
         if (!ensureBluetoothPermissions("connect to BLE device", BluetoothPermission.CONNECT)) {
             return Promise.rejected(IllegalStateException("Bluetooth permissions not granted"))
         }
@@ -1207,7 +1216,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         serviceUUID: String,
         characteristicUUID: String,
         value: String,
-        writeType: WriteType?
+        writeType: WriteType
     ): Promise<Unit> {
         val gatt = connectedDevices[deviceId]
             ?: return Promise.rejected(IllegalStateException("Device not connected: $deviceId"))
@@ -1528,7 +1537,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         deviceId: String,
         txPhy: BluetoothPhy,
         rxPhy: BluetoothPhy,
-        phyOption: BluetoothPhyOption?
+        phyOption: BluetoothPhyOption
     ): Promise<Unit> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return unsupportedPromise("BLE PHY selection requires Android 8.0 or newer")

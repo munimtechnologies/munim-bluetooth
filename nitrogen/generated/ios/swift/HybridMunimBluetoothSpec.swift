@@ -17,23 +17,23 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func updateAdvertisingData(advertisingData: AdvertisingDataTypes) throws -> Void
   func getAdvertisingData() throws -> Promise<AdvertisingDataTypes>
   func stopAdvertising() throws -> Void
-  func setServices(services: [GATTService], requestOptions: PeripheralRequestOptions?) throws -> Void
+  func setServices(services: [GATTService], requestOptions: PeripheralRequestOptions) throws -> Void
   func updateCharacteristicValue(serviceUUID: String, characteristicUUID: String, value: String, notify: Bool?) throws -> Promise<Void>
-  func respondToPeripheralReadRequest(requestId: String, value: String?, status: PeripheralRequestStatus?) throws -> Promise<Void>
-  func respondToPeripheralWriteRequest(requestId: String, accept: Bool, status: PeripheralRequestStatus?) throws -> Promise<Void>
+  func respondToPeripheralReadRequest(requestId: String, value: String, useStoredValue: Bool, status: PeripheralRequestStatus) throws -> Promise<Void>
+  func respondToPeripheralWriteRequest(requestId: String, accept: Bool, status: PeripheralRequestStatus) throws -> Promise<Void>
   func respondToPeripheralExecuteWriteRequest(requestId: String, accept: Bool) throws -> Promise<Void>
   func isBluetoothEnabled() throws -> Promise<Bool>
   func requestEnable() throws -> Promise<Bool>
   func requestBluetoothPermission(permissions: [String]?) throws -> Promise<Bool>
   func getCapabilities() throws -> Promise<BluetoothCapabilities>
-  func startScan(options: ScanOptions?) throws -> Void
+  func startScan(options: ScanOptions) throws -> Void
   func stopScan() throws -> Void
-  func connect(deviceId: String, options: ConnectOptions?) throws -> Promise<Void>
+  func connect(deviceId: String, options: ConnectOptions) throws -> Promise<Void>
   func disconnect(deviceId: String) throws -> Void
   func discoverServices(deviceId: String) throws -> Promise<[GATTService]>
   func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<CharacteristicValue>
   func readDescriptor(deviceId: String, serviceUUID: String, characteristicUUID: String, descriptorUUID: String) throws -> Promise<DescriptorValue>
-  func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?) throws -> Promise<Void>
+  func writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType) throws -> Promise<Void>
   func writeDescriptor(deviceId: String, serviceUUID: String, characteristicUUID: String, descriptorUUID: String, value: String) throws -> Promise<Void>
   func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<Void>
   func unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<Void>
@@ -44,7 +44,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func requestMTU(deviceId: String, mtu: Double) throws -> Promise<Double>
   func getMaximumWriteLength(deviceId: String, type: WriteLengthType) throws -> Promise<Double>
   func requestConnectionPriority(deviceId: String, priority: ConnectionPriority) throws -> Promise<Bool>
-  func setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?) throws -> Promise<Void>
+  func setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption) throws -> Promise<Void>
   func readPhy(deviceId: String) throws -> Promise<PhyStatus>
   func getBondState(deviceId: String) throws -> Promise<BondState>
   func createBond(deviceId: String) throws -> Promise<BondState>

@@ -48,7 +48,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun setServices(services: Array<GATTService>, requestOptions: PeripheralRequestOptions?): Unit
+  abstract fun setServices(services: Array<GATTService>, requestOptions: PeripheralRequestOptions): Unit
   
   @DoNotStrip
   @Keep
@@ -56,11 +56,11 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun respondToPeripheralReadRequest(requestId: String, value: String?, status: PeripheralRequestStatus?): Promise<Unit>
+  abstract fun respondToPeripheralReadRequest(requestId: String, value: String, useStoredValue: Boolean, status: PeripheralRequestStatus): Promise<Unit>
   
   @DoNotStrip
   @Keep
-  abstract fun respondToPeripheralWriteRequest(requestId: String, accept: Boolean, status: PeripheralRequestStatus?): Promise<Unit>
+  abstract fun respondToPeripheralWriteRequest(requestId: String, accept: Boolean, status: PeripheralRequestStatus): Promise<Unit>
   
   @DoNotStrip
   @Keep
@@ -84,7 +84,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun startScan(options: ScanOptions?): Unit
+  abstract fun startScan(options: ScanOptions): Unit
   
   @DoNotStrip
   @Keep
@@ -92,7 +92,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun connect(deviceId: String, options: ConnectOptions?): Promise<Unit>
+  abstract fun connect(deviceId: String, options: ConnectOptions): Promise<Unit>
   
   @DoNotStrip
   @Keep
@@ -112,7 +112,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType?): Promise<Unit>
+  abstract fun writeCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String, value: String, writeType: WriteType): Promise<Unit>
   
   @DoNotStrip
   @Keep
@@ -156,7 +156,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?): Promise<Unit>
+  abstract fun setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption): Promise<Unit>
   
   @DoNotStrip
   @Keep
