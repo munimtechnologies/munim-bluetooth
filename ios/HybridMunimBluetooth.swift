@@ -1484,6 +1484,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         unsupportedPromise("Explicit bonding is handled by iOS and is not exposed through CoreBluetooth")
     }
 
+    func getBondedDevices() throws -> Promise<[BondedDevice]> {
+        // iOS keeps pairings private to the system.
+        let promise = Promise<[BondedDevice]>()
+        promise.resolve(withResult: [])
+        return promise
+    }
+
     func removeBond(deviceId: String) throws -> Promise<BondState> {
         unsupportedPromise("Removing bonds is not exposed by iOS public APIs")
     }

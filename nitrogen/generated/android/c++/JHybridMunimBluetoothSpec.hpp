@@ -89,6 +89,7 @@ namespace margelo::nitro::munimbluetooth {
     std::shared_ptr<Promise<PhyStatus>> readPhy(const std::string& deviceId) override;
     std::shared_ptr<Promise<BondState>> getBondState(const std::string& deviceId) override;
     std::shared_ptr<Promise<BondState>> createBond(const std::string& deviceId) override;
+    std::shared_ptr<Promise<std::vector<BondedDevice>>> getBondedDevices() override;
     std::shared_ptr<Promise<BondState>> removeBond(const std::string& deviceId) override;
     std::shared_ptr<Promise<std::string>> startExtendedAdvertising(const ExtendedAdvertisingOptions& options) override;
     void stopExtendedAdvertising(const std::string& advertisingId) override;

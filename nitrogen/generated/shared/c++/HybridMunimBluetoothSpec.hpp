@@ -49,6 +49,8 @@ namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
 namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
 // Forward declaration of `BondState` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BondState; }
+// Forward declaration of `BondedDevice` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BondedDevice; }
 // Forward declaration of `ExtendedAdvertisingOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ExtendedAdvertisingOptions; }
 // Forward declaration of `L2CAPChannel` to properly resolve imports.
@@ -82,6 +84,7 @@ namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 #include "BluetoothPhyOption.hpp"
 #include "PhyStatus.hpp"
 #include "BondState.hpp"
+#include "BondedDevice.hpp"
 #include "ExtendedAdvertisingOptions.hpp"
 #include "L2CAPChannel.hpp"
 #include "BackgroundSessionOptions.hpp"
@@ -154,6 +157,7 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<PhyStatus>> readPhy(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<BondState>> getBondState(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<BondState>> createBond(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<std::vector<BondedDevice>>> getBondedDevices() = 0;
       virtual std::shared_ptr<Promise<BondState>> removeBond(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<std::string>> startExtendedAdvertising(const ExtendedAdvertisingOptions& options) = 0;
       virtual void stopExtendedAdvertising(const std::string& advertisingId) = 0;

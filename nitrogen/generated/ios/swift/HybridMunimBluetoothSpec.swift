@@ -48,6 +48,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func readPhy(deviceId: String) throws -> Promise<PhyStatus>
   func getBondState(deviceId: String) throws -> Promise<BondState>
   func createBond(deviceId: String) throws -> Promise<BondState>
+  func getBondedDevices() throws -> Promise<[BondedDevice]>
   func removeBond(deviceId: String) throws -> Promise<BondState>
   func startExtendedAdvertising(options: ExtendedAdvertisingOptions) throws -> Promise<String>
   func stopExtendedAdvertising(advertisingId: String) throws -> Void

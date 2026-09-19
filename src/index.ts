@@ -38,6 +38,8 @@ import type {
   ScanCallbackType,
   ScanMatchMode,
   ScanPhy,
+  BondedDevice,
+  BluetoothDeviceType,
 } from './specs/munim-bluetooth.nitro'
 
 /** Android Bluetooth Class of Device metadata reported during Classic discovery. */
@@ -650,6 +652,13 @@ export function createBond(deviceId: string): Promise<BondState> {
 }
 
 /**
+ * List devices bonded with this phone (Android). iOS resolves [].
+ */
+export function getBondedDevices(): Promise<BondedDevice[]> {
+  return MunimBluetooth.getBondedDevices()
+}
+
+/**
  * Remove a platform bond where supported.
  */
 export function removeBond(deviceId: string): Promise<BondState> {
@@ -951,6 +960,8 @@ export type {
   ScanCallbackType,
   ScanMatchMode,
   ScanPhy,
+  BondedDevice,
+  BluetoothDeviceType,
 }
 
 // Default export for convenience
@@ -992,6 +1003,7 @@ export default {
   readPhy,
   getBondState,
   createBond,
+  getBondedDevices,
   removeBond,
   startExtendedAdvertising,
   stopExtendedAdvertising,

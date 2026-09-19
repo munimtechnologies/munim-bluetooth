@@ -56,7 +56,9 @@ import com.margelo.nitro.munimbluetooth.BackgroundSessionOptions
 import com.margelo.nitro.munimbluetooth.BluetoothCapabilities
 import com.margelo.nitro.munimbluetooth.BluetoothPhy
 import com.margelo.nitro.munimbluetooth.BluetoothPhyOption
+import com.margelo.nitro.munimbluetooth.BluetoothDeviceType
 import com.margelo.nitro.munimbluetooth.BondState
+import com.margelo.nitro.munimbluetooth.BondedDevice
 import com.margelo.nitro.munimbluetooth.CharacteristicValue
 import com.margelo.nitro.munimbluetooth.ConnectOptions
 import com.margelo.nitro.munimbluetooth.ConnectionPriority
@@ -1690,6 +1692,32 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             BluetoothDevice.BOND_BONDING -> BondState.BONDING
             BluetoothDevice.BOND_BONDED -> BondState.BONDED
             else -> BondState.NONE
+        }
+    }
+
+    override fun getBondedDevices(): Promise<Array<BondedDevice>> {
+        if (!hasRequiredBluetoothPermissions(BluetoothPermission.CONNECT)) {
+            return Promise.rejected(SecurityException("Missing Bluetooth permissions"))
+        }
+        ensureBluetoothManager()
+        val adapter = bluetoothAdapter
+            ?: return Promise.rejected(IllegalStateException("Bluetooth adapter unavailable"))
+        return try {
+            val devices = adapter.bondedDevices.orEmpty().map { device ->
+                BondedDevice(
+                    id = device.address,
+                    name = device.name,
+                    type = when (device.type) {
+                        BluetoothDevice.DEVICE_TYPE_CLASSIC -> BluetoothDeviceType.CLASSIC
+                        BluetoothDevice.DEVICE_TYPE_LE -> BluetoothDeviceType.LE
+                        BluetoothDevice.DEVICE_TYPE_DUAL -> BluetoothDeviceType.DUAL
+                        else -> BluetoothDeviceType.UNKNOWN
+                    }
+                )
+            }.sortedBy { it.id }
+            Promise.resolved(devices.toTypedArray())
+        } catch (error: SecurityException) {
+            Promise.rejected(error)
         }
     }
 
