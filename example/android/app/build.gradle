@@ -45,7 +45,8 @@ react {
 
     /* Hermes Commands */
     //   The hermes compiler command to run. By default it is 'hermesc'
-    hermesCommand = "$rootDir/../../node_modules/react-native/node_modules/hermes-compiler/hermesc/%OS-BIN%/hermesc"
+    // RN 0.87 hoists hermes-compiler to the repo root node_modules.
+    hermesCommand = "$rootDir/../../node_modules/hermes-compiler/hermesc/%OS-BIN%/hermesc"
     //
     //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
     // hermesFlags = ["-O", "-output-source-map"]
