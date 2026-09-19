@@ -68,6 +68,8 @@ namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 // Forward declaration of `ServiceDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ServiceDataEntry; }
+// Forward declaration of `WriteLengthType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class WriteLengthType; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 
@@ -102,6 +104,7 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include "ScanMode.hpp"
 #include "ScanOptions.hpp"
 #include "ServiceDataEntry.hpp"
+#include "WriteLengthType.hpp"
 #include "WriteType.hpp"
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/Result.hpp>

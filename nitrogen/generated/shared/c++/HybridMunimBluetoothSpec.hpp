@@ -35,6 +35,8 @@ namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 // Forward declaration of `GATTQueueDiagnostic` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTQueueDiagnostic; }
+// Forward declaration of `WriteLengthType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class WriteLengthType; }
 // Forward declaration of `BluetoothPhy` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 // Forward declaration of `BluetoothPhyOption` to properly resolve imports.
@@ -69,6 +71,7 @@ namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 #include "DescriptorValue.hpp"
 #include "WriteType.hpp"
 #include "GATTQueueDiagnostic.hpp"
+#include "WriteLengthType.hpp"
 #include "BluetoothPhy.hpp"
 #include "BluetoothPhyOption.hpp"
 #include "PhyStatus.hpp"
@@ -137,6 +140,7 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<std::vector<std::string>>> getConnectedDevices() = 0;
       virtual std::shared_ptr<Promise<double>> readRSSI(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<double>> requestMTU(const std::string& deviceId, double mtu) = 0;
+      virtual std::shared_ptr<Promise<double>> getMaximumWriteLength(const std::string& deviceId, WriteLengthType type) = 0;
       virtual std::shared_ptr<Promise<void>> setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, std::optional<BluetoothPhyOption> phyOption) = 0;
       virtual std::shared_ptr<Promise<PhyStatus>> readPhy(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<BondState>> getBondState(const std::string& deviceId) = 0;

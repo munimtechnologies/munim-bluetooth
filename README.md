@@ -774,6 +774,11 @@ Writes a value to a characteristic on a connected device.
 
 **Returns:** Promise<void>. With-response writes reject if the native write callback does not arrive within 15 seconds.
 
+Write-without-response is flow controlled, so a burst of writes is not silently dropped:
+
+- **iOS** queues each value and hands it to CoreBluetooth only while `canSendWriteWithoutResponse` is true, draining the rest from `peripheralIsReady(toSendWriteWithoutResponse:)`. The promise resolves once CoreBluetooth has accepted the value. Values longer than `getMaximumWriteLength(deviceId, 'withoutResponse')` are rejected; the queue holds at most 1024 pending values per device.
+- **Android** sends one write at a time through the per-device GATT queue and waits for the stack's `onCharacteristicWrite` before the next. If the stack still reports busy (`ERROR_GATT_WRITE_REQUEST_BUSY` on Android 13+, or `false` from `writeCharacteristic` before that), the write is retried with a short backoff (up to 20 attempts) before the promise rejects.
+
 #### `writeDescriptor(deviceId, serviceUUID, characteristicUUID, descriptorUUID, value)`
 
 Writes a descriptor value to a connected device.
@@ -857,7 +862,17 @@ Reads RSSI (signal strength) for a connected device.
 
 #### `requestMTU(deviceId, mtu)`
 
-Requests an ATT MTU on Android. iOS rejects with an unsupported error because CoreBluetooth negotiates MTU internally.
+Requests an ATT MTU on Android and resolves with the negotiated value. CoreBluetooth negotiates the MTU itself, so iOS ignores `mtu` and resolves with the MTU in effect (`maximumWriteValueLength(.withoutResponse) + 3`).
+
+**Returns:** Promise<number>
+
+#### `getMaximumWriteLength(deviceId, type)`
+
+Returns the largest value, in bytes, that one characteristic write can carry on this connection. Use it to chunk write-without-response payloads.
+
+- `type`: `'withResponse' | 'withoutResponse'`
+- iOS: CoreBluetooth's `maximumWriteValueLength(for:)`.
+- Android: `'withoutResponse'` is the last negotiated MTU minus 3 (23 − 3 = 20 until an MTU exchange has been reported, so call `requestMTU()` first); `'withResponse'` is 512, the maximum attribute length that a long write can carry.
 
 **Returns:** Promise<number>
 

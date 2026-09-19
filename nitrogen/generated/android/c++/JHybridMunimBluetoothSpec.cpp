@@ -57,6 +57,8 @@ namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 // Forward declaration of `WriteType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
+// Forward declaration of `WriteLengthType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class WriteLengthType; }
 // Forward declaration of `BluetoothPhyOption` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
 // Forward declaration of `ExtendedAdvertisingOptions` to properly resolve imports.
@@ -124,6 +126,8 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPrefere
 #include "JScanMode.hpp"
 #include "WriteType.hpp"
 #include "JWriteType.hpp"
+#include "WriteLengthType.hpp"
+#include "JWriteLengthType.hpp"
 #include "BluetoothPhyOption.hpp"
 #include "JBluetoothPhyOption.hpp"
 #include "ExtendedAdvertisingOptions.hpp"
@@ -539,6 +543,22 @@ namespace margelo::nitro::munimbluetooth {
   std::shared_ptr<Promise<double>> JHybridMunimBluetoothSpec::requestMTU(const std::string& deviceId, double mtu) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, double /* mtu */)>("requestMTU");
     auto __result = method(_javaPart, jni::make_jstring(deviceId), mtu);
+    return [&]() {
+      auto __promise = Promise<double>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<jni::JDouble>(__boxedResult);
+        __promise->resolve(__result->value());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<double>> JHybridMunimBluetoothSpec::getMaximumWriteLength(const std::string& deviceId, WriteLengthType type) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<JWriteLengthType> /* type */)>("getMaximumWriteLength");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), JWriteLengthType::fromCpp(type));
     return [&]() {
       auto __promise = Promise<double>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {

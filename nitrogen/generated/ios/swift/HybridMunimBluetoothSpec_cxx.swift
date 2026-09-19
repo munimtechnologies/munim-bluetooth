@@ -621,6 +621,25 @@ open class HybridMunimBluetoothSpec_cxx {
   }
   
   @inline(__always)
+  public final func getMaximumWriteLength(deviceId: std.string, type: Int32) -> bridge.Result_std__shared_ptr_Promise_double___ {
+    do {
+      let __result = try self.__implementation.getMaximumWriteLength(deviceId: String(deviceId), type: margelo.nitro.munimbluetooth.WriteLengthType(rawValue: type)!)
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_double__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_double__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_double__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve(__result) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_double___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_double___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
   public final func setPreferredPhy(deviceId: std.string, txPhy: Int32, rxPhy: Int32, phyOption: bridge.std__optional_BluetoothPhyOption_) -> bridge.Result_std__shared_ptr_Promise_void___ {
     do {
       let __result = try self.__implementation.setPreferredPhy(deviceId: String(deviceId), txPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: txPhy)!, rxPhy: margelo.nitro.munimbluetooth.BluetoothPhy(rawValue: rxPhy)!, phyOption: phyOption.value)

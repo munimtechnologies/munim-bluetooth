@@ -40,6 +40,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func getConnectedDevices() throws -> Promise<[String]>
   func readRSSI(deviceId: String) throws -> Promise<Double>
   func requestMTU(deviceId: String, mtu: Double) throws -> Promise<Double>
+  func getMaximumWriteLength(deviceId: String, type: WriteLengthType) throws -> Promise<Double>
   func setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?) throws -> Promise<Void>
   func readPhy(deviceId: String) throws -> Promise<PhyStatus>
   func getBondState(deviceId: String) throws -> Promise<BondState>

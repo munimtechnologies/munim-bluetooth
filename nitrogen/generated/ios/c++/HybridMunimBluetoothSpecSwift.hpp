@@ -48,6 +48,8 @@ namespace margelo::nitro::munimbluetooth { struct DescriptorValue; }
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 // Forward declaration of `GATTQueueDiagnostic` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct GATTQueueDiagnostic; }
+// Forward declaration of `WriteLengthType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class WriteLengthType; }
 // Forward declaration of `BluetoothPhy` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 // Forward declaration of `BluetoothPhyOption` to properly resolve imports.
@@ -95,6 +97,7 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
 #include "DescriptorValue.hpp"
 #include "WriteType.hpp"
 #include "GATTQueueDiagnostic.hpp"
+#include "WriteLengthType.hpp"
 #include "BluetoothPhy.hpp"
 #include "BluetoothPhyOption.hpp"
 #include "PhyStatus.hpp"
@@ -354,6 +357,14 @@ namespace margelo::nitro::munimbluetooth {
     }
     inline std::shared_ptr<Promise<double>> requestMTU(const std::string& deviceId, double mtu) override {
       auto __result = _swiftPart.requestMTU(deviceId, std::forward<decltype(mtu)>(mtu));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<Promise<double>> getMaximumWriteLength(const std::string& deviceId, WriteLengthType type) override {
+      auto __result = _swiftPart.getMaximumWriteLength(deviceId, static_cast<int>(type));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

@@ -152,6 +152,10 @@ private final class PeripheralDelegateProxy: NSObject, CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didOpen channel: CBL2CAPChannel?, error: Error?) {
         owner?.handlePeripheralDidOpenL2CAPChannel(peripheral, channel: channel, error: error)
     }
+
+    func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        owner?.handlePeripheralIsReadyToSendWriteWithoutResponse(peripheral)
+    }
 }
 
 private final class L2CAPStreamDelegateProxy: NSObject, StreamDelegate {
@@ -266,6 +270,12 @@ private final class QueuedGattOperation {
     }
 }
 
+private struct PendingWriteWithoutResponse {
+    let data: Data
+    let characteristic: CBCharacteristic
+    let promise: Promise<Void>
+}
+
 private struct PendingL2CAPWrite {
     let data: Data
     var offset: Int
@@ -303,6 +313,9 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private var pendingDescriptorWriteValues: [String: Data] = [:]
     private var pendingNotificationStatePromises: [String: Promise<Void>] = [:]
     private var pendingRSSIPromises: [String: Promise<Double>] = [:]
+    /// Write-without-response values waiting for CoreBluetooth's transmit
+    /// buffer (canSendWriteWithoutResponse) per device.
+    private var writeWithoutResponseQueues: [String: [PendingWriteWithoutResponse]] = [:]
     private var gattOperationQueues: [String: [QueuedGattOperation]] = [:]
     private var activeGattOperations: [String: QueuedGattOperation] = [:]
     private var gattOperationTimeouts: [String: DispatchWorkItem] = [:]
@@ -1044,8 +1057,23 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                     promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support writeWithoutResponse"]))
                     return promise
                 }
-                peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
-                promise.resolve(withResult: ())
+                let maximumLength = peripheral.maximumWriteValueLength(for: .withoutResponse)
+                guard data.count <= maximumLength else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 413, userInfo: [NSLocalizedDescriptionKey: "Value is \(data.count) bytes but write-without-response is limited to \(maximumLength) bytes on this connection; use getMaximumWriteLength() to chunk it"]))
+                    return promise
+                }
+                var queue = writeWithoutResponseQueues[deviceId] ?? []
+                guard queue.count < Self.maxQueuedWritesWithoutResponse else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 3, userInfo: [NSLocalizedDescriptionKey: "Write-without-response queue is full for \(deviceId)"]))
+                    return promise
+                }
+                // CoreBluetooth silently drops writes-without-response once its
+                // transmit buffer is full. Queue them and hand each one over
+                // only while canSendWriteWithoutResponse is true; the promise
+                // resolves when the value has been handed to CoreBluetooth.
+                queue.append(PendingWriteWithoutResponse(data: data, characteristic: characteristic, promise: promise))
+                writeWithoutResponseQueues[deviceId] = queue
+                drainWritesWithoutResponse(deviceId: deviceId, peripheral: peripheral)
                 return promise
             }
 
@@ -1235,7 +1263,55 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     }
 
     func requestMTU(deviceId: String, mtu: Double) throws -> Promise<Double> {
-        unsupportedPromise("requestMTU is not exposed by CoreBluetooth on iOS")
+        try onBluetoothThread {
+            // CoreBluetooth negotiates the ATT MTU itself and has no API to
+            // request one. Report the MTU in effect (the write-without-response
+            // payload limit plus the 3-byte ATT header).
+            let promise = Promise<Double>()
+            guard let peripheral = connectedPeripherals[deviceId] else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return promise
+            }
+            let effectiveMtu = peripheral.maximumWriteValueLength(for: .withoutResponse) + 3
+            promise.resolve(withResult: Double(effectiveMtu))
+            return promise
+        }
+    }
+
+    func getMaximumWriteLength(deviceId: String, type: WriteLengthType) throws -> Promise<Double> {
+        try onBluetoothThread {
+            let promise = Promise<Double>()
+            guard let peripheral = connectedPeripherals[deviceId] else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                return promise
+            }
+            let writeType: CBCharacteristicWriteType = type == .withoutresponse ? .withoutResponse : .withResponse
+            promise.resolve(withResult: Double(peripheral.maximumWriteValueLength(for: writeType)))
+            return promise
+        }
+    }
+
+    private func drainWritesWithoutResponse(deviceId: String, peripheral: CBPeripheral) {
+        guard var queue = writeWithoutResponseQueues[deviceId], !queue.isEmpty else {
+            writeWithoutResponseQueues.removeValue(forKey: deviceId)
+            return
+        }
+        while !queue.isEmpty, peripheral.canSendWriteWithoutResponse {
+            let write = queue.removeFirst()
+            peripheral.writeValue(write.data, for: write.characteristic, type: .withoutResponse)
+            write.promise.resolve(withResult: ())
+        }
+        writeWithoutResponseQueues[deviceId] = queue.isEmpty ? nil : queue
+    }
+
+    private func rejectWritesWithoutResponse(deviceId: String, error: Error) {
+        writeWithoutResponseQueues.removeValue(forKey: deviceId)?.forEach {
+            $0.promise.reject(withError: error)
+        }
+    }
+
+    func handlePeripheralIsReadyToSendWriteWithoutResponse(_ peripheral: CBPeripheral) {
+        drainWritesWithoutResponse(deviceId: peripheral.identifier.uuidString, peripheral: peripheral)
     }
 
     func setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?) throws -> Promise<Void> {
@@ -2931,6 +3007,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)?.reject(withError: error)
         pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
         pendingRSSIPromises.removeValue(forKey: deviceId)?.reject(withError: error)
+        rejectWritesWithoutResponse(deviceId: deviceId, error: error)
 
         let prefix = "\(deviceId.lowercased())|"
         for key in Array(pendingReadPromises.keys) where key.hasPrefix(prefix) {
@@ -3688,4 +3765,5 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private static let adapterStateTimeout: TimeInterval = 10.0
     private static let permissionPromptTimeout: TimeInterval = 60.0
     private static let maxL2CAPOutboundBufferBytes = 1_048_576
+    private static let maxQueuedWritesWithoutResponse = 1_024
 }

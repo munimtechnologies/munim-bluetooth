@@ -172,6 +172,9 @@ export interface DescriptorValue {
 // Write type for characteristic writes
 export type WriteType = 'write' | 'writeWithoutResponse'
 
+/** Which write procedure getMaximumWriteLength() should report for. */
+export type WriteLengthType = 'withResponse' | 'withoutResponse'
+
 export type BluetoothPhy = 'le1m' | 'le2m' | 'leCoded'
 
 export type BluetoothPhyOption = 'none' | 's2' | 's8'
@@ -512,9 +515,22 @@ export interface MunimBluetooth
   readRSSI(deviceId: string): Promise<number>
 
   /**
-   * Request a BLE ATT MTU. Android supports this directly; iOS negotiates MTU internally.
+   * Request a BLE ATT MTU. Android negotiates the requested value. iOS
+   * negotiates the MTU itself, so it ignores the requested value and resolves
+   * with the MTU in effect (maximum write-without-response length + 3).
    */
   requestMTU(deviceId: string, mtu: number): Promise<number>
+
+  /**
+   * Largest value, in bytes, that a single characteristic write of the given
+   * type can carry on this connection. Write-without-response values larger
+   * than this are rejected; write-with-response values up to 512 bytes use a
+   * long (prepared) write.
+   */
+  getMaximumWriteLength(
+    deviceId: string,
+    type: WriteLengthType
+  ): Promise<number>
 
   /**
    * Set preferred BLE PHY where supported.

@@ -74,6 +74,7 @@ import com.margelo.nitro.munimbluetooth.PhyStatus
 import com.margelo.nitro.munimbluetooth.ScanMode
 import com.margelo.nitro.munimbluetooth.ScanOptions
 import com.margelo.nitro.munimbluetooth.ServiceDataEntry
+import com.margelo.nitro.munimbluetooth.WriteLengthType
 import com.margelo.nitro.munimbluetooth.WriteType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -174,6 +175,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val pendingDescriptorReads = ConcurrentHashMap<String, Promise<DescriptorValue>>()
     private val pendingDescriptorWrites = ConcurrentHashMap<String, Promise<Unit>>()
     private val pendingMtuRequests = ConcurrentHashMap<String, Promise<Double>>()
+    private val negotiatedMtus = ConcurrentHashMap<String, Int>()
     private val pendingPhyReads = ConcurrentHashMap<String, Promise<PhyStatus>>()
     private val pendingPhyWrites = ConcurrentHashMap<String, Promise<Unit>>()
     private val pendingRssiReads = ConcurrentHashMap<String, Promise<Double>>()
@@ -965,14 +967,17 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 "writeWithoutResponse",
                 key,
                 start = {
-                    val started = writeGattCharacteristic(gatt, characteristic, data, resolvedWriteType)
-                    if (started) {
+                    // The operation stays active until onCharacteristicWrite
+                    // (Android reports no-response writes there once the
+                    // stack has taken the packet), which is the flow-control
+                    // signal: starting the next write earlier returns BUSY.
+                    val operation = activeGattOperations[deviceId]
+                    startCharacteristicWriteWithRetry(
+                        deviceId, "writeWithoutResponse", key, gatt, characteristic, data, resolvedWriteType, 0
+                    ) {
                         promise.resolve(Unit)
-                        bluetoothScope.launch {
-                            completeGattOperationWithoutCallback(deviceId, "writeWithoutResponse", key)
-                        }
+                        scheduleWriteWithoutResponseFallback(deviceId, operation)
                     }
-                    started
                 },
                 reject = promise::reject
             )
@@ -983,7 +988,9 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 key,
                 start = {
                     pendingWrites[key] = promise
-                    writeGattCharacteristic(gatt, characteristic, data, resolvedWriteType)
+                    startCharacteristicWriteWithRetry(
+                        deviceId, "writeCharacteristic", key, gatt, characteristic, data, resolvedWriteType, 0
+                    ) {}
                 },
                 reject = { error ->
                     pendingWrites.remove(key)
@@ -1164,6 +1171,26 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             }
         )
         return promise
+    }
+
+    override fun getMaximumWriteLength(deviceId: String, type: WriteLengthType): Promise<Double> {
+        if (!connectedDevices.containsKey(deviceId)) {
+            return Promise.rejected(IllegalStateException("Device not connected: $deviceId"))
+        }
+        return Promise.resolved(maximumWriteLength(deviceId, type).toDouble())
+    }
+
+    private fun maximumWriteLength(deviceId: String, type: WriteLengthType): Int {
+        return when (type) {
+            // A no-response write is a single ATT packet: MTU minus the
+            // 3-byte opcode/handle header. Android only reports the MTU via
+            // onMtuChanged, so before any exchange this is the 23-byte
+            // default; call requestMTU() first for an accurate value.
+            WriteLengthType.WITHOUTRESPONSE -> (negotiatedMtus[deviceId] ?: DEFAULT_ATT_MTU) - 3
+            // With-response writes above MTU-3 become a long (prepared) write,
+            // bounded by the 512-byte maximum attribute value length.
+            WriteLengthType.WITHRESPONSE -> MAX_ATTRIBUTE_VALUE_LENGTH
+        }
     }
 
     override fun setPreferredPhy(
@@ -2713,6 +2740,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             }
 
             override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+                // Also fires for exchanges the stack or the peer initiated.
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    negotiatedMtus[deviceId] = mtu
+                }
                 completeGattOperation(deviceId, setOf("requestMTU"), deviceId, status) {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
                         pendingMtuRequests.remove(deviceId)?.resolve(mtu.toDouble())
@@ -2889,6 +2920,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         pendingServiceDiscoveries.remove(deviceId)
         pendingRssiReads.remove(deviceId)
         pendingMtuRequests.remove(deviceId)
+        negotiatedMtus.remove(deviceId)
         pendingPhyReads.remove(deviceId)
         pendingPhyWrites.remove(deviceId)
     }
@@ -3039,12 +3071,94 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return true
     }
 
-    private fun completeGattOperationWithoutCallback(
+    /**
+     * Some stacks never report onCharacteristicWrite for no-response writes.
+     * Advance the queue anyway after a short grace period, but only if the
+     * same operation instance is still the active one.
+     */
+    private fun scheduleWriteWithoutResponseFallback(
+        deviceId: String,
+        operation: QueuedGattOperation?
+    ) {
+        operation ?: return
+        bluetoothScope.launch {
+            delay(WRITE_WITHOUT_RESPONSE_FALLBACK_MS)
+            completeSpecificGattOperation(deviceId, operation)
+        }
+    }
+
+    @Synchronized
+    private fun completeSpecificGattOperation(deviceId: String, expected: QueuedGattOperation) {
+        if (activeGattOperations[deviceId] !== expected) return
+        gattOperationTimeouts.remove(deviceId)?.cancel()
+        activeGattOperations.remove(deviceId)
+        emitGattOperationResult(deviceId, expected, BluetoothGatt.GATT_SUCCESS, null)
+        startNextGattOperation(deviceId)
+    }
+
+    @Synchronized
+    private fun failActiveGattOperation(deviceId: String, expected: QueuedGattOperation, error: Throwable) {
+        if (activeGattOperations[deviceId] !== expected) return
+        gattOperationTimeouts.remove(deviceId)?.cancel()
+        activeGattOperations.remove(deviceId)
+        expected.reject(error)
+        emitGattOperationResult(deviceId, expected, null, error.message)
+        startNextGattOperation(deviceId)
+    }
+
+    /**
+     * Starts a characteristic write, retrying with a short backoff while the
+     * stack reports it is busy (ERROR_GATT_WRITE_REQUEST_BUSY on Android 13+,
+     * a plain `false` before that). Must be called from an operation's
+     * `start` block, i.e. while that operation is active.
+     */
+    private fun startCharacteristicWriteWithRetry(
         deviceId: String,
         kind: String,
-        target: String
-    ) {
-        completeGattOperation(deviceId, setOf(kind), target, BluetoothGatt.GATT_SUCCESS) {}
+        key: String,
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        data: ByteArray,
+        writeType: Int,
+        attempt: Int,
+        onStarted: () -> Unit
+    ): Boolean {
+        val operation = activeGattOperations[deviceId]
+        return when (writeGattCharacteristicStatus(gatt, characteristic, data, writeType)) {
+            WRITE_STARTED -> {
+                onStarted()
+                true
+            }
+            WRITE_BUSY -> {
+                if (attempt >= MAX_WRITE_BUSY_RETRIES || operation == null) {
+                    false
+                } else {
+                    bluetoothScope.launch {
+                        delay((WRITE_BUSY_RETRY_BASE_DELAY_MS * (attempt + 1)).coerceAtMost(WRITE_BUSY_RETRY_MAX_DELAY_MS))
+                        synchronized(this@HybridMunimBluetooth) {
+                            if (activeGattOperations[deviceId] !== operation) return@launch
+                            val restarted = try {
+                                startCharacteristicWriteWithRetry(
+                                    deviceId, kind, key, gatt, characteristic, data, writeType, attempt + 1, onStarted
+                                )
+                            } catch (error: SecurityException) {
+                                failActiveGattOperation(deviceId, operation, error)
+                                return@launch
+                            }
+                            if (!restarted) {
+                                failActiveGattOperation(
+                                    deviceId,
+                                    operation,
+                                    IllegalStateException("$kind for $key failed: GATT stayed busy after ${attempt + 1} retries")
+                                )
+                            }
+                        }
+                    }
+                    true
+                }
+            }
+            else -> false
+        }
     }
 
     private fun emitGattOperationResult(
@@ -3247,18 +3361,24 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     }
 
     @Suppress("DEPRECATION")
-    private fun writeGattCharacteristic(
+    private fun writeGattCharacteristicStatus(
         gatt: BluetoothGatt,
         characteristic: BluetoothGattCharacteristic,
         value: ByteArray,
         writeType: Int
-    ): Boolean {
+    ): Int {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            gatt.writeCharacteristic(characteristic, value, writeType) == BluetoothStatusCodes.SUCCESS
+            when (gatt.writeCharacteristic(characteristic, value, writeType)) {
+                BluetoothStatusCodes.SUCCESS -> WRITE_STARTED
+                BluetoothStatusCodes.ERROR_GATT_WRITE_REQUEST_BUSY -> WRITE_BUSY
+                else -> WRITE_FAILED
+            }
         } else {
             characteristic.value = value
             characteristic.writeType = writeType
-            gatt.writeCharacteristic(characteristic)
+            // Before Android 13 a busy stack is indistinguishable from other
+            // failures; treat false as busy and let the bounded retry decide.
+            if (gatt.writeCharacteristic(characteristic)) WRITE_STARTED else WRITE_BUSY
         }
     }
 
@@ -4114,6 +4234,15 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         private const val CONNECTION_RETRY_DELAY_MS = 350L
         private const val MAX_CONNECTION_RETRIES = 2
         private const val OPERATION_TIMEOUT_MS = 15_000L
+        private const val DEFAULT_ATT_MTU = 23
+        private const val MAX_ATTRIBUTE_VALUE_LENGTH = 512
+        private const val WRITE_STARTED = 0
+        private const val WRITE_BUSY = 1
+        private const val WRITE_FAILED = 2
+        private const val MAX_WRITE_BUSY_RETRIES = 20
+        private const val WRITE_BUSY_RETRY_BASE_DELAY_MS = 5L
+        private const val WRITE_BUSY_RETRY_MAX_DELAY_MS = 50L
+        private const val WRITE_WITHOUT_RESPONSE_FALLBACK_MS = 500L
         private const val BOND_TIMEOUT_MS = 30_000L
         private const val DEFAULT_PERIPHERAL_REQUEST_TIMEOUT_MS = 10_000L
         private const val DEFAULT_STREAM_BUFFER_SIZE = 4096
