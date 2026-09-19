@@ -114,17 +114,20 @@
 | Peripheral advertising | ✅ | ✅ | iOS only allows CoreBluetooth-supported advertising keys such as local name and service UUIDs. Android splits primary advertising data and scan response data to stay within BLE size limits. |
 | Peripheral GATT services | ✅ | ✅ | Read and write requests are handled natively on both platforms. Characteristics can require encrypted access; authenticated-MITM permissions are Android-only because CoreBluetooth has no matching public option. |
 | Peripheral notify/indicate subscriptions | ✅ | ✅ | Subscribe/unsubscribe events are emitted when centrals change CCC state. |
-| Central scan | ✅ | ✅ | Android scan failures emit `scanFailed`. |
-| Central connect/disconnect | ✅ | ✅ | `connect()` has a native 15 second timeout. |
+| Central scan | ✅ | ✅ | Service UUID, name, and manufacturer filters on both platforms (iOS applies name/manufacturer in-process); Android also takes address filters and `ScanSettings`. Android scan failures, including its 5-starts-per-30-seconds throttle, emit `scanFailed`. |
+| Central connect/disconnect | ✅ | ✅ | `connect()` times out after 15 seconds by default (`timeoutMs` configurable); `autoConnect` maps to Android background connect and iOS 17+ auto-reconnect. |
 | Central service discovery | ✅ | ✅ | Emits `servicesDiscovered` in addition to resolving the Promise. Native timeout rejects if callbacks do not arrive. |
 | Central characteristic read | ✅ | ✅ | Resolves with hex-encoded values. Native timeout rejects if callbacks do not arrive. |
-| Central characteristic write | ✅ | ✅ | Supports `write` and `writeWithoutResponse`. With-response writes have native timeout protection. |
+| Central characteristic write | ✅ | ✅ | Supports `write` and `writeWithoutResponse`. With-response writes have native timeout protection; write-without-response is flow controlled, and `getMaximumWriteLength()` reports the payload limit. |
 | Central descriptor read/write | ✅ | ✅ | Uses `readDescriptor()` and `writeDescriptor()` with hex-encoded values. Native timeout rejects if callbacks do not arrive. |
 | Central notify/indicate subscription | ✅ | ✅ | Values emit through `characteristicValueChanged`. |
 | RSSI read | ✅ | ✅ | Resolves with dBm. |
-| ATT MTU request | ❌ | ✅ | Android supports `requestMTU()`. iOS negotiates ATT MTU internally and does not expose a public setter. |
+| ATT MTU request | ➖ | ✅ | Android negotiates the requested MTU. iOS negotiates the MTU itself; `requestMTU()` resolves with the MTU in effect. |
+| Connection priority | ➖ | ✅ | Android `requestConnectionPriority()`; iOS resolves `false`. |
+| GATT cache refresh / Service Changed | ✅ | ✅ | Both emit `servicesChanged` (Android 12+). `refreshGattCache()` is Android-only; iOS resolves `false`. |
+| Enable Bluetooth prompt | ❌ | ✅ | Android `requestEnable()` shows the system dialog; iOS resolves with the current state. |
 | BLE PHY read/preference | ❌ | ✅ | Android 8+ supports `readPhy()` and `setPreferredPhy()` when hardware allows it. |
-| Pairing/bond state | ❌ | ✅ | Android supports bond state and starts/removes bonds. iOS handles pairing automatically and does not expose bond management through CoreBluetooth. |
+| Pairing/bond state | ❌ | ✅ | Android supports bond state, lists bonded devices (`getBondedDevices()`), and starts/removes bonds. iOS handles pairing automatically and does not expose bond management through CoreBluetooth. |
 | Extended advertising | ❌ | ✅ | Android 8+ supports `startExtendedAdvertising()` on hardware with LE extended advertising. iOS does not expose BLE extended advertising. |
 | BLE L2CAP channel streams | ✅ | ✅ | iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+ for LE CoC sockets. Published and outbound channels require encryption by default. |
 | Classic Bluetooth RFCOMM | ❌ | ✅ | Android supports discovery, SPP-style RFCOMM client connections, server/listener sockets, disconnect, write, and receive events. iOS apps cannot use public Classic Bluetooth RFCOMM APIs. |
