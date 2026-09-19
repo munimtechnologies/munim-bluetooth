@@ -37,6 +37,7 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("writeDescriptor", &HybridMunimBluetoothSpec::writeDescriptor);
       prototype.registerHybridMethod("subscribeToCharacteristic", &HybridMunimBluetoothSpec::subscribeToCharacteristic);
       prototype.registerHybridMethod("unsubscribeFromCharacteristic", &HybridMunimBluetoothSpec::unsubscribeFromCharacteristic);
+      prototype.registerHybridMethod("refreshGattCache", &HybridMunimBluetoothSpec::refreshGattCache);
       prototype.registerHybridMethod("getGattQueueDiagnostics", &HybridMunimBluetoothSpec::getGattQueueDiagnostics);
       prototype.registerHybridMethod("getConnectedDevices", &HybridMunimBluetoothSpec::getConnectedDevices);
       prototype.registerHybridMethod("readRSSI", &HybridMunimBluetoothSpec::readRSSI);

@@ -825,6 +825,7 @@ Use `addEventListener(eventName, callback)` for BLE status and data events.
 | `deviceConnected` | `{ deviceId }` |
 | `deviceDisconnected` | `{ deviceId }` |
 | `servicesDiscovered` | `{ deviceId, services }` |
+| `servicesChanged` | `{ deviceId, invalidatedServices? }` when the remote GATT database changes (iOS `didModifyServices`, Android 12+ `onServiceChanged`). Cached characteristics are dropped and the next `discoverServices()` re-reads the database; iOS lists the invalidated service UUIDs and fails queued write-without-response values that targeted them. |
 | `characteristicValueChanged` | `{ deviceId, serviceUUID, characteristicUUID, value }` |
 | `l2capChannelPublished`, `l2capChannelUnpublished` | Local LE L2CAP channel lifecycle status. |
 | `l2capChannelOpened`, `l2capChannelClosed` | LE L2CAP stream lifecycle status. |
@@ -887,6 +888,15 @@ Sets preferred BLE PHY on Android 8+ when hardware supports it. iOS rejects with
 Reads the current BLE PHY on Android 8+ when hardware supports it. iOS rejects with an unsupported error.
 
 **Returns:** Promise<PhyStatus>
+
+#### `refreshGattCache(deviceId)`
+
+Clears the OS GATT attribute cache for a connected device so the next `discoverServices()` re-reads the remote database. Useful after a peripheral firmware update when the stack keeps serving stale handles.
+
+- Android: calls the hidden `BluetoothGatt.refresh()` through the GATT queue and resolves with its result (`false` when the platform refuses it).
+- iOS: resolves `false`. CoreBluetooth has no public cache API and applies Service Changed indications itself (listen for `servicesChanged`).
+
+**Returns:** Promise<boolean>
 
 #### `getBondState(deviceId)`
 

@@ -36,6 +36,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func writeDescriptor(deviceId: String, serviceUUID: String, characteristicUUID: String, descriptorUUID: String, value: String) throws -> Promise<Void>
   func subscribeToCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<Void>
   func unsubscribeFromCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<Void>
+  func refreshGattCache(deviceId: String) throws -> Promise<Bool>
   func getGattQueueDiagnostics() throws -> Promise<[GATTQueueDiagnostic]>
   func getConnectedDevices() throws -> Promise<[String]>
   func readRSSI(deviceId: String) throws -> Promise<Double>

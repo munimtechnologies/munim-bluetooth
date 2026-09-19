@@ -85,6 +85,12 @@ export type BluetoothEventMap = {
     reason?: string
   }
   servicesDiscovered: { deviceId: string; services: GATTService[] }
+  /**
+   * The remote GATT database changed (Service Changed indication). Cached
+   * characteristics are dropped; call discoverServices() again before further
+   * GATT operations. iOS lists the invalidated service UUIDs.
+   */
+  servicesChanged: { deviceId: string; invalidatedServices?: string[] }
   characteristicValueChanged: CharacteristicValue & { deviceId: string }
   l2capChannelPublished: { channelId: string; psm: number }
   l2capChannelPublishFailed: { psm?: number; error: string }
@@ -508,6 +514,14 @@ export function unsubscribeFromCharacteristic(
   )
 }
 
+/**
+ * Clear the OS GATT cache for a connected device (Android). The next
+ * discoverServices() call re-reads the remote database. iOS resolves false.
+ */
+export function refreshGattCache(deviceId: string): Promise<boolean> {
+  return MunimBluetooth.refreshGattCache(deviceId)
+}
+
 export function getGattQueueDiagnostics(): Promise<GATTQueueDiagnostic[]> {
   return MunimBluetooth.getGattQueueDiagnostics()
 }
@@ -909,6 +923,7 @@ export default {
   writeDescriptor,
   subscribeToCharacteristic,
   unsubscribeFromCharacteristic,
+  refreshGattCache,
   getGattQueueDiagnostics,
   getConnectedDevices,
   readRSSI,
