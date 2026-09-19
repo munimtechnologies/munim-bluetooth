@@ -148,6 +148,10 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
+  abstract fun requestConnectionPriority(deviceId: String, priority: ConnectionPriority): Promise<Boolean>
+  
+  @DoNotStrip
+  @Keep
   abstract fun setPreferredPhy(deviceId: String, txPhy: BluetoothPhy, rxPhy: BluetoothPhy, phyOption: BluetoothPhyOption?): Promise<Unit>
   
   @DoNotStrip

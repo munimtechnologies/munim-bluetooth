@@ -33,6 +33,7 @@ import type {
   PeripheralRequestStatus,
   GATTQueueDiagnostic,
   WriteLengthType,
+  ConnectionPriority,
 } from './specs/munim-bluetooth.nitro'
 
 /** Android Bluetooth Class of Device metadata reported during Classic discovery. */
@@ -565,6 +566,17 @@ export function getMaximumWriteLength(
 }
 
 /**
+ * Request a connection interval profile ('high' for throughput/latency,
+ * 'lowPower' to save battery). Android only; iOS resolves false.
+ */
+export function requestConnectionPriority(
+  deviceId: string,
+  priority: ConnectionPriority
+): Promise<boolean> {
+  return MunimBluetooth.requestConnectionPriority(deviceId, priority)
+}
+
+/**
  * Set preferred BLE PHY. Android 8+ supports this when hardware allows it.
  */
 export function setPreferredPhy(
@@ -894,6 +906,7 @@ export type {
   PeripheralRequestStatus,
   GATTQueueDiagnostic,
   WriteLengthType,
+  ConnectionPriority,
 }
 
 // Default export for convenience
@@ -929,6 +942,7 @@ export default {
   readRSSI,
   requestMTU,
   getMaximumWriteLength,
+  requestConnectionPriority,
   setPreferredPhy,
   readPhy,
   getBondState,

@@ -83,6 +83,7 @@ namespace margelo::nitro::munimbluetooth {
     std::shared_ptr<Promise<double>> readRSSI(const std::string& deviceId) override;
     std::shared_ptr<Promise<double>> requestMTU(const std::string& deviceId, double mtu) override;
     std::shared_ptr<Promise<double>> getMaximumWriteLength(const std::string& deviceId, WriteLengthType type) override;
+    std::shared_ptr<Promise<bool>> requestConnectionPriority(const std::string& deviceId, ConnectionPriority priority) override;
     std::shared_ptr<Promise<void>> setPreferredPhy(const std::string& deviceId, BluetoothPhy txPhy, BluetoothPhy rxPhy, std::optional<BluetoothPhyOption> phyOption) override;
     std::shared_ptr<Promise<PhyStatus>> readPhy(const std::string& deviceId) override;
     std::shared_ptr<Promise<BondState>> getBondState(const std::string& deviceId) override;

@@ -59,6 +59,8 @@ namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 // Forward declaration of `WriteLengthType` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class WriteLengthType; }
+// Forward declaration of `ConnectionPriority` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ConnectionPriority; }
 // Forward declaration of `BluetoothPhyOption` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
 // Forward declaration of `ExtendedAdvertisingOptions` to properly resolve imports.
@@ -128,6 +130,8 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPrefere
 #include "JWriteType.hpp"
 #include "WriteLengthType.hpp"
 #include "JWriteLengthType.hpp"
+#include "ConnectionPriority.hpp"
+#include "JConnectionPriority.hpp"
 #include "BluetoothPhyOption.hpp"
 #include "JBluetoothPhyOption.hpp"
 #include "ExtendedAdvertisingOptions.hpp"
@@ -580,6 +584,22 @@ namespace margelo::nitro::munimbluetooth {
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
         auto __result = jni::static_ref_cast<jni::JDouble>(__boxedResult);
         __promise->resolve(__result->value());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<bool>> JHybridMunimBluetoothSpec::requestConnectionPriority(const std::string& deviceId, ConnectionPriority priority) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* deviceId */, jni::alias_ref<JConnectionPriority> /* priority */)>("requestConnectionPriority");
+    auto __result = method(_javaPart, jni::make_jstring(deviceId), JConnectionPriority::fromCpp(priority));
+    return [&]() {
+      auto __promise = Promise<bool>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<jni::JBoolean>(__boxedResult);
+        __promise->resolve(static_cast<bool>(__result->value()));
       });
       __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
         jni::JniException __jniError(__throwable);

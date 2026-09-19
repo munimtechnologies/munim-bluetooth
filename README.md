@@ -877,6 +877,12 @@ Returns the largest value, in bytes, that one characteristic write can carry on 
 
 **Returns:** Promise<number>
 
+#### `requestConnectionPriority(deviceId, priority)`
+
+Requests a connection interval profile: `'high'` (short interval, more throughput and lower latency), `'balanced'` (the default), or `'lowPower'`. Android calls `BluetoothGatt.requestConnectionPriority()` and resolves with whether the request was accepted; the controller still negotiates the final parameters. iOS resolves `false` and changes nothing, because CoreBluetooth manages connection parameters itself.
+
+**Returns:** Promise<boolean>
+
 #### `setPreferredPhy(deviceId, txPhy, rxPhy, phyOption?)`
 
 Sets preferred BLE PHY on Android 8+ when hardware supports it. iOS rejects with an unsupported error.

@@ -43,6 +43,7 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("readRSSI", &HybridMunimBluetoothSpec::readRSSI);
       prototype.registerHybridMethod("requestMTU", &HybridMunimBluetoothSpec::requestMTU);
       prototype.registerHybridMethod("getMaximumWriteLength", &HybridMunimBluetoothSpec::getMaximumWriteLength);
+      prototype.registerHybridMethod("requestConnectionPriority", &HybridMunimBluetoothSpec::requestConnectionPriority);
       prototype.registerHybridMethod("setPreferredPhy", &HybridMunimBluetoothSpec::setPreferredPhy);
       prototype.registerHybridMethod("readPhy", &HybridMunimBluetoothSpec::readPhy);
       prototype.registerHybridMethod("getBondState", &HybridMunimBluetoothSpec::getBondState);
