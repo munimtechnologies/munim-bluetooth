@@ -5,7 +5,9 @@
   
   <!-- Feature declarations -->
   <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
-  <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
+  <!-- Not required: a hard requirement filters the host app out of Play for
+       devices without BLE. Check getCapabilities()/isBluetoothEnabled() at runtime. -->
+  <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
   <application>
     <service
