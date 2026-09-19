@@ -136,6 +136,7 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<void>> writeDescriptor(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID, const std::string& descriptorUUID, const std::string& value) = 0;
       virtual std::shared_ptr<Promise<void>> subscribeToCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
       virtual std::shared_ptr<Promise<void>> unsubscribeFromCharacteristic(const std::string& deviceId, const std::string& serviceUUID, const std::string& characteristicUUID) = 0;
+      virtual std::shared_ptr<Promise<bool>> refreshGattCache(const std::string& deviceId) = 0;
       virtual std::shared_ptr<Promise<std::vector<GATTQueueDiagnostic>>> getGattQueueDiagnostics() = 0;
       virtual std::shared_ptr<Promise<std::vector<std::string>>> getConnectedDevices() = 0;
       virtual std::shared_ptr<Promise<double>> readRSSI(const std::string& deviceId) = 0;

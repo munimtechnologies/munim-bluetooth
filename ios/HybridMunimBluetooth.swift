@@ -153,6 +153,10 @@ private final class PeripheralDelegateProxy: NSObject, CBPeripheralDelegate {
         owner?.handlePeripheralDidOpenL2CAPChannel(peripheral, channel: channel, error: error)
     }
 
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        owner?.handlePeripheralDidModifyServices(peripheral, invalidatedServices: invalidatedServices)
+    }
+
     func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
         owner?.handlePeripheralIsReadyToSendWriteWithoutResponse(peripheral)
     }
@@ -305,6 +309,9 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private var peripheralCharacteristics: [String: [CBCharacteristic]] = [:]
     private var pendingConnectionPromises: [String: Promise<Void>] = [:]
     private var pendingServiceDiscoveryPromises: [String: Promise<[GATTService]>] = [:]
+    /// Devices whose GATT database changed since the last discovery; their
+    /// cached services must not satisfy discoverServices().
+    private var devicesNeedingServiceRediscovery: Set<String> = []
     private var pendingCharacteristicDiscoveryCounts: [String: Int] = [:]
     private var pendingReadPromises: [String: Promise<CharacteristicValue>] = [:]
     private var pendingWritePromises: [String: Promise<Void>] = [:]
@@ -934,7 +941,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 return promise
             }
 
-            if let services = peripheral.services,
+            if !devicesNeedingServiceRediscovery.contains(deviceId),
+               let services = peripheral.services,
                services.allSatisfy({ $0.characteristics != nil && $0.includedServices != nil }) {
                 promise.resolve(withResult: buildGATTServices(from: services))
                 return promise
@@ -1208,6 +1216,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         return promise
     }
 
+    func refreshGattCache(deviceId: String) throws -> Promise<Bool> {
+        // CoreBluetooth has no public cache-clearing API; it handles the
+        // Service Changed indication itself (see didModifyServices).
+        let promise = Promise<Bool>()
+        promise.resolve(withResult: false)
+        return promise
+    }
+
     func getGattQueueDiagnostics() throws -> Promise<[GATTQueueDiagnostic]> {
         try onBluetoothThread {
             let promise = Promise<[GATTQueueDiagnostic]>()
@@ -1308,6 +1324,33 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         writeWithoutResponseQueues.removeValue(forKey: deviceId)?.forEach {
             $0.promise.reject(withError: error)
         }
+    }
+
+    func handlePeripheralDidModifyServices(_ peripheral: CBPeripheral, invalidatedServices: [CBService]) {
+        let deviceId = peripheral.identifier.uuidString
+        let invalidatedUUIDs = invalidatedServices.map { $0.uuid.uuidString }
+        peripheralCharacteristics.removeValue(forKey: deviceId)
+        devicesNeedingServiceRediscovery.insert(deviceId)
+
+        // Queued no-response writes may target characteristics that no
+        // longer exist; fail them rather than writing to stale handles.
+        let invalidated = Set(invalidatedUUIDs.map { $0.lowercased() })
+        if var queue = writeWithoutResponseQueues[deviceId] {
+            let error = NSError(domain: "MunimBluetooth", code: 410, userInfo: [NSLocalizedDescriptionKey: "Remote GATT services changed; rediscover services before writing"])
+            queue.removeAll { write in
+                let serviceUUID = write.characteristic.service?.uuid.uuidString.lowercased() ?? ""
+                guard invalidated.contains(serviceUUID) else { return false }
+                write.promise.reject(withError: error)
+                return true
+            }
+            writeWithoutResponseQueues[deviceId] = queue.isEmpty ? nil : queue
+        }
+
+        NSLog("Bluetooth: services changed peripheral=%@ invalidated=%@", deviceId, invalidatedUUIDs.joined(separator: ","))
+        emit("servicesChanged", body: [
+            "deviceId": deviceId,
+            "invalidatedServices": invalidatedUUIDs
+        ])
     }
 
     func handlePeripheralIsReadyToSendWriteWithoutResponse(_ peripheral: CBPeripheral) {
@@ -2648,6 +2691,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
 
         pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
+        devicesNeedingServiceRediscovery.remove(deviceId)
         completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
         let services = buildGATTServices(from: peripheral.services ?? [])
         pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)?.resolve(withResult: services)
@@ -3008,6 +3052,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
         pendingRSSIPromises.removeValue(forKey: deviceId)?.reject(withError: error)
         rejectWritesWithoutResponse(deviceId: deviceId, error: error)
+        devicesNeedingServiceRediscovery.remove(deviceId)
 
         let prefix = "\(deviceId.lowercased())|"
         for key in Array(pendingReadPromises.keys) where key.hasPrefix(prefix) {

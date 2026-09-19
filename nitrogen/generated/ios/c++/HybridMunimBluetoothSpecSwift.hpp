@@ -331,6 +331,14 @@ namespace margelo::nitro::munimbluetooth {
       auto __value = std::move(__result.value());
       return __value;
     }
+    inline std::shared_ptr<Promise<bool>> refreshGattCache(const std::string& deviceId) override {
+      auto __result = _swiftPart.refreshGattCache(deviceId);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
     inline std::shared_ptr<Promise<std::vector<GATTQueueDiagnostic>>> getGattQueueDiagnostics() override {
       auto __result = _swiftPart.getGattQueueDiagnostics();
       if (__result.hasError()) [[unlikely]] {

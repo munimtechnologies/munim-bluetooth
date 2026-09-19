@@ -124,6 +124,10 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
+  abstract fun refreshGattCache(deviceId: String): Promise<Boolean>
+  
+  @DoNotStrip
+  @Keep
   abstract fun getGattQueueDiagnostics(): Promise<Array<GATTQueueDiagnostic>>
   
   @DoNotStrip

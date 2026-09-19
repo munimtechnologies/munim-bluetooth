@@ -496,6 +496,14 @@ export interface MunimBluetooth
     characteristicUUID: string
   ): Promise<void>
 
+  /**
+   * Clear the OS GATT attribute cache for a connected device so the next
+   * discoverServices() re-reads the remote database. Android uses the hidden
+   * BluetoothGatt.refresh() and resolves with its result; iOS has no such API
+   * (CoreBluetooth tracks Service Changed itself) and resolves false.
+   */
+  refreshGattCache(deviceId: string): Promise<boolean>
+
   /** Snapshot serialized per-device GATT queues for diagnostics. */
   getGattQueueDiagnostics(): Promise<GATTQueueDiagnostic[]>
 

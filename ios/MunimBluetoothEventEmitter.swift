@@ -46,6 +46,7 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
             "deviceDisconnected",
             "connectionStateChanged",
             "servicesDiscovered",
+            "servicesChanged",
             "characteristicValueChanged",
             "mtuChanged",
             "phyChanged",

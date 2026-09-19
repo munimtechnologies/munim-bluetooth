@@ -176,6 +176,9 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val pendingDescriptorWrites = ConcurrentHashMap<String, Promise<Unit>>()
     private val pendingMtuRequests = ConcurrentHashMap<String, Promise<Double>>()
     private val negotiatedMtus = ConcurrentHashMap<String, Int>()
+    // Devices whose remote GATT database changed (or whose cache was
+    // refreshed); gatt.services is stale for them until rediscovered.
+    private val devicesNeedingServiceRediscovery = ConcurrentHashMap.newKeySet<String>()
     private val pendingPhyReads = ConcurrentHashMap<String, Promise<PhyStatus>>()
     private val pendingPhyWrites = ConcurrentHashMap<String, Promise<Unit>>()
     private val pendingRssiReads = ConcurrentHashMap<String, Promise<Double>>()
@@ -858,7 +861,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         val gatt = connectedDevices[deviceId]
             ?: return Promise.rejected(IllegalStateException("Device not connected: $deviceId"))
 
-        if (gatt.services.isNotEmpty()) {
+        if (gatt.services.isNotEmpty() && !devicesNeedingServiceRediscovery.contains(deviceId)) {
             return Promise.resolved(buildGattServices(gatt))
         }
 
@@ -1105,6 +1108,55 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             }
         )
         return promise
+    }
+
+    override fun refreshGattCache(deviceId: String): Promise<Boolean> {
+        val gatt = connectedDevices[deviceId]
+            ?: return Promise.rejected(IllegalStateException("Device not connected: $deviceId"))
+
+        val promise = Promise<Boolean>()
+        enqueueGattOperation(
+            deviceId,
+            "refreshGattCache",
+            deviceId,
+            start = {
+                val operation = activeGattOperations[deviceId]
+                val refreshed = try {
+                    // Hidden API (greylisted). It clears the cached attribute
+                    // database; services must be rediscovered afterwards.
+                    gatt.javaClass.getMethod("refresh").invoke(gatt) as? Boolean ?: false
+                } catch (error: ReflectiveOperationException) {
+                    Log.w(TAG, "BluetoothGatt.refresh() is unavailable", error)
+                    false
+                } catch (error: SecurityException) {
+                    Log.w(TAG, "BluetoothGatt.refresh() was denied", error)
+                    false
+                }
+                if (refreshed) {
+                    lastCharacteristicValues.keys.removeIf { it.startsWith("$deviceId|") }
+                    devicesNeedingServiceRediscovery.add(deviceId)
+                }
+                promise.resolve(refreshed)
+                // refresh() is asynchronous inside the stack; hold the queue
+                // briefly so the next operation does not race it.
+                if (operation != null) {
+                    bluetoothScope.launch {
+                        delay(GATT_REFRESH_SETTLE_MS)
+                        completeSpecificGattOperation(deviceId, operation)
+                    }
+                }
+                true
+            },
+            reject = promise::reject
+        )
+        return promise
+    }
+
+    private fun handleServicesChanged(deviceId: String) {
+        lastCharacteristicValues.keys.removeIf { it.startsWith("$deviceId|") }
+        devicesNeedingServiceRediscovery.add(deviceId)
+        Log.i(TAG, "Remote GATT services changed for $deviceId")
+        eventEmitter.emit("servicesChanged", mapOf("deviceId" to deviceId))
     }
 
     // The per-device ArrayDeques are only safe under the same monitor as
@@ -2616,6 +2668,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                     status
                 ) {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
+                        devicesNeedingServiceRediscovery.remove(deviceId)
                         val services = buildGattServices(gatt)
                         pendingServiceDiscoveries.remove(deviceId)?.resolve(services)
                         eventEmitter.emit(
@@ -2808,6 +2861,12 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 }
             }
 
+            // API 31+: the remote sent a Service Changed indication. Older
+            // releases handle it inside the stack without telling the app.
+            override fun onServiceChanged(gatt: BluetoothGatt) {
+                handleServicesChanged(deviceId)
+            }
+
             override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
                 completeGattOperation(deviceId, setOf("readRSSI"), deviceId, status) {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -2921,6 +2980,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         pendingRssiReads.remove(deviceId)
         pendingMtuRequests.remove(deviceId)
         negotiatedMtus.remove(deviceId)
+        devicesNeedingServiceRediscovery.remove(deviceId)
         pendingPhyReads.remove(deviceId)
         pendingPhyWrites.remove(deviceId)
     }
@@ -4235,6 +4295,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         private const val MAX_CONNECTION_RETRIES = 2
         private const val OPERATION_TIMEOUT_MS = 15_000L
         private const val DEFAULT_ATT_MTU = 23
+        private const val GATT_REFRESH_SETTLE_MS = 300L
         private const val MAX_ATTRIBUTE_VALUE_LENGTH = 512
         private const val WRITE_STARTED = 0
         private const val WRITE_BUSY = 1
