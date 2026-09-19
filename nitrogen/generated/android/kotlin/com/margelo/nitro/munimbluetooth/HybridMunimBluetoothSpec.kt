@@ -172,6 +172,10 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
+  abstract fun getBondedDevices(): Promise<Array<BondedDevice>>
+  
+  @DoNotStrip
+  @Keep
   abstract fun removeBond(deviceId: String): Promise<BondState>
   
   @DoNotStrip

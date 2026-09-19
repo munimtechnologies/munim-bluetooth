@@ -49,6 +49,7 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("readPhy", &HybridMunimBluetoothSpec::readPhy);
       prototype.registerHybridMethod("getBondState", &HybridMunimBluetoothSpec::getBondState);
       prototype.registerHybridMethod("createBond", &HybridMunimBluetoothSpec::createBond);
+      prototype.registerHybridMethod("getBondedDevices", &HybridMunimBluetoothSpec::getBondedDevices);
       prototype.registerHybridMethod("removeBond", &HybridMunimBluetoothSpec::removeBond);
       prototype.registerHybridMethod("startExtendedAdvertising", &HybridMunimBluetoothSpec::startExtendedAdvertising);
       prototype.registerHybridMethod("stopExtendedAdvertising", &HybridMunimBluetoothSpec::stopExtendedAdvertising);

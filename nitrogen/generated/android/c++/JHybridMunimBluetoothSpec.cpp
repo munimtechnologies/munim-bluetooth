@@ -35,6 +35,10 @@ namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 // Forward declaration of `BondState` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BondState; }
+// Forward declaration of `BondedDevice` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BondedDevice; }
+// Forward declaration of `BluetoothDeviceType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothDeviceType; }
 // Forward declaration of `L2CAPChannel` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
 // Forward declaration of `MultipeerPeer` to properly resolve imports.
@@ -114,6 +118,10 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPrefere
 #include "JBluetoothPhy.hpp"
 #include "BondState.hpp"
 #include "JBondState.hpp"
+#include "BondedDevice.hpp"
+#include "JBondedDevice.hpp"
+#include "BluetoothDeviceType.hpp"
+#include "JBluetoothDeviceType.hpp"
 #include "L2CAPChannel.hpp"
 #include "JL2CAPChannel.hpp"
 #include "MultipeerPeer.hpp"
@@ -695,6 +703,31 @@ namespace margelo::nitro::munimbluetooth {
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
         auto __result = jni::static_ref_cast<JBondState>(__boxedResult);
         __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<std::vector<BondedDevice>>> JHybridMunimBluetoothSpec::getBondedDevices() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("getBondedDevices");
+    auto __result = method(_javaPart);
+    return [&]() {
+      auto __promise = Promise<std::vector<BondedDevice>>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<jni::JArrayClass<JBondedDevice>>(__boxedResult);
+        __promise->resolve([&](auto&& __input) {
+          size_t __size = __input->size();
+          std::vector<BondedDevice> __vector;
+          __vector.reserve(__size);
+          for (size_t __i = 0; __i < __size; __i++) {
+            auto __element = __input->getElement(__i);
+            __vector.push_back(__element->toCpp());
+          }
+          return __vector;
+        }(__result));
       });
       __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
         jni::JniException __jniError(__throwable);

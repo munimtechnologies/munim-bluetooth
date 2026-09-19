@@ -249,6 +249,16 @@ export type ConnectionPriority = 'balanced' | 'high' | 'lowPower'
 
 export type BondState = 'none' | 'bonding' | 'bonded' | 'unsupported'
 
+/** Android BluetoothDevice.getType(). */
+export type BluetoothDeviceType = 'classic' | 'le' | 'dual' | 'unknown'
+
+export interface BondedDevice {
+  /** MAC address; usable as a deviceId for connect()/connectClassic(). */
+  id: string
+  name?: string
+  type: BluetoothDeviceType
+}
+
 export interface BluetoothCapabilities {
   platform: string
   supportsBleCentral: boolean
@@ -647,6 +657,13 @@ export interface MunimBluetooth
    * Start platform pairing/bonding for a device.
    */
   createBond(deviceId: string): Promise<BondState>
+
+  /**
+   * List devices bonded (paired) with this phone. Android only; needs
+   * BLUETOOTH_CONNECT on Android 12+. iOS exposes no bond list and resolves
+   * an empty array.
+   */
+  getBondedDevices(): Promise<BondedDevice[]>
 
   /**
    * Remove an Android bond. Unsupported on iOS public APIs.

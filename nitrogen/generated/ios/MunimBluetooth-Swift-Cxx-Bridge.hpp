@@ -12,12 +12,16 @@
 namespace margelo::nitro::munimbluetooth { struct AdvertisingDataTypes; }
 // Forward declaration of `BluetoothCapabilities` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct BluetoothCapabilities; }
+// Forward declaration of `BluetoothDeviceType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothDeviceType; }
 // Forward declaration of `BluetoothPhyOption` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
 // Forward declaration of `BluetoothPhy` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BluetoothPhy; }
 // Forward declaration of `BondState` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BondState; }
+// Forward declaration of `BondedDevice` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BondedDevice; }
 // Forward declaration of `CharacteristicValue` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct CharacteristicValue; }
 // Forward declaration of `ConnectOptions` to properly resolve imports.
@@ -78,9 +82,11 @@ namespace MunimBluetooth { class HybridMunimBluetoothSpec_cxx; }
 // Include C++ defined types
 #include "AdvertisingDataTypes.hpp"
 #include "BluetoothCapabilities.hpp"
+#include "BluetoothDeviceType.hpp"
 #include "BluetoothPhy.hpp"
 #include "BluetoothPhyOption.hpp"
 #include "BondState.hpp"
+#include "BondedDevice.hpp"
 #include "CharacteristicValue.hpp"
 #include "ConnectOptions.hpp"
 #include "DescriptorValue.hpp"
@@ -941,6 +947,51 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Func_void_BondState_Wrapper(std::move(value));
   }
   
+  // pragma MARK: std::vector<BondedDevice>
+  /**
+   * Specialized version of `std::vector<BondedDevice>`.
+   */
+  using std__vector_BondedDevice_ = std::vector<BondedDevice>;
+  inline std::vector<BondedDevice> create_std__vector_BondedDevice_(size_t size) noexcept {
+    std::vector<BondedDevice> vector;
+    vector.reserve(size);
+    return vector;
+  }
+  
+  // pragma MARK: std::shared_ptr<Promise<std::vector<BondedDevice>>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<std::vector<BondedDevice>>>`.
+   */
+  using std__shared_ptr_Promise_std__vector_BondedDevice___ = std::shared_ptr<Promise<std::vector<BondedDevice>>>;
+  inline std::shared_ptr<Promise<std::vector<BondedDevice>>> create_std__shared_ptr_Promise_std__vector_BondedDevice___() noexcept {
+    return Promise<std::vector<BondedDevice>>::create();
+  }
+  inline PromiseHolder<std::vector<BondedDevice>> wrap_std__shared_ptr_Promise_std__vector_BondedDevice___(std::shared_ptr<Promise<std::vector<BondedDevice>>> promise) noexcept {
+    return PromiseHolder<std::vector<BondedDevice>>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(const std::vector<BondedDevice>& /* result */)>
+  /**
+   * Specialized version of `std::function<void(const std::vector<BondedDevice>&)>`.
+   */
+  using Func_void_std__vector_BondedDevice_ = std::function<void(const std::vector<BondedDevice>& /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(const std::vector<BondedDevice>& / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_std__vector_BondedDevice__Wrapper final {
+  public:
+    explicit Func_void_std__vector_BondedDevice__Wrapper(std::function<void(const std::vector<BondedDevice>& /* result */)>&& func): _function(std::make_unique<std::function<void(const std::vector<BondedDevice>& /* result */)>>(std::move(func))) {}
+    inline void call(std::vector<BondedDevice> result) const noexcept {
+      _function->operator()(result);
+    }
+  private:
+    std::unique_ptr<std::function<void(const std::vector<BondedDevice>& /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_std__vector_BondedDevice_ create_Func_void_std__vector_BondedDevice_(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_std__vector_BondedDevice__Wrapper wrap_Func_void_std__vector_BondedDevice_(Func_void_std__vector_BondedDevice_ value) noexcept {
+    return Func_void_std__vector_BondedDevice__Wrapper(std::move(value));
+  }
+  
   // pragma MARK: std::shared_ptr<Promise<std::string>>
   /**
    * Specialized version of `std::shared_ptr<Promise<std::string>>`.
@@ -1237,6 +1288,15 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   }
   inline Result_std__shared_ptr_Promise_BondState___ create_Result_std__shared_ptr_Promise_BondState___(const std::exception_ptr& error) noexcept {
     return Result<std::shared_ptr<Promise<BondState>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<Promise<std::vector<BondedDevice>>>>
+  using Result_std__shared_ptr_Promise_std__vector_BondedDevice____ = Result<std::shared_ptr<Promise<std::vector<BondedDevice>>>>;
+  inline Result_std__shared_ptr_Promise_std__vector_BondedDevice____ create_Result_std__shared_ptr_Promise_std__vector_BondedDevice____(const std::shared_ptr<Promise<std::vector<BondedDevice>>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<std::vector<BondedDevice>>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_std__vector_BondedDevice____ create_Result_std__shared_ptr_Promise_std__vector_BondedDevice____(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<std::vector<BondedDevice>>>>::withError(error);
   }
   
   // pragma MARK: Result<std::shared_ptr<Promise<std::string>>>

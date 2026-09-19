@@ -68,6 +68,10 @@ namespace margelo::nitro::munimbluetooth { enum class BluetoothPhyOption; }
 namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
 // Forward declaration of `BondState` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class BondState; }
+// Forward declaration of `BondedDevice` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { struct BondedDevice; }
+// Forward declaration of `BluetoothDeviceType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class BluetoothDeviceType; }
 // Forward declaration of `ExtendedAdvertisingOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ExtendedAdvertisingOptions; }
 // Forward declaration of `L2CAPChannel` to properly resolve imports.
@@ -117,6 +121,8 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
 #include "BluetoothPhyOption.hpp"
 #include "PhyStatus.hpp"
 #include "BondState.hpp"
+#include "BondedDevice.hpp"
+#include "BluetoothDeviceType.hpp"
 #include "ExtendedAdvertisingOptions.hpp"
 #include "L2CAPChannel.hpp"
 #include "BackgroundSessionOptions.hpp"
@@ -436,6 +442,14 @@ namespace margelo::nitro::munimbluetooth {
     }
     inline std::shared_ptr<Promise<BondState>> createBond(const std::string& deviceId) override {
       auto __result = _swiftPart.createBond(deviceId);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<Promise<std::vector<BondedDevice>>> getBondedDevices() override {
+      auto __result = _swiftPart.getBondedDevices();
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

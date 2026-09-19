@@ -946,6 +946,12 @@ Starts Android pairing/bonding. iOS rejects with an unsupported error.
 
 **Returns:** Promise<BondState>
 
+#### `getBondedDevices()`
+
+Lists devices bonded (paired) with the phone: `{ id, name?, type }[]`, where `type` is `'classic' | 'le' | 'dual' | 'unknown'` and `id` is the MAC address usable with `connect()`/`connectClassic()`. Android only; needs the `connect` permission on Android 12+. iOS keeps pairings private and resolves `[]`.
+
+**Returns:** Promise<BondedDevice[]>
+
 #### `removeBond(deviceId)`
 
 Removes an Android bond when the OS exposes that operation. iOS rejects with an unsupported error.
