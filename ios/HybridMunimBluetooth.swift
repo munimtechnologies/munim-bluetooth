@@ -97,6 +97,24 @@ private final class CentralManagerDelegateProxy: NSObject, CBCentralManagerDeleg
         owner?.handleCentralManagerDidDisconnectPeripheral(central, peripheral: peripheral, error: error)
     }
 
+    // On iOS 17+ CoreBluetooth calls this variant instead of the one above;
+    // older releases never call it. It uses no iOS 17 types, so it needs no
+    // availability annotation (which a protocol witness may not carry here).
+    func centralManager(
+        _ central: CBCentralManager,
+        didDisconnectPeripheral peripheral: CBPeripheral,
+        timestamp: CFAbsoluteTime,
+        isReconnecting: Bool,
+        error: Error?
+    ) {
+        owner?.handleCentralManagerDidDisconnectPeripheral(
+            central,
+            peripheral: peripheral,
+            error: error,
+            isReconnecting: isReconnecting
+        )
+    }
+
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         owner?.handleCentralManagerDidFailToConnect(central, peripheral: peripheral, error: error)
     }
@@ -893,7 +911,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    func connect(deviceId: String) throws -> Promise<Void> {
+    func connect(deviceId: String, options: ConnectOptions?) throws -> Promise<Void> {
         settleCentralManager()
         return try onBluetoothThread {
             let promise = Promise<Void>()
@@ -913,10 +931,22 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 return promise
             }
 
+            let autoConnect = options?.autoConnect ?? false
             pendingConnectionPromises[deviceId] = promise
-            scheduleConnectionTimeout(deviceId: deviceId, peripheral: peripheral)
+            // CoreBluetooth connection attempts never time out on their own.
+            let timeoutMs = options?.timeoutMs ?? (autoConnect ? 0 : Self.defaultConnectionTimeoutMs)
+            if timeoutMs > 0 {
+                scheduleConnectionTimeout(deviceId: deviceId, peripheral: peripheral, timeout: timeoutMs / 1_000)
+            } else {
+                connectionTimeouts.removeValue(forKey: deviceId)?.cancel()
+            }
             peripheral.delegate = peripheralDelegateProxy
-            centralManager.connect(peripheral, options: nil)
+
+            var connectOptions: [String: Any] = [:]
+            if autoConnect, #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                connectOptions[CBConnectPeripheralOptionEnableAutoReconnect] = true
+            }
+            centralManager.connect(peripheral, options: connectOptions.isEmpty ? nil : connectOptions)
             return promise
         }
     }
@@ -2395,7 +2425,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         return discoveredPeripherals[deviceId]
     }
 
-    private func scheduleConnectionTimeout(deviceId: String, peripheral: CBPeripheral) {
+    private func scheduleConnectionTimeout(deviceId: String, peripheral: CBPeripheral, timeout: TimeInterval) {
         connectionTimeouts.removeValue(forKey: deviceId)?.cancel()
 
         let workItem = DispatchWorkItem { [weak self, weak peripheral] in
@@ -2417,7 +2447,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
 
         connectionTimeouts[deviceId] = workItem
-        bleQueue.asyncAfter(deadline: .now() + 15.0, execute: workItem)
+        bleQueue.asyncAfter(deadline: .now() + timeout, execute: workItem)
     }
 
     private func scheduleOperationTimeout(key: String, message: String, onTimeout: @escaping () -> Void) {
@@ -3464,7 +3494,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         NSLog("Bluetooth: connected peripheral=%@", deviceId)
     }
 
-    func handleCentralManagerDidDisconnectPeripheral(_ central: CBCentralManager, peripheral: CBPeripheral, error: Error?) {
+    func handleCentralManagerDidDisconnectPeripheral(
+        _ central: CBCentralManager,
+        peripheral: CBPeripheral,
+        error: Error?,
+        isReconnecting: Bool = false
+    ) {
         let deviceId = peripheral.identifier.uuidString
         connectedPeripherals.removeValue(forKey: deviceId)
         peripheralCharacteristics.removeValue(forKey: deviceId)
@@ -3474,12 +3509,25 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             error: error ?? NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Disconnected from \(deviceId)"])
         )
         let reason = error?.localizedDescription ?? "remoteOrLinkLoss"
-        emit("deviceDisconnected", body: ["deviceId": deviceId, "reason": reason])
+        emit("deviceDisconnected", body: [
+            "deviceId": deviceId,
+            "reason": reason,
+            "isReconnecting": isReconnecting
+        ])
         emit("connectionStateChanged", body: [
             "deviceId": deviceId,
             "state": "disconnected",
             "reason": reason
         ])
+        if isReconnecting {
+            // CBConnectPeripheralOptionEnableAutoReconnect: the system is
+            // already re-establishing the link; didConnect follows.
+            emit("connectionStateChanged", body: [
+                "deviceId": deviceId,
+                "state": "connecting",
+                "reason": "autoReconnect"
+            ])
+        }
 
         NSLog("Bluetooth: disconnected peripheral=%@", deviceId)
     }
@@ -3815,6 +3863,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private static let defaultPeripheralRequestTimeoutMs: Double = 10_000
     private static let gattOperationTimeout: TimeInterval = 15.0
     private static let managerSettleTimeout: TimeInterval = 2.0
+    private static let defaultConnectionTimeoutMs: Double = 15_000
     private static let adapterStateTimeout: TimeInterval = 10.0
     private static let permissionPromptTimeout: TimeInterval = 60.0
     private static let maxL2CAPOutboundBufferBytes = 1_048_576

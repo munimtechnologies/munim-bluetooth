@@ -88,7 +88,7 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun connect(deviceId: String): Promise<Unit>
+  abstract fun connect(deviceId: String, options: ConnectOptions?): Promise<Unit>
   
   @DoNotStrip
   @Keep

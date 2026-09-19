@@ -27,7 +27,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func getCapabilities() throws -> Promise<BluetoothCapabilities>
   func startScan(options: ScanOptions?) throws -> Void
   func stopScan() throws -> Void
-  func connect(deviceId: String) throws -> Promise<Void>
+  func connect(deviceId: String, options: ConnectOptions?) throws -> Promise<Void>
   func disconnect(deviceId: String) throws -> Void
   func discoverServices(deviceId: String) throws -> Promise<[GATTService]>
   func readCharacteristic(deviceId: String, serviceUUID: String, characteristicUUID: String) throws -> Promise<CharacteristicValue>

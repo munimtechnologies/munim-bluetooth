@@ -55,6 +55,7 @@ import com.margelo.nitro.munimbluetooth.BluetoothPhy
 import com.margelo.nitro.munimbluetooth.BluetoothPhyOption
 import com.margelo.nitro.munimbluetooth.BondState
 import com.margelo.nitro.munimbluetooth.CharacteristicValue
+import com.margelo.nitro.munimbluetooth.ConnectOptions
 import com.margelo.nitro.munimbluetooth.ConnectionPriority
 import com.margelo.nitro.munimbluetooth.DescriptorValue
 import com.margelo.nitro.munimbluetooth.ExtendedAdvertisingOptions
@@ -185,6 +186,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     private val pendingRssiReads = ConcurrentHashMap<String, Promise<Double>>()
     private val pendingConnectionTimeouts = ConcurrentHashMap<String, Job>()
     private val pendingConnectionAttempts = ConcurrentHashMap<String, Int>()
+    private val pendingConnectionAutoConnect = ConcurrentHashMap<String, Boolean>()
     private val pendingOperationTimeouts = ConcurrentHashMap<String, Job>()
     private val gattOperationQueues = ConcurrentHashMap<String, ArrayDeque<QueuedGattOperation>>()
     private val activeGattOperations = ConcurrentHashMap<String, QueuedGattOperation>()
@@ -806,7 +808,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return true
     }
 
-    override fun connect(deviceId: String): Promise<Unit> {
+    override fun connect(deviceId: String, options: ConnectOptions?): Promise<Unit> {
         if (!ensureBluetoothPermissions("connect to BLE device", BluetoothPermission.CONNECT)) {
             return Promise.rejected(IllegalStateException("Bluetooth permissions not granted"))
         }
@@ -831,10 +833,21 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             }
         } ?: return Promise.rejected(IllegalArgumentException("Device not found: $deviceId"))
 
+        val autoConnect = options?.autoConnect ?: false
+        // A background (autoConnect) connection waits for the device
+        // indefinitely by design, so it only times out when asked to.
+        val timeoutMs = options?.timeoutMs?.toLong()
+            ?: if (autoConnect) 0L else CONNECTION_TIMEOUT_MS
+
         val promise = Promise<Unit>()
         pendingConnections[deviceId] = promise
         pendingConnectionAttempts[deviceId] = 0
-        scheduleConnectionTimeout(deviceId)
+        pendingConnectionAutoConnect[deviceId] = autoConnect
+        if (timeoutMs > 0) {
+            scheduleConnectionTimeout(deviceId, timeoutMs)
+        } else {
+            pendingConnectionTimeouts.remove(deviceId)?.cancel()
+        }
         startGattConnection(deviceId, device)
         return promise
     }
@@ -842,6 +855,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     override fun disconnect(deviceId: String) {
         pendingConnectionTimeouts.remove(deviceId)?.cancel()
         pendingConnectionAttempts.remove(deviceId)
+        pendingConnectionAutoConnect.remove(deviceId)
         pendingConnectionGatts.remove(deviceId)?.let { gatt ->
             gatt.disconnect()
             gatt.close()
@@ -3004,10 +3018,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         pendingPhyWrites.remove(deviceId)
     }
 
-    private fun scheduleConnectionTimeout(deviceId: String) {
+    private fun scheduleConnectionTimeout(deviceId: String, timeoutMs: Long) {
         pendingConnectionTimeouts.remove(deviceId)?.cancel()
         pendingConnectionTimeouts[deviceId] = bluetoothScope.launch {
-            delay(CONNECTION_TIMEOUT_MS)
+            delay(timeoutMs)
             pendingConnectionTimeouts.remove(deviceId)
             pendingConnectionAttempts.remove(deviceId)
             val promise = pendingConnections.remove(deviceId) ?: return@launch
@@ -3028,10 +3042,11 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             return
         }
 
+        val autoConnect = pendingConnectionAutoConnect[deviceId] ?: false
         val gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            device.connectGatt(context, false, createGattCallback(deviceId), BluetoothDevice.TRANSPORT_LE)
+            device.connectGatt(context, autoConnect, createGattCallback(deviceId), BluetoothDevice.TRANSPORT_LE)
         } else {
-            device.connectGatt(context, false, createGattCallback(deviceId))
+            device.connectGatt(context, autoConnect, createGattCallback(deviceId))
         }
         pendingConnectionGatts[deviceId] = gatt
     }

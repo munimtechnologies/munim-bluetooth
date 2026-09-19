@@ -169,6 +169,22 @@ export interface DescriptorValue {
   descriptorUUID: string
 }
 
+export interface ConnectOptions {
+  /**
+   * Reject (and cancel the attempt) if the link is not up within this many
+   * milliseconds. Defaults to 15000, or no timeout when autoConnect is true.
+   * Pass 0 to wait indefinitely.
+   */
+  timeoutMs?: number
+  /**
+   * Android: connectGatt(autoConnect = true), a background connection that
+   * completes whenever the device comes into range. iOS 17+: enables
+   * CBConnectPeripheralOptionEnableAutoReconnect so the system reconnects
+   * after a link loss. Defaults to false.
+   */
+  autoConnect?: boolean
+}
+
 // Write type for characteristic writes
 export type WriteType = 'write' | 'writeWithoutResponse'
 
@@ -400,9 +416,10 @@ export interface MunimBluetooth
    * Connect to a BLE device.
    *
    * @param deviceId - The unique identifier of the device to connect to.
+   * @param options - Optional timeout and auto-connect behaviour.
    * @returns Promise resolving when connection is established or rejected.
    */
-  connect(deviceId: string): Promise<void>
+  connect(deviceId: string, options?: ConnectOptions): Promise<void>
 
   /**
    * Disconnect from a BLE device.
