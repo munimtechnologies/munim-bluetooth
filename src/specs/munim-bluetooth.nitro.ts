@@ -78,6 +78,15 @@ export interface BLEDevice {
 // Scan mode type
 export type ScanMode = 'lowPower' | 'balanced' | 'lowLatency'
 
+/** Android ScanSettings callback type. */
+export type ScanCallbackType = 'allMatches' | 'firstMatch' | 'matchLost'
+
+/** Android ScanSettings match mode. */
+export type ScanMatchMode = 'aggressive' | 'sticky'
+
+/** Android ScanSettings PHY (only used when `legacy` is false). */
+export type ScanPhy = 'le1m' | 'leCoded' | 'allSupported'
+
 // Scan options
 export interface ScanOptions {
   serviceUUIDs?: string[]
@@ -87,6 +96,42 @@ export interface ScanOptions {
   rssiThreshold?: number
   /** Only report devices whose advertised/local name starts with this prefix. */
   namePrefix?: string
+  /**
+   * Only report devices whose advertised/local name equals this exactly.
+   * Android: ScanFilter.setDeviceName. iOS: filtered in-process.
+   */
+  deviceName?: string
+  /** Android only: only report this MAC address (ScanFilter.setDeviceAddress). */
+  deviceAddress?: string
+  /**
+   * Only report devices advertising manufacturer data for this Bluetooth SIG
+   * company identifier. Android: ScanFilter.setManufacturerData. iOS:
+   * filtered in-process.
+   */
+  manufacturerId?: number
+  /**
+   * Hex prefix the manufacturer payload (after the company identifier) must
+   * match. Requires manufacturerId.
+   */
+  manufacturerData?: string
+  /**
+   * Hex bit mask for manufacturerData, same length: 1 bits must match,
+   * 0 bits are ignored.
+   */
+  manufacturerDataMask?: string
+  /** Android: batch results and deliver them every N ms (0 = immediately). */
+  reportDelayMs?: number
+  /** Android: ScanSettings callback type. Defaults to 'allMatches'. */
+  callbackType?: ScanCallbackType
+  /** Android: ScanSettings match mode. Defaults to 'aggressive'. */
+  matchMode?: ScanMatchMode
+  /**
+   * Android 8+: report only legacy advertisements (default true). Set false
+   * to also receive extended advertisements.
+   */
+  legacy?: boolean
+  /** Android 8+: PHY to scan on when legacy is false. */
+  phy?: ScanPhy
 }
 
 export interface GATTDescriptor {

@@ -56,10 +56,16 @@ namespace margelo::nitro::munimbluetooth { struct PeripheralRequestOptions; }
 namespace margelo::nitro::munimbluetooth { enum class PeripheralRequestStatus; }
 // Forward declaration of `PhyStatus` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
+// Forward declaration of `ScanCallbackType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanCallbackType; }
+// Forward declaration of `ScanMatchMode` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanMatchMode; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
+// Forward declaration of `ScanPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanPhy; }
 // Forward declaration of `ServiceDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ServiceDataEntry; }
 // Forward declaration of `WriteType` to properly resolve imports.
@@ -94,8 +100,11 @@ namespace MunimBluetooth { class HybridMunimBluetoothSpec_cxx; }
 #include "PeripheralRequestOptions.hpp"
 #include "PeripheralRequestStatus.hpp"
 #include "PhyStatus.hpp"
+#include "ScanCallbackType.hpp"
+#include "ScanMatchMode.hpp"
 #include "ScanMode.hpp"
 #include "ScanOptions.hpp"
+#include "ScanPhy.hpp"
 #include "ServiceDataEntry.hpp"
 #include "WriteType.hpp"
 #include <NitroModules/Promise.hpp>
@@ -541,6 +550,51 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return optional.has_value();
   }
   inline ScanMode get_std__optional_ScanMode_(const std::optional<ScanMode>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<ScanCallbackType>
+  /**
+   * Specialized version of `std::optional<ScanCallbackType>`.
+   */
+  using std__optional_ScanCallbackType_ = std::optional<ScanCallbackType>;
+  inline std::optional<ScanCallbackType> create_std__optional_ScanCallbackType_(const ScanCallbackType& value) noexcept {
+    return std::optional<ScanCallbackType>(value);
+  }
+  inline bool has_value_std__optional_ScanCallbackType_(const std::optional<ScanCallbackType>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline ScanCallbackType get_std__optional_ScanCallbackType_(const std::optional<ScanCallbackType>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<ScanMatchMode>
+  /**
+   * Specialized version of `std::optional<ScanMatchMode>`.
+   */
+  using std__optional_ScanMatchMode_ = std::optional<ScanMatchMode>;
+  inline std::optional<ScanMatchMode> create_std__optional_ScanMatchMode_(const ScanMatchMode& value) noexcept {
+    return std::optional<ScanMatchMode>(value);
+  }
+  inline bool has_value_std__optional_ScanMatchMode_(const std::optional<ScanMatchMode>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline ScanMatchMode get_std__optional_ScanMatchMode_(const std::optional<ScanMatchMode>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<ScanPhy>
+  /**
+   * Specialized version of `std::optional<ScanPhy>`.
+   */
+  using std__optional_ScanPhy_ = std::optional<ScanPhy>;
+  inline std::optional<ScanPhy> create_std__optional_ScanPhy_(const ScanPhy& value) noexcept {
+    return std::optional<ScanPhy>(value);
+  }
+  inline bool has_value_std__optional_ScanPhy_(const std::optional<ScanPhy>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline ScanPhy get_std__optional_ScanPhy_(const std::optional<ScanPhy>& optional) noexcept {
     return optional.value();
   }
   

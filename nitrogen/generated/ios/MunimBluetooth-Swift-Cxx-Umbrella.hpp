@@ -66,10 +66,16 @@ namespace margelo::nitro::munimbluetooth { struct PeripheralRequestOptions; }
 namespace margelo::nitro::munimbluetooth { enum class PeripheralRequestStatus; }
 // Forward declaration of `PhyStatus` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct PhyStatus; }
+// Forward declaration of `ScanCallbackType` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanCallbackType; }
+// Forward declaration of `ScanMatchMode` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanMatchMode; }
 // Forward declaration of `ScanMode` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class ScanMode; }
 // Forward declaration of `ScanOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ScanOptions; }
+// Forward declaration of `ScanPhy` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class ScanPhy; }
 // Forward declaration of `ServiceDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ServiceDataEntry; }
 // Forward declaration of `WriteLengthType` to properly resolve imports.
@@ -107,8 +113,11 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include "PeripheralRequestOptions.hpp"
 #include "PeripheralRequestStatus.hpp"
 #include "PhyStatus.hpp"
+#include "ScanCallbackType.hpp"
+#include "ScanMatchMode.hpp"
 #include "ScanMode.hpp"
 #include "ScanOptions.hpp"
+#include "ScanPhy.hpp"
 #include "ServiceDataEntry.hpp"
 #include "WriteLengthType.hpp"
 #include "WriteType.hpp"

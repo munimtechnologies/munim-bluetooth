@@ -32,7 +32,37 @@ data class ScanOptions(
   val rssiThreshold: Double?,
   @DoNotStrip
   @Keep
-  val namePrefix: String?
+  val namePrefix: String?,
+  @DoNotStrip
+  @Keep
+  val deviceName: String?,
+  @DoNotStrip
+  @Keep
+  val deviceAddress: String?,
+  @DoNotStrip
+  @Keep
+  val manufacturerId: Double?,
+  @DoNotStrip
+  @Keep
+  val manufacturerData: String?,
+  @DoNotStrip
+  @Keep
+  val manufacturerDataMask: String?,
+  @DoNotStrip
+  @Keep
+  val reportDelayMs: Double?,
+  @DoNotStrip
+  @Keep
+  val callbackType: ScanCallbackType?,
+  @DoNotStrip
+  @Keep
+  val matchMode: ScanMatchMode?,
+  @DoNotStrip
+  @Keep
+  val legacy: Boolean?,
+  @DoNotStrip
+  @Keep
+  val phy: ScanPhy?
 ) {
   /* primary constructor */
 
@@ -44,6 +74,16 @@ data class ScanOptions(
       && Objects.deepEquals(this.scanMode, other.scanMode)
       && Objects.deepEquals(this.rssiThreshold, other.rssiThreshold)
       && Objects.deepEquals(this.namePrefix, other.namePrefix)
+      && Objects.deepEquals(this.deviceName, other.deviceName)
+      && Objects.deepEquals(this.deviceAddress, other.deviceAddress)
+      && Objects.deepEquals(this.manufacturerId, other.manufacturerId)
+      && Objects.deepEquals(this.manufacturerData, other.manufacturerData)
+      && Objects.deepEquals(this.manufacturerDataMask, other.manufacturerDataMask)
+      && Objects.deepEquals(this.reportDelayMs, other.reportDelayMs)
+      && Objects.deepEquals(this.callbackType, other.callbackType)
+      && Objects.deepEquals(this.matchMode, other.matchMode)
+      && Objects.deepEquals(this.legacy, other.legacy)
+      && Objects.deepEquals(this.phy, other.phy)
   }
 
   override fun hashCode(): Int {
@@ -52,7 +92,17 @@ data class ScanOptions(
       allowDuplicates,
       scanMode,
       rssiThreshold,
-      namePrefix
+      namePrefix,
+      deviceName,
+      deviceAddress,
+      manufacturerId,
+      manufacturerData,
+      manufacturerDataMask,
+      reportDelayMs,
+      callbackType,
+      matchMode,
+      legacy,
+      phy
     ).contentDeepHashCode()
   }
 
@@ -64,8 +114,8 @@ data class ScanOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(serviceUUIDs: Array<String>?, allowDuplicates: Boolean?, scanMode: ScanMode?, rssiThreshold: Double?, namePrefix: String?): ScanOptions {
-      return ScanOptions(serviceUUIDs, allowDuplicates, scanMode, rssiThreshold, namePrefix)
+    private fun fromCpp(serviceUUIDs: Array<String>?, allowDuplicates: Boolean?, scanMode: ScanMode?, rssiThreshold: Double?, namePrefix: String?, deviceName: String?, deviceAddress: String?, manufacturerId: Double?, manufacturerData: String?, manufacturerDataMask: String?, reportDelayMs: Double?, callbackType: ScanCallbackType?, matchMode: ScanMatchMode?, legacy: Boolean?, phy: ScanPhy?): ScanOptions {
+      return ScanOptions(serviceUUIDs, allowDuplicates, scanMode, rssiThreshold, namePrefix, deviceName, deviceAddress, manufacturerId, manufacturerData, manufacturerDataMask, reportDelayMs, callbackType, matchMode, legacy, phy)
     }
   }
 }

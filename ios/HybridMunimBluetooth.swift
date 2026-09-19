@@ -355,6 +355,9 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private var connectionTimeouts: [String: DispatchWorkItem] = [:]
     private var operationTimeouts: [String: DispatchWorkItem] = [:]
     private var scanOptions: ScanOptions?
+    /// Parsed in-process scan filters (CoreBluetooth only filters by service).
+    private var scanDeviceNameFilter: String?
+    private var scanManufacturerFilter: (companyId: UInt16, data: Data?, mask: Data?)?
     private var isScanning = false
     private var isBackgroundSessionActive = false
     private lazy var peripheralManagerDelegateProxy = PeripheralManagerDelegateProxy(owner: self)
@@ -888,7 +891,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 throw notPoweredOnError(centralManager.state, code: 1)
             }
 
+            let manufacturerFilter = try parseManufacturerScanFilter(options)
             scanOptions = options
+            scanDeviceNameFilter = options?.deviceName.flatMap { $0.isEmpty ? nil : $0 }
+            scanManufacturerFilter = manufacturerFilter
             isScanning = true
 
             var scanOptions: [String: Any] = [:]
@@ -904,10 +910,69 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
+    /// CoreBluetooth can only filter scans by service UUID, so the
+    /// manufacturer filter is parsed once here and applied per result.
+    private func parseManufacturerScanFilter(_ options: ScanOptions?) throws -> (companyId: UInt16, data: Data?, mask: Data?)? {
+        guard let options else { return nil }
+        let invalid = { (message: String) in
+            NSError(domain: "MunimBluetooth", code: 400, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+        guard let companyId = options.manufacturerId else {
+            if options.manufacturerData != nil || options.manufacturerDataMask != nil {
+                throw invalid("manufacturerData/manufacturerDataMask require manufacturerId")
+            }
+            return nil
+        }
+        guard companyId.isFinite, companyId >= 0, companyId <= Double(UInt16.max), companyId.rounded(.towardZero) == companyId else {
+            throw invalid("manufacturerId must be an integer between 0 and 65535")
+        }
+        var data: Data?
+        if let hex = options.manufacturerData, !hex.isEmpty {
+            guard let parsed = hexStringToData(hex) else { throw invalid("manufacturerData must be a hex string") }
+            data = parsed
+        }
+        var mask: Data?
+        if let hex = options.manufacturerDataMask, !hex.isEmpty {
+            guard let parsed = hexStringToData(hex) else { throw invalid("manufacturerDataMask must be a hex string") }
+            guard let data, parsed.count == data.count else {
+                throw invalid("manufacturerDataMask must be the same length as manufacturerData")
+            }
+            mask = parsed
+        }
+        return (UInt16(companyId), data, mask)
+    }
+
+    private func matchesManufacturerFilter(_ advertisementData: [String: Any]) -> Bool {
+        guard let filter = scanManufacturerFilter else { return true }
+        // CoreBluetooth reports manufacturer data with the little-endian
+        // company identifier still in front of the payload.
+        guard let raw = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data,
+              raw.count >= 2 else {
+            return false
+        }
+        let bytes = [UInt8](raw)
+        let companyId = UInt16(bytes[0]) | (UInt16(bytes[1]) << 8)
+        guard companyId == filter.companyId else { return false }
+        guard let expected = filter.data else { return true }
+        let payload = Array(bytes.dropFirst(2))
+        guard payload.count >= expected.count else { return false }
+        let expectedBytes = [UInt8](expected)
+        let maskBytes = filter.mask.map { [UInt8]($0) }
+        for index in 0..<expectedBytes.count {
+            let mask = maskBytes?[index] ?? 0xFF
+            if payload[index] & mask != expectedBytes[index] & mask {
+                return false
+            }
+        }
+        return true
+    }
+
     func stopScan() throws {
         try onBluetoothThread {
             centralManager?.stopScan()
             isScanning = false
+            scanDeviceNameFilter = nil
+            scanManufacturerFilter = nil
         }
     }
 
@@ -1600,7 +1665,17 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                         allowDuplicates: options.allowDuplicates,
                         scanMode: options.scanMode,
                         rssiThreshold: nil,
-                        namePrefix: nil
+                        namePrefix: nil,
+                        deviceName: nil,
+                        deviceAddress: nil,
+                        manufacturerId: nil,
+                        manufacturerData: nil,
+                        manufacturerDataMask: nil,
+                        reportDelayMs: nil,
+                        callbackType: nil,
+                        matchMode: nil,
+                        legacy: nil,
+                        phy: nil
                     )
                 )
                 emit("backgroundSessionStarted", body: [
@@ -3438,7 +3513,17 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 allowDuplicates: nil,
                 scanMode: nil,
                 rssiThreshold: nil,
-                namePrefix: nil
+                namePrefix: nil,
+                deviceName: nil,
+                deviceAddress: nil,
+                manufacturerId: nil,
+                manufacturerData: nil,
+                manufacturerDataMask: nil,
+                reportDelayMs: nil,
+                callbackType: nil,
+                matchMode: nil,
+                legacy: nil,
+                phy: nil
             )
             isScanning = true
             isBackgroundSessionActive = true
@@ -3468,6 +3553,16 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             guard matchesPrefix else {
                 return
             }
+        }
+
+        if let expectedName = scanDeviceNameFilter {
+            let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String
+            guard peripheral.name == expectedName || localName == expectedName else {
+                return
+            }
+        }
+        guard matchesManufacturerFilter(advertisementData) else {
+            return
         }
 
         let deviceId = peripheral.identifier.uuidString
