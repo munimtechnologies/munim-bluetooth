@@ -1,3 +1,9 @@
+## [0.8.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.8.0...v0.8.1) (2026-09-19)
+
+### 🐛 Bug Fixes
+
+* **ios:** stop optional option objects arriving as garbage in Release builds ([04e77ec](https://github.com/munimtechnologies/munim-bluetooth/commit/04e77eca7cbeb915e5604402d25dedd7e7db8979)), closes [margelo/nitro#1319](https://github.com/margelo/nitro/issues/1319) [swiftlang/swift#84848](https://github.com/swiftlang/swift/issues/84848)
+
 ## [0.8.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.7.2...v0.8.0) (2026-09-19)
 
 ### ✨ Features
