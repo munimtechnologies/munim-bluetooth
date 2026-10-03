@@ -272,6 +272,18 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
+  abstract fun requestSubrateMode(deviceId: String, mode: SubrateMode): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun startChannelSoundingSession(deviceId: String): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun stopChannelSoundingSession(deviceId: String): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
   abstract fun addListener(eventName: String): Unit
   
   @DoNotStrip

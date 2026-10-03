@@ -57,6 +57,12 @@ namespace margelo::nitro::munimbluetooth {
       jboolean supportsBackgroundBle = this->getFieldValue(fieldSupportsBackgroundBle);
       static const auto fieldSupportsMultipeerConnectivity = clazz->getField<jboolean>("supportsMultipeerConnectivity");
       jboolean supportsMultipeerConnectivity = this->getFieldValue(fieldSupportsMultipeerConnectivity);
+      static const auto fieldSupportsChannelSounding = clazz->getField<jboolean>("supportsChannelSounding");
+      jboolean supportsChannelSounding = this->getFieldValue(fieldSupportsChannelSounding);
+      static const auto fieldSupportsLeHighDataThroughputPhy = clazz->getField<jboolean>("supportsLeHighDataThroughputPhy");
+      jboolean supportsLeHighDataThroughputPhy = this->getFieldValue(fieldSupportsLeHighDataThroughputPhy);
+      static const auto fieldSupportsConnectionSubrating = clazz->getField<jboolean>("supportsConnectionSubrating");
+      jboolean supportsConnectionSubrating = this->getFieldValue(fieldSupportsConnectionSubrating);
       return BluetoothCapabilities(
         platform->toStdString(),
         static_cast<bool>(supportsBleCentral),
@@ -70,7 +76,10 @@ namespace margelo::nitro::munimbluetooth {
         static_cast<bool>(supportsL2cap),
         static_cast<bool>(supportsClassicBluetooth),
         static_cast<bool>(supportsBackgroundBle),
-        static_cast<bool>(supportsMultipeerConnectivity)
+        static_cast<bool>(supportsMultipeerConnectivity),
+        static_cast<bool>(supportsChannelSounding),
+        static_cast<bool>(supportsLeHighDataThroughputPhy),
+        static_cast<bool>(supportsConnectionSubrating)
       );
     }
 
@@ -80,7 +89,7 @@ namespace margelo::nitro::munimbluetooth {
      */
     [[maybe_unused]]
     static jni::local_ref<JBluetoothCapabilities::javaobject> fromCpp(const BluetoothCapabilities& value) {
-      using JSignature = JBluetoothCapabilities(jni::alias_ref<jni::JString>, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean);
+      using JSignature = JBluetoothCapabilities(jni::alias_ref<jni::JString>, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -97,7 +106,10 @@ namespace margelo::nitro::munimbluetooth {
         value.supportsL2cap,
         value.supportsClassicBluetooth,
         value.supportsBackgroundBle,
-        value.supportsMultipeerConnectivity
+        value.supportsMultipeerConnectivity,
+        value.supportsChannelSounding,
+        value.supportsLeHighDataThroughputPhy,
+        value.supportsConnectionSubrating
       );
     }
   };

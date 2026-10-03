@@ -73,6 +73,9 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func rejectMultipeerInvitation(invitationId: String) throws -> Void
   func getMultipeerPeers() throws -> Promise<[MultipeerPeer]>
   func sendMultipeerMessage(value: String, peerIds: [String]?, reliable: Bool?) throws -> Promise<Void>
+  func requestSubrateMode(deviceId: String, mode: SubrateMode) throws -> Promise<Void>
+  func startChannelSoundingSession(deviceId: String) throws -> Promise<Void>
+  func stopChannelSoundingSession(deviceId: String) throws -> Promise<Void>
   func addListener(eventName: String) throws -> Void
   func removeListeners(count: Double) throws -> Void
 }

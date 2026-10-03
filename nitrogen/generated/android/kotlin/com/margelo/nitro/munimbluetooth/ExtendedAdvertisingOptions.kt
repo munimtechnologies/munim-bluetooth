@@ -59,6 +59,9 @@ data class ExtendedAdvertisingOptions(
   val txPowerLevel: Double?,
   @DoNotStrip
   @Keep
+  val maxTxPower: Boolean?,
+  @DoNotStrip
+  @Keep
   val primaryPhy: BluetoothPhy?,
   @DoNotStrip
   @Keep
@@ -82,6 +85,7 @@ data class ExtendedAdvertisingOptions(
       && Objects.deepEquals(this.includeTxPower, other.includeTxPower)
       && Objects.deepEquals(this.interval, other.interval)
       && Objects.deepEquals(this.txPowerLevel, other.txPowerLevel)
+      && Objects.deepEquals(this.maxTxPower, other.maxTxPower)
       && Objects.deepEquals(this.primaryPhy, other.primaryPhy)
       && Objects.deepEquals(this.secondaryPhy, other.secondaryPhy)
   }
@@ -101,6 +105,7 @@ data class ExtendedAdvertisingOptions(
       includeTxPower,
       interval,
       txPowerLevel,
+      maxTxPower,
       primaryPhy,
       secondaryPhy
     ).contentDeepHashCode()
@@ -114,8 +119,8 @@ data class ExtendedAdvertisingOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(serviceUUIDs: Array<String>?, localName: String?, manufacturerData: String?, manufacturerCompanyId: Double?, manufacturerDataEntries: Array<ManufacturerDataEntry>?, advertisingData: AdvertisingDataTypes?, connectable: Boolean?, scannable: Boolean?, legacyMode: Boolean?, anonymous: Boolean?, includeTxPower: Boolean?, interval: Double?, txPowerLevel: Double?, primaryPhy: BluetoothPhy?, secondaryPhy: BluetoothPhy?): ExtendedAdvertisingOptions {
-      return ExtendedAdvertisingOptions(serviceUUIDs, localName, manufacturerData, manufacturerCompanyId, manufacturerDataEntries, advertisingData, connectable, scannable, legacyMode, anonymous, includeTxPower, interval, txPowerLevel, primaryPhy, secondaryPhy)
+    private fun fromCpp(serviceUUIDs: Array<String>?, localName: String?, manufacturerData: String?, manufacturerCompanyId: Double?, manufacturerDataEntries: Array<ManufacturerDataEntry>?, advertisingData: AdvertisingDataTypes?, connectable: Boolean?, scannable: Boolean?, legacyMode: Boolean?, anonymous: Boolean?, includeTxPower: Boolean?, interval: Double?, txPowerLevel: Double?, maxTxPower: Boolean?, primaryPhy: BluetoothPhy?, secondaryPhy: BluetoothPhy?): ExtendedAdvertisingOptions {
+      return ExtendedAdvertisingOptions(serviceUUIDs, localName, manufacturerData, manufacturerCompanyId, manufacturerDataEntries, advertisingData, connectable, scannable, legacyMode, anonymous, includeTxPower, interval, txPowerLevel, maxTxPower, primaryPhy, secondaryPhy)
     }
   }
 }

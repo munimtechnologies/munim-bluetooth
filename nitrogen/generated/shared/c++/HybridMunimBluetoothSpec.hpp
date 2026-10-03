@@ -61,6 +61,8 @@ namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
 namespace margelo::nitro::munimbluetooth { struct MultipeerSessionOptions; }
 // Forward declaration of `MultipeerPeer` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
+// Forward declaration of `SubrateMode` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class SubrateMode; }
 
 #include "AdvertisingOptions.hpp"
 #include "AdvertisingDataTypes.hpp"
@@ -90,6 +92,7 @@ namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 #include "BackgroundSessionOptions.hpp"
 #include "MultipeerSessionOptions.hpp"
 #include "MultipeerPeer.hpp"
+#include "SubrateMode.hpp"
 
 namespace margelo::nitro::munimbluetooth {
 
@@ -182,6 +185,9 @@ namespace margelo::nitro::munimbluetooth {
       virtual void rejectMultipeerInvitation(const std::string& invitationId) = 0;
       virtual std::shared_ptr<Promise<std::vector<MultipeerPeer>>> getMultipeerPeers() = 0;
       virtual std::shared_ptr<Promise<void>> sendMultipeerMessage(const std::string& value, const std::optional<std::vector<std::string>>& peerIds, std::optional<bool> reliable) = 0;
+      virtual std::shared_ptr<Promise<void>> requestSubrateMode(const std::string& deviceId, SubrateMode mode) = 0;
+      virtual std::shared_ptr<Promise<void>> startChannelSoundingSession(const std::string& deviceId) = 0;
+      virtual std::shared_ptr<Promise<void>> stopChannelSoundingSession(const std::string& deviceId) = 0;
       virtual void addListener(const std::string& eventName) = 0;
       virtual void removeListeners(double count) = 0;
 

@@ -114,6 +114,9 @@ namespace margelo::nitro::munimbluetooth {
     void rejectMultipeerInvitation(const std::string& invitationId) override;
     std::shared_ptr<Promise<std::vector<MultipeerPeer>>> getMultipeerPeers() override;
     std::shared_ptr<Promise<void>> sendMultipeerMessage(const std::string& value, const std::optional<std::vector<std::string>>& peerIds, std::optional<bool> reliable) override;
+    std::shared_ptr<Promise<void>> requestSubrateMode(const std::string& deviceId, SubrateMode mode) override;
+    std::shared_ptr<Promise<void>> startChannelSoundingSession(const std::string& deviceId) override;
+    std::shared_ptr<Promise<void>> stopChannelSoundingSession(const std::string& deviceId) override;
     void addListener(const std::string& eventName) override;
     void removeListeners(double count) override;
 

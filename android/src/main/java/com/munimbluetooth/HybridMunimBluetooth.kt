@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattConnectionSettings
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattServerCallback
@@ -84,6 +85,7 @@ import com.margelo.nitro.munimbluetooth.ScanMode
 import com.margelo.nitro.munimbluetooth.ScanPhy
 import com.margelo.nitro.munimbluetooth.ScanOptions
 import com.margelo.nitro.munimbluetooth.ServiceDataEntry
+import com.margelo.nitro.munimbluetooth.SubrateMode
 import com.margelo.nitro.munimbluetooth.WriteLengthType
 import com.margelo.nitro.munimbluetooth.WriteType
 import kotlinx.coroutines.CoroutineScope
@@ -98,6 +100,7 @@ import java.io.IOException
 import java.util.UUID
 import java.util.ArrayDeque
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executor
 
 @Keep
 @DoNotStrip
@@ -230,6 +233,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
     init {
         ensureAdapterStateReceiver()
+        ensureBondStateReceiver()
     }
 
     private fun getBluetoothManager(): BluetoothManager? {
@@ -815,9 +819,22 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 supportsL2cap = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
                 supportsClassicBluetooth = adapter != null,
                 supportsBackgroundBle = true,
-                supportsMultipeerConnectivity = false
+                supportsMultipeerConnectivity = false,
+                supportsChannelSounding = false,
+                supportsLeHighDataThroughputPhy = isLeHighDataThroughputPhySupported(adapter),
+                supportsConnectionSubrating = isAtLeastApi36_1()
             )
         )
+    }
+
+    private fun isLeHighDataThroughputPhySupported(adapter: BluetoothAdapter?): Boolean {
+        if (Build.VERSION.SDK_INT < API_CINNAMON_BUN || adapter == null) return false
+        return try {
+            adapter.isLeHighDataThroughputPhySupported() == BluetoothStatusCodes.FEATURE_SUPPORTED
+        } catch (error: SecurityException) {
+            Log.w(TAG, "isLeHighDataThroughputPhySupported needs BLUETOOTH_CONNECT", error)
+            false
+        }
     }
 
     override fun startScan(options: ScanOptions) {
@@ -1019,6 +1036,21 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                         ScanPhy.ALLSUPPORTED -> ScanSettings.PHY_LE_ALL_SUPPORTED
                     }
                 )
+            }
+        }
+        // API 36.1+: let the controller drop weak advertisements. The
+        // in-process filter in passesScanFilters() still applies everywhere.
+        if (isAtLeastApi36_1()) {
+            options?.rssiThreshold?.let { threshold ->
+                if (threshold.isFinite()) {
+                    try {
+                        builder.setRssiThreshold(
+                            threshold.toInt().coerceIn(SCAN_RSSI_THRESHOLD_MIN, SCAN_RSSI_THRESHOLD_MAX)
+                        )
+                    } catch (error: IllegalArgumentException) {
+                        Log.w(TAG, "Controller RSSI threshold rejected; filtering in-process only", error)
+                    }
+                }
             }
         }
         return builder.build()
@@ -1638,55 +1670,36 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         return promise
     }
 
+    /**
+     * Bond events for every device (not only ones this module bonds):
+     * ACTION_BOND_STATE_CHANGED (with the API 36.1+ bond-loss reason) and the
+     * API 36+ ACTION_KEY_MISSING / ACTION_ENCRYPTION_CHANGE broadcasts.
+     */
+    @Synchronized
     private fun ensureBondStateReceiver() {
         if (bondStateReceiver != null) return
         val context = NitroModules.applicationContext ?: return
 
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action != BluetoothDevice.ACTION_BOND_STATE_CHANGED) return
-                val device = getBluetoothDeviceExtra(intent) ?: return
-                val deviceId = device.address
-                val bondState = intent.getIntExtra(
-                    BluetoothDevice.EXTRA_BOND_STATE,
-                    BluetoothDevice.BOND_NONE
-                )
-                val previousBondState = intent.getIntExtra(
-                    BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
-                    BluetoothDevice.BOND_NONE
-                )
-
-                eventEmitter.emit(
-                    "bondStateChanged",
-                    mapOf(
-                        "deviceId" to deviceId,
-                        "bondState" to nativeBondStateToState(bondState).name.lowercase(),
-                        "previousBondState" to nativeBondStateToState(previousBondState).name.lowercase()
-                    )
-                )
-
-                when (bondState) {
-                    BluetoothDevice.BOND_BONDED -> {
-                        pendingBondTimeouts.remove(deviceId)?.cancel()
-                        pendingBondPromises.remove(deviceId)?.resolve(BondState.BONDED)
-                    }
-
-                    BluetoothDevice.BOND_NONE -> {
-                        pendingBondTimeouts.remove(deviceId)?.cancel()
-                        pendingBondPromises.remove(deviceId)?.reject(
-                            IllegalStateException("Bonding failed for $deviceId")
-                        )
-                    }
+                when (intent.action) {
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> handleBondStateChanged(intent)
+                    BluetoothDevice.ACTION_KEY_MISSING -> handleKeyMissing(intent)
+                    BluetoothDevice.ACTION_ENCRYPTION_CHANGE -> handleEncryptionChange(intent)
                 }
             }
         }
 
         val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            filter.addAction(BluetoothDevice.ACTION_KEY_MISSING)
+            filter.addAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE)
+        }
         // Must stay RECEIVER_EXPORTED: Bluetooth broadcasts are sent by the
         // privileged Bluetooth app, not the system UID, and Android documents
         // that RECEIVER_NOT_EXPORTED receivers do not get broadcasts from
-        // "highly privileged apps, such as Bluetooth". The action is protected,
-        // so other apps cannot spoof it.
+        // "highly privileged apps, such as Bluetooth". The actions are
+        // protected, so other apps cannot spoof them.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
         } else {
@@ -1694,6 +1707,88 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             context.registerReceiver(receiver, filter)
         }
         bondStateReceiver = receiver
+    }
+
+    private fun handleKeyMissing(intent: Intent) {
+        val device = getBluetoothDeviceExtra(intent) ?: return
+        eventEmitter.emit("bondKeyMissing", mapOf("deviceId" to device.address))
+    }
+
+    private fun handleEncryptionChange(intent: Intent) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return
+        val device = getBluetoothDeviceExtra(intent) ?: return
+        val algorithm = intent.getIntExtra(BluetoothDevice.EXTRA_ENCRYPTION_ALGORITHM, -1)
+        val keySize = intent.getIntExtra(BluetoothDevice.EXTRA_KEY_SIZE, -1)
+        val transport = intent.getIntExtra(BluetoothDevice.EXTRA_TRANSPORT, -1)
+        eventEmitter.emit(
+            "encryptionChanged",
+            mapOf(
+                "deviceId" to device.address,
+                "status" to intent.getIntExtra(BluetoothDevice.EXTRA_ENCRYPTION_STATUS, -1),
+                "enabled" to intent.getBooleanExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, false),
+                "algorithm" to when (algorithm) {
+                    -1 -> null
+                    BluetoothDevice.ENCRYPTION_ALGORITHM_NONE -> "none"
+                    BluetoothDevice.ENCRYPTION_ALGORITHM_E0 -> "e0"
+                    BluetoothDevice.ENCRYPTION_ALGORITHM_AES -> "aes"
+                    else -> "unknown"
+                },
+                "keySize" to keySize.takeIf { it >= 0 },
+                "transport" to when (transport) {
+                    -1 -> null
+                    BluetoothDevice.TRANSPORT_AUTO -> "auto"
+                    BluetoothDevice.TRANSPORT_BREDR -> "bredr"
+                    BluetoothDevice.TRANSPORT_LE -> "le"
+                    else -> "unknown"
+                }
+            ).filterValues { it != null }
+        )
+    }
+
+    private fun bondLossReasonName(intent: Intent): String? {
+        if (!isAtLeastApi36_1() || !intent.hasExtra(BluetoothDevice.EXTRA_BOND_LOSS_REASON)) return null
+        return when (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_LOSS_REASON, BluetoothDevice.BOND_LOSS_REASON_UNKNOWN)) {
+            BluetoothDevice.BOND_LOSS_REASON_BREDR_AUTH_FAILURE -> "bredrAuthFailure"
+            BluetoothDevice.BOND_LOSS_REASON_BREDR_INCOMING_PAIRING -> "bredrIncomingPairing"
+            BluetoothDevice.BOND_LOSS_REASON_LE_ENCRYPT_FAILURE -> "leEncryptFailure"
+            BluetoothDevice.BOND_LOSS_REASON_LE_INCOMING_PAIRING -> "leIncomingPairing"
+            else -> "unknown"
+        }
+    }
+
+    private fun handleBondStateChanged(intent: Intent) {
+        val device = getBluetoothDeviceExtra(intent) ?: return
+        val deviceId = device.address
+        val bondState = intent.getIntExtra(
+            BluetoothDevice.EXTRA_BOND_STATE,
+            BluetoothDevice.BOND_NONE
+        )
+        val previousBondState = intent.getIntExtra(
+            BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
+            BluetoothDevice.BOND_NONE
+        )
+
+        val payload = mutableMapOf<String, Any?>(
+            "deviceId" to deviceId,
+            "bondState" to nativeBondStateToState(bondState).name.lowercase(),
+            "previousBondState" to nativeBondStateToState(previousBondState).name.lowercase()
+        )
+        bondLossReasonName(intent)?.let { payload["bondLossReason"] = it }
+        eventEmitter.emit("bondStateChanged", payload)
+
+        when (bondState) {
+            BluetoothDevice.BOND_BONDED -> {
+                pendingBondTimeouts.remove(deviceId)?.cancel()
+                pendingBondPromises.remove(deviceId)?.resolve(BondState.BONDED)
+            }
+
+            BluetoothDevice.BOND_NONE -> {
+                pendingBondTimeouts.remove(deviceId)?.cancel()
+                pendingBondPromises.remove(deviceId)?.reject(
+                    IllegalStateException("Bonding failed for $deviceId")
+                )
+            }
+        }
     }
 
     private fun nativeBondStateToState(bondState: Int): BondState {
@@ -1747,6 +1842,67 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
     }
 
+    override fun requestSubrateMode(deviceId: String, mode: SubrateMode): Promise<Unit> {
+        if (!isAtLeastApi36_1()) {
+            return unsupportedPromise("Connection subrating requires Android 16 QPR2 (API 36.1) or newer")
+        }
+        val gatt = connectedDevices[deviceId]
+            ?: return Promise.rejected(IllegalStateException("Device not connected: $deviceId"))
+        val nativeMode = when (mode) {
+            SubrateMode.OFF -> BluetoothGatt.SUBRATE_MODE_OFF
+            SubrateMode.LOW -> BluetoothGatt.SUBRATE_MODE_LOW
+            SubrateMode.BALANCED -> BluetoothGatt.SUBRATE_MODE_BALANCED
+            SubrateMode.HIGH -> BluetoothGatt.SUBRATE_MODE_HIGH
+        }
+        return try {
+            when (val status = gatt.requestSubrateMode(nativeMode)) {
+                BluetoothStatusCodes.SUCCESS -> Promise.resolved(Unit)
+                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED -> unsupportedPromise(
+                    "Connection subrating is not supported by this controller"
+                )
+                else -> Promise.rejected(
+                    IllegalStateException(
+                        "requestSubrateMode failed for $deviceId: ${bluetoothStatusName(status)} ($status)"
+                    )
+                )
+            }
+        } catch (error: SecurityException) {
+            Promise.rejected(error)
+        }
+    }
+
+    override fun startChannelSoundingSession(deviceId: String): Promise<Unit> {
+        return unsupportedPromise(CHANNEL_SOUNDING_UNSUPPORTED_MESSAGE)
+    }
+
+    override fun stopChannelSoundingSession(deviceId: String): Promise<Unit> {
+        return unsupportedPromise(CHANNEL_SOUNDING_UNSUPPORTED_MESSAGE)
+    }
+
+    private fun bluetoothStatusName(status: Int): String {
+        return when (status) {
+            BluetoothStatusCodes.SUCCESS -> "success"
+            BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED -> "Bluetooth not enabled"
+            BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED -> "Bluetooth not allowed"
+            BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED -> "device not bonded"
+            BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION -> "missing BLUETOOTH_CONNECT"
+            BluetoothStatusCodes.FEATURE_NOT_SUPPORTED -> "feature not supported"
+            else -> "error"
+        }
+    }
+
+    private fun subrateModeName(mode: Int): String {
+        return when (mode) {
+            BluetoothGatt.SUBRATE_MODE_OFF -> "off"
+            BluetoothGatt.SUBRATE_MODE_LOW -> "low"
+            BluetoothGatt.SUBRATE_MODE_BALANCED -> "balanced"
+            BluetoothGatt.SUBRATE_MODE_HIGH -> "high"
+            BluetoothGatt.SUBRATE_MODE_SYSTEM_UPDATE -> "systemUpdate"
+            BluetoothGatt.SUBRATE_MODE_NOT_UPDATED -> "notUpdated"
+            else -> "unknown"
+        }
+    }
+
     override fun startExtendedAdvertising(options: ExtendedAdvertisingOptions): Promise<String> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return unsupportedPromise("BLE extended advertising requires Android 8.0 or newer")
@@ -1797,7 +1953,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             .setPrimaryPhy(phyToAdvertisingPhy(options.primaryPhy ?: BluetoothPhy.LE1M))
             .setSecondaryPhy(phyToAdvertisingPhy(options.secondaryPhy ?: BluetoothPhy.LE1M))
             .setInterval(options.interval?.toInt() ?: AdvertisingSetParameters.INTERVAL_MEDIUM)
-            .setTxPowerLevel(options.txPowerLevel?.toInt() ?: AdvertisingSetParameters.TX_POWER_HIGH)
+            .setTxPowerLevel(extendedAdvertisingTxPower(options))
             .build()
 
         val callback = object : AdvertisingSetCallback() {
@@ -1835,6 +1991,23 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             callback
         )
         return promise
+    }
+
+    /**
+     * Android 17 (API 37) raised the advertising TX power ceiling from
+     * TX_POWER_MAX (1 dBm) to TX_POWER_MAX_AVAILABLE (20 dBm).
+     */
+    private fun extendedAdvertisingTxPower(options: ExtendedAdvertisingOptions): Int {
+        @Suppress("DEPRECATION")
+        val maxTxPower = if (Build.VERSION.SDK_INT >= API_CINNAMON_BUN) {
+            AdvertisingSetParameters.TX_POWER_MAX_AVAILABLE
+        } else {
+            AdvertisingSetParameters.TX_POWER_MAX
+        }
+        if (options.maxTxPower == true) return maxTxPower
+        val requested = options.txPowerLevel?.takeIf { it.isFinite() }?.toInt()
+            ?: return AdvertisingSetParameters.TX_POWER_HIGH
+        return requested.coerceIn(AdvertisingSetParameters.TX_POWER_MIN, maxTxPower)
     }
 
     override fun stopExtendedAdvertising(advertisingId: String) {
@@ -3181,6 +3354,19 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 handleServicesChanged(deviceId)
             }
 
+            // API 36.1+: the LE connection subrate changed, either after
+            // requestSubrateMode() or because the stack/peer updated it.
+            override fun onSubrateChange(gatt: BluetoothGatt, subrateMode: Int, status: Int) {
+                eventEmitter.emit(
+                    "subrateChanged",
+                    mapOf(
+                        "deviceId" to deviceId,
+                        "mode" to subrateModeName(subrateMode),
+                        "status" to status
+                    )
+                )
+            }
+
             override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
                 completeGattOperation(deviceId, setOf("readRSSI"), deviceId, status) {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -3324,10 +3510,46 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
 
         val autoConnect = pendingConnectionAutoConnect[deviceId] ?: false
-        val gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            device.connectGatt(context, autoConnect, createGattCallback(deviceId), BluetoothDevice.TRANSPORT_LE)
-        } else {
-            device.connectGatt(context, autoConnect, createGattCallback(deviceId))
+        val callback = createGattCallback(deviceId)
+        val gatt: BluetoothGatt? = try {
+            when {
+                // API 37 deprecates the Context overloads in favour of a
+                // settings object. The direct executor keeps callbacks on
+                // the Bluetooth binder thread, as the old overloads did.
+                Build.VERSION.SDK_INT >= API_CINNAMON_BUN -> {
+                    val settings = BluetoothGattConnectionSettings.Builder()
+                        .setAutoConnectEnabled(autoConnect)
+                        .setTransport(BluetoothDevice.TRANSPORT_LE)
+                        .build()
+                    device.connectGatt(settings, DIRECT_EXECUTOR, callback)
+                }
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
+                    @Suppress("DEPRECATION")
+                    device.connectGatt(context, autoConnect, callback, BluetoothDevice.TRANSPORT_LE)
+                }
+                else -> {
+                    @Suppress("DEPRECATION")
+                    device.connectGatt(context, autoConnect, callback)
+                }
+            }
+        } catch (error: SecurityException) {
+            pendingConnectionTimeouts.remove(deviceId)?.cancel()
+            pendingConnectionAttempts.remove(deviceId)
+            pendingConnections.remove(deviceId)?.reject(error)
+            return
+        } catch (error: IllegalArgumentException) {
+            pendingConnectionTimeouts.remove(deviceId)?.cancel()
+            pendingConnectionAttempts.remove(deviceId)
+            pendingConnections.remove(deviceId)?.reject(error)
+            return
+        }
+        if (gatt == null) {
+            pendingConnectionTimeouts.remove(deviceId)?.cancel()
+            pendingConnectionAttempts.remove(deviceId)
+            pendingConnections.remove(deviceId)?.reject(
+                IllegalStateException("connectGatt returned no GATT client for $deviceId")
+            )
+            return
         }
         pendingConnectionGatts[deviceId] = gatt
     }
@@ -4598,8 +4820,26 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         previousAdapterName = null
     }
 
+    /**
+     * Subrating, the controller RSSI scan threshold and the bond-loss reason
+     * shipped in Android 16 QPR2 (API 36.1), a minor SDK release that
+     * SDK_INT alone cannot tell apart from 36.0.
+     */
+    private fun isAtLeastApi36_1(): Boolean {
+        return Build.VERSION.SDK_INT >= API_CINNAMON_BUN ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
+                Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1)
+    }
+
     companion object {
         private const val TAG = "HybridMunimBluetooth"
+        /** Android 17. Build.VERSION_CODES.CINNAMON_BUN on compileSdk 37. */
+        private const val API_CINNAMON_BUN = 37
+        private const val SCAN_RSSI_THRESHOLD_MIN = -127
+        private const val SCAN_RSSI_THRESHOLD_MAX = 20
+        private val DIRECT_EXECUTOR = Executor { command -> command.run() }
+        private const val CHANNEL_SOUNDING_UNSUPPORTED_MESSAGE =
+            "Bluetooth Channel Sounding is only available on iOS 27+; Android ranging (android.ranging) is not wrapped by munim-bluetooth"
         // ATT "Unlikely Error" (0x0E); not exposed as a constant by the Android SDK
         private const val GATT_UNLIKELY_ERROR = 0x0E
         private const val BLUETOOTH_PERMISSION_REQUEST_CODE = 9137

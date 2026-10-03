@@ -74,6 +74,9 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("rejectMultipeerInvitation", &HybridMunimBluetoothSpec::rejectMultipeerInvitation);
       prototype.registerHybridMethod("getMultipeerPeers", &HybridMunimBluetoothSpec::getMultipeerPeers);
       prototype.registerHybridMethod("sendMultipeerMessage", &HybridMunimBluetoothSpec::sendMultipeerMessage);
+      prototype.registerHybridMethod("requestSubrateMode", &HybridMunimBluetoothSpec::requestSubrateMode);
+      prototype.registerHybridMethod("startChannelSoundingSession", &HybridMunimBluetoothSpec::startChannelSoundingSession);
+      prototype.registerHybridMethod("stopChannelSoundingSession", &HybridMunimBluetoothSpec::stopChannelSoundingSession);
       prototype.registerHybridMethod("addListener", &HybridMunimBluetoothSpec::addListener);
       prototype.registerHybridMethod("removeListeners", &HybridMunimBluetoothSpec::removeListeners);
     });

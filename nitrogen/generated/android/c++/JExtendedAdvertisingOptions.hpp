@@ -67,6 +67,8 @@ namespace margelo::nitro::munimbluetooth {
       jni::local_ref<jni::JDouble> interval = this->getFieldValue(fieldInterval);
       static const auto fieldTxPowerLevel = clazz->getField<jni::JDouble>("txPowerLevel");
       jni::local_ref<jni::JDouble> txPowerLevel = this->getFieldValue(fieldTxPowerLevel);
+      static const auto fieldMaxTxPower = clazz->getField<jni::JBoolean>("maxTxPower");
+      jni::local_ref<jni::JBoolean> maxTxPower = this->getFieldValue(fieldMaxTxPower);
       static const auto fieldPrimaryPhy = clazz->getField<JBluetoothPhy>("primaryPhy");
       jni::local_ref<JBluetoothPhy> primaryPhy = this->getFieldValue(fieldPrimaryPhy);
       static const auto fieldSecondaryPhy = clazz->getField<JBluetoothPhy>("secondaryPhy");
@@ -103,6 +105,7 @@ namespace margelo::nitro::munimbluetooth {
         includeTxPower != nullptr ? std::make_optional(static_cast<bool>(includeTxPower->value())) : std::nullopt,
         interval != nullptr ? std::make_optional(interval->value()) : std::nullopt,
         txPowerLevel != nullptr ? std::make_optional(txPowerLevel->value()) : std::nullopt,
+        maxTxPower != nullptr ? std::make_optional(static_cast<bool>(maxTxPower->value())) : std::nullopt,
         primaryPhy != nullptr ? std::make_optional(primaryPhy->toCpp()) : std::nullopt,
         secondaryPhy != nullptr ? std::make_optional(secondaryPhy->toCpp()) : std::nullopt
       );
@@ -114,7 +117,7 @@ namespace margelo::nitro::munimbluetooth {
      */
     [[maybe_unused]]
     static jni::local_ref<JExtendedAdvertisingOptions::javaobject> fromCpp(const ExtendedAdvertisingOptions& value) {
-      using JSignature = JExtendedAdvertisingOptions(jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JArrayClass<JManufacturerDataEntry>>, jni::alias_ref<JAdvertisingDataTypes>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JDouble>, jni::alias_ref<JBluetoothPhy>, jni::alias_ref<JBluetoothPhy>);
+      using JSignature = JExtendedAdvertisingOptions(jni::alias_ref<jni::JArrayClass<jni::JString>>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JArrayClass<JManufacturerDataEntry>>, jni::alias_ref<JAdvertisingDataTypes>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<JBluetoothPhy>, jni::alias_ref<JBluetoothPhy>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -150,6 +153,7 @@ namespace margelo::nitro::munimbluetooth {
         value.includeTxPower.has_value() ? jni::JBoolean::valueOf(value.includeTxPower.value()) : nullptr,
         value.interval.has_value() ? jni::JDouble::valueOf(value.interval.value()) : nullptr,
         value.txPowerLevel.has_value() ? jni::JDouble::valueOf(value.txPowerLevel.value()) : nullptr,
+        value.maxTxPower.has_value() ? jni::JBoolean::valueOf(value.maxTxPower.value()) : nullptr,
         value.primaryPhy.has_value() ? JBluetoothPhy::fromCpp(value.primaryPhy.value()) : nullptr,
         value.secondaryPhy.has_value() ? JBluetoothPhy::fromCpp(value.secondaryPhy.value()) : nullptr
       );

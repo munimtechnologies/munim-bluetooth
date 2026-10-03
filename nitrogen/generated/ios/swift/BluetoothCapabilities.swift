@@ -18,8 +18,8 @@ public extension BluetoothCapabilities {
   /**
    * Create a new instance of `BluetoothCapabilities`.
    */
-  init(platform: String, supportsBleCentral: Bool, supportsBlePeripheral: Bool, supportsDescriptors: Bool, supportsIncludedServices: Bool, supportsMtu: Bool, supportsPhy: Bool, supportsBonding: Bool, supportsExtendedAdvertising: Bool, supportsL2cap: Bool, supportsClassicBluetooth: Bool, supportsBackgroundBle: Bool, supportsMultipeerConnectivity: Bool) {
-    self.init(std.string(platform), supportsBleCentral, supportsBlePeripheral, supportsDescriptors, supportsIncludedServices, supportsMtu, supportsPhy, supportsBonding, supportsExtendedAdvertising, supportsL2cap, supportsClassicBluetooth, supportsBackgroundBle, supportsMultipeerConnectivity)
+  init(platform: String, supportsBleCentral: Bool, supportsBlePeripheral: Bool, supportsDescriptors: Bool, supportsIncludedServices: Bool, supportsMtu: Bool, supportsPhy: Bool, supportsBonding: Bool, supportsExtendedAdvertising: Bool, supportsL2cap: Bool, supportsClassicBluetooth: Bool, supportsBackgroundBle: Bool, supportsMultipeerConnectivity: Bool, supportsChannelSounding: Bool, supportsLeHighDataThroughputPhy: Bool, supportsConnectionSubrating: Bool) {
+    self.init(std.string(platform), supportsBleCentral, supportsBlePeripheral, supportsDescriptors, supportsIncludedServices, supportsMtu, supportsPhy, supportsBonding, supportsExtendedAdvertising, supportsL2cap, supportsClassicBluetooth, supportsBackgroundBle, supportsMultipeerConnectivity, supportsChannelSounding, supportsLeHighDataThroughputPhy, supportsConnectionSubrating)
   }
 
   @inline(__always)
@@ -85,5 +85,20 @@ public extension BluetoothCapabilities {
   @inline(__always)
   var supportsMultipeerConnectivity: Bool {
     return self.__supportsMultipeerConnectivity
+  }
+  
+  @inline(__always)
+  var supportsChannelSounding: Bool {
+    return self.__supportsChannelSounding
+  }
+  
+  @inline(__always)
+  var supportsLeHighDataThroughputPhy: Bool {
+    return self.__supportsLeHighDataThroughputPhy
+  }
+  
+  @inline(__always)
+  var supportsConnectionSubrating: Bool {
+    return self.__supportsConnectionSubrating
   }
 }

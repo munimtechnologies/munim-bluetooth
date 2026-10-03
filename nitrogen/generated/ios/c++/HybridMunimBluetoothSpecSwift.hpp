@@ -88,6 +88,8 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerEncryptionPrefere
 namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 // Forward declaration of `MultipeerPeerState` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
+// Forward declaration of `SubrateMode` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class SubrateMode; }
 
 #include "AdvertisingOptions.hpp"
 #include <string>
@@ -131,6 +133,7 @@ namespace margelo::nitro::munimbluetooth { enum class MultipeerPeerState; }
 #include "MultipeerEncryptionPreference.hpp"
 #include "MultipeerPeer.hpp"
 #include "MultipeerPeerState.hpp"
+#include "SubrateMode.hpp"
 
 #include "MunimBluetooth-Swift-Cxx-Umbrella.hpp"
 
@@ -614,6 +617,30 @@ namespace margelo::nitro::munimbluetooth {
     }
     inline std::shared_ptr<Promise<void>> sendMultipeerMessage(const std::string& value, const std::optional<std::vector<std::string>>& peerIds, std::optional<bool> reliable) override {
       auto __result = _swiftPart.sendMultipeerMessage(value, peerIds, reliable);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<Promise<void>> requestSubrateMode(const std::string& deviceId, SubrateMode mode) override {
+      auto __result = _swiftPart.requestSubrateMode(deviceId, static_cast<int>(mode));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<Promise<void>> startChannelSoundingSession(const std::string& deviceId) override {
+      auto __result = _swiftPart.startChannelSoundingSession(deviceId);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<Promise<void>> stopChannelSoundingSession(const std::string& deviceId) override {
+      auto __result = _swiftPart.stopChannelSoundingSession(deviceId);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

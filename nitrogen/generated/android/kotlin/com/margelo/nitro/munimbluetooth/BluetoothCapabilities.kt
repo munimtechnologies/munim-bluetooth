@@ -56,7 +56,16 @@ data class BluetoothCapabilities(
   val supportsBackgroundBle: Boolean,
   @DoNotStrip
   @Keep
-  val supportsMultipeerConnectivity: Boolean
+  val supportsMultipeerConnectivity: Boolean,
+  @DoNotStrip
+  @Keep
+  val supportsChannelSounding: Boolean,
+  @DoNotStrip
+  @Keep
+  val supportsLeHighDataThroughputPhy: Boolean,
+  @DoNotStrip
+  @Keep
+  val supportsConnectionSubrating: Boolean
 ) {
   /* primary constructor */
 
@@ -76,6 +85,9 @@ data class BluetoothCapabilities(
       && Objects.deepEquals(this.supportsClassicBluetooth, other.supportsClassicBluetooth)
       && Objects.deepEquals(this.supportsBackgroundBle, other.supportsBackgroundBle)
       && Objects.deepEquals(this.supportsMultipeerConnectivity, other.supportsMultipeerConnectivity)
+      && Objects.deepEquals(this.supportsChannelSounding, other.supportsChannelSounding)
+      && Objects.deepEquals(this.supportsLeHighDataThroughputPhy, other.supportsLeHighDataThroughputPhy)
+      && Objects.deepEquals(this.supportsConnectionSubrating, other.supportsConnectionSubrating)
   }
 
   override fun hashCode(): Int {
@@ -92,7 +104,10 @@ data class BluetoothCapabilities(
       supportsL2cap,
       supportsClassicBluetooth,
       supportsBackgroundBle,
-      supportsMultipeerConnectivity
+      supportsMultipeerConnectivity,
+      supportsChannelSounding,
+      supportsLeHighDataThroughputPhy,
+      supportsConnectionSubrating
     ).contentDeepHashCode()
   }
 
@@ -104,8 +119,8 @@ data class BluetoothCapabilities(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(platform: String, supportsBleCentral: Boolean, supportsBlePeripheral: Boolean, supportsDescriptors: Boolean, supportsIncludedServices: Boolean, supportsMtu: Boolean, supportsPhy: Boolean, supportsBonding: Boolean, supportsExtendedAdvertising: Boolean, supportsL2cap: Boolean, supportsClassicBluetooth: Boolean, supportsBackgroundBle: Boolean, supportsMultipeerConnectivity: Boolean): BluetoothCapabilities {
-      return BluetoothCapabilities(platform, supportsBleCentral, supportsBlePeripheral, supportsDescriptors, supportsIncludedServices, supportsMtu, supportsPhy, supportsBonding, supportsExtendedAdvertising, supportsL2cap, supportsClassicBluetooth, supportsBackgroundBle, supportsMultipeerConnectivity)
+    private fun fromCpp(platform: String, supportsBleCentral: Boolean, supportsBlePeripheral: Boolean, supportsDescriptors: Boolean, supportsIncludedServices: Boolean, supportsMtu: Boolean, supportsPhy: Boolean, supportsBonding: Boolean, supportsExtendedAdvertising: Boolean, supportsL2cap: Boolean, supportsClassicBluetooth: Boolean, supportsBackgroundBle: Boolean, supportsMultipeerConnectivity: Boolean, supportsChannelSounding: Boolean, supportsLeHighDataThroughputPhy: Boolean, supportsConnectionSubrating: Boolean): BluetoothCapabilities {
+      return BluetoothCapabilities(platform, supportsBleCentral, supportsBlePeripheral, supportsDescriptors, supportsIncludedServices, supportsMtu, supportsPhy, supportsBonding, supportsExtendedAdvertising, supportsL2cap, supportsClassicBluetooth, supportsBackgroundBle, supportsMultipeerConnectivity, supportsChannelSounding, supportsLeHighDataThroughputPhy, supportsConnectionSubrating)
     }
   }
 }

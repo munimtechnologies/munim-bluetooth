@@ -178,6 +178,18 @@ private final class PeripheralDelegateProxy: NSObject, CBPeripheralDelegate {
     func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
         owner?.handlePeripheralIsReadyToSendWriteWithoutResponse(peripheral)
     }
+
+#if compiler(>=6.4) && os(iOS) && !targetEnvironment(macCatalyst)
+    @available(iOS 27, *)
+    func peripheral(_ peripheral: CBPeripheral, didReceive results: CBChannelSoundingProcedureResults?, error: Error?) {
+        owner?.handleChannelSoundingResults(peripheral, distance: results?.distance, error: error)
+    }
+
+    @available(iOS 27, *)
+    func peripheral(_ peripheral: CBPeripheral, didCompleteChannelSoundingSession error: Error?) {
+        owner?.handleChannelSoundingCompleted(peripheral, error: error)
+    }
+#endif
 }
 
 private final class L2CAPStreamDelegateProxy: NSObject, StreamDelegate {
@@ -887,7 +899,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 supportsL2cap: true,
                 supportsClassicBluetooth: false,
                 supportsBackgroundBle: true,
-                supportsMultipeerConnectivity: true
+                supportsMultipeerConnectivity: true,
+                supportsChannelSounding: Self.isChannelSoundingSupported(),
+                supportsLeHighDataThroughputPhy: false,
+                supportsConnectionSubrating: false
             ))
             return promise
         }
@@ -1499,6 +1514,97 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
     func removeBond(deviceId: String) throws -> Promise<BondState> {
         unsupportedPromise("Removing bonds is not exposed by iOS public APIs")
+    }
+
+    func requestSubrateMode(deviceId: String, mode: SubrateMode) throws -> Promise<Void> {
+        unsupportedPromise("Connection subrating is not exposed by CoreBluetooth; iOS manages connection parameters itself")
+    }
+
+    // MARK: - Channel Sounding (iOS 27)
+
+    /// CBCentralManager.supports(.channelSounding): N1-chip hardware in a
+    /// region that allows Channel Sounding. Needs no manager instance, so it
+    /// never triggers the Bluetooth permission prompt.
+    private static func isChannelSoundingSupported() -> Bool {
+#if compiler(>=6.4) && os(iOS) && !targetEnvironment(macCatalyst)
+        if #available(iOS 27, *) {
+            return CBCentralManager.supports(.channelSounding)
+        }
+#endif
+        return false
+    }
+
+    private static var channelSoundingUnavailableMessage: String {
+#if compiler(>=6.4) && os(iOS) && !targetEnvironment(macCatalyst)
+        return "Bluetooth Channel Sounding requires iOS 27 or newer"
+#else
+        return "Bluetooth Channel Sounding requires iOS 27 and an app built with Xcode 27 or newer"
+#endif
+    }
+
+    func startChannelSoundingSession(deviceId: String) throws -> Promise<Void> {
+#if compiler(>=6.4) && os(iOS) && !targetEnvironment(macCatalyst)
+        if #available(iOS 27, *) {
+            return try onBluetoothThread {
+                let promise = Promise<Void>()
+                guard CBCentralManager.supports(.channelSounding) else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 501, userInfo: [
+                        NSLocalizedDescriptionKey: "Bluetooth Channel Sounding is not supported on this device or in this region"
+                    ]))
+                    return promise
+                }
+                guard let peripheral = connectedPeripherals[deviceId] else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                    return promise
+                }
+                peripheral.delegate = peripheralDelegateProxy
+                peripheral.startChannelSoundingSession(CBChannelSoundingSessionConfiguration(role: .initiator))
+                promise.resolve(withResult: ())
+                return promise
+            }
+        }
+#endif
+        return unsupportedPromise(Self.channelSoundingUnavailableMessage)
+    }
+
+    func stopChannelSoundingSession(deviceId: String) throws -> Promise<Void> {
+#if compiler(>=6.4) && os(iOS) && !targetEnvironment(macCatalyst)
+        if #available(iOS 27, *) {
+            return try onBluetoothThread {
+                let promise = Promise<Void>()
+                guard let peripheral = connectedPeripherals[deviceId] else {
+                    promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Device not connected"]))
+                    return promise
+                }
+                // Cancelling without an active session is a no-op; the end of
+                // a real session is reported by channelSoundingCompleted.
+                peripheral.cancelChannelSoundingSession()
+                promise.resolve(withResult: ())
+                return promise
+            }
+        }
+#endif
+        return unsupportedPromise(Self.channelSoundingUnavailableMessage)
+    }
+
+    func handleChannelSoundingResults(_ peripheral: CBPeripheral, distance: Double?, error: Error?) {
+        var body: [String: Any] = ["deviceId": peripheral.identifier.uuidString]
+        if let error {
+            body["error"] = error.localizedDescription
+            body["errorCode"] = (error as NSError).code
+        } else if let distance {
+            body["distance"] = distance
+        }
+        emit("channelSoundingResults", body: body)
+    }
+
+    func handleChannelSoundingCompleted(_ peripheral: CBPeripheral, error: Error?) {
+        var body: [String: Any] = ["deviceId": peripheral.identifier.uuidString]
+        if let error {
+            body["error"] = error.localizedDescription
+            body["errorCode"] = (error as NSError).code
+        }
+        emit("channelSoundingCompleted", body: body)
     }
 
     func startExtendedAdvertising(options: ExtendedAdvertisingOptions) throws -> Promise<String> {

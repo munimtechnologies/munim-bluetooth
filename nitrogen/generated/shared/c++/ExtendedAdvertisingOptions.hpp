@@ -62,12 +62,13 @@ namespace margelo::nitro::munimbluetooth {
     std::optional<bool> includeTxPower     SWIFT_PRIVATE;
     std::optional<double> interval     SWIFT_PRIVATE;
     std::optional<double> txPowerLevel     SWIFT_PRIVATE;
+    std::optional<bool> maxTxPower     SWIFT_PRIVATE;
     std::optional<BluetoothPhy> primaryPhy     SWIFT_PRIVATE;
     std::optional<BluetoothPhy> secondaryPhy     SWIFT_PRIVATE;
 
   public:
     ExtendedAdvertisingOptions() = default;
-    explicit ExtendedAdvertisingOptions(std::optional<std::vector<std::string>> serviceUUIDs, std::optional<std::string> localName, std::optional<std::string> manufacturerData, std::optional<double> manufacturerCompanyId, std::optional<std::vector<ManufacturerDataEntry>> manufacturerDataEntries, std::optional<AdvertisingDataTypes> advertisingData, std::optional<bool> connectable, std::optional<bool> scannable, std::optional<bool> legacyMode, std::optional<bool> anonymous, std::optional<bool> includeTxPower, std::optional<double> interval, std::optional<double> txPowerLevel, std::optional<BluetoothPhy> primaryPhy, std::optional<BluetoothPhy> secondaryPhy): serviceUUIDs(serviceUUIDs), localName(localName), manufacturerData(manufacturerData), manufacturerCompanyId(manufacturerCompanyId), manufacturerDataEntries(manufacturerDataEntries), advertisingData(advertisingData), connectable(connectable), scannable(scannable), legacyMode(legacyMode), anonymous(anonymous), includeTxPower(includeTxPower), interval(interval), txPowerLevel(txPowerLevel), primaryPhy(primaryPhy), secondaryPhy(secondaryPhy) {}
+    explicit ExtendedAdvertisingOptions(std::optional<std::vector<std::string>> serviceUUIDs, std::optional<std::string> localName, std::optional<std::string> manufacturerData, std::optional<double> manufacturerCompanyId, std::optional<std::vector<ManufacturerDataEntry>> manufacturerDataEntries, std::optional<AdvertisingDataTypes> advertisingData, std::optional<bool> connectable, std::optional<bool> scannable, std::optional<bool> legacyMode, std::optional<bool> anonymous, std::optional<bool> includeTxPower, std::optional<double> interval, std::optional<double> txPowerLevel, std::optional<bool> maxTxPower, std::optional<BluetoothPhy> primaryPhy, std::optional<BluetoothPhy> secondaryPhy): serviceUUIDs(serviceUUIDs), localName(localName), manufacturerData(manufacturerData), manufacturerCompanyId(manufacturerCompanyId), manufacturerDataEntries(manufacturerDataEntries), advertisingData(advertisingData), connectable(connectable), scannable(scannable), legacyMode(legacyMode), anonymous(anonymous), includeTxPower(includeTxPower), interval(interval), txPowerLevel(txPowerLevel), maxTxPower(maxTxPower), primaryPhy(primaryPhy), secondaryPhy(secondaryPhy) {}
 
   public:
     friend bool operator==(const ExtendedAdvertisingOptions& lhs, const ExtendedAdvertisingOptions& rhs) = default;
@@ -96,6 +97,7 @@ namespace margelo::nitro {
         JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "includeTxPower"))),
         JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "interval"))),
         JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "txPowerLevel"))),
+        JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "maxTxPower"))),
         JSIConverter<std::optional<margelo::nitro::munimbluetooth::BluetoothPhy>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "primaryPhy"))),
         JSIConverter<std::optional<margelo::nitro::munimbluetooth::BluetoothPhy>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "secondaryPhy")))
       );
@@ -115,6 +117,7 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "includeTxPower"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.includeTxPower));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "interval"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.interval));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "txPowerLevel"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.txPowerLevel));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "maxTxPower"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.maxTxPower));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "primaryPhy"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::BluetoothPhy>>::toJSI(runtime, arg.primaryPhy));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "secondaryPhy"), JSIConverter<std::optional<margelo::nitro::munimbluetooth::BluetoothPhy>>::toJSI(runtime, arg.secondaryPhy));
       return obj;
@@ -140,6 +143,7 @@ namespace margelo::nitro {
       if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "includeTxPower")))) return false;
       if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "interval")))) return false;
       if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "txPowerLevel")))) return false;
+      if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "maxTxPower")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::BluetoothPhy>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "primaryPhy")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::munimbluetooth::BluetoothPhy>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "secondaryPhy")))) return false;
       return true;

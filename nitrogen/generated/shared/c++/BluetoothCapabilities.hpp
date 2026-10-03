@@ -52,10 +52,13 @@ namespace margelo::nitro::munimbluetooth {
     bool supportsClassicBluetooth     SWIFT_PRIVATE;
     bool supportsBackgroundBle     SWIFT_PRIVATE;
     bool supportsMultipeerConnectivity     SWIFT_PRIVATE;
+    bool supportsChannelSounding     SWIFT_PRIVATE;
+    bool supportsLeHighDataThroughputPhy     SWIFT_PRIVATE;
+    bool supportsConnectionSubrating     SWIFT_PRIVATE;
 
   public:
     BluetoothCapabilities() = default;
-    explicit BluetoothCapabilities(std::string platform, bool supportsBleCentral, bool supportsBlePeripheral, bool supportsDescriptors, bool supportsIncludedServices, bool supportsMtu, bool supportsPhy, bool supportsBonding, bool supportsExtendedAdvertising, bool supportsL2cap, bool supportsClassicBluetooth, bool supportsBackgroundBle, bool supportsMultipeerConnectivity): platform(platform), supportsBleCentral(supportsBleCentral), supportsBlePeripheral(supportsBlePeripheral), supportsDescriptors(supportsDescriptors), supportsIncludedServices(supportsIncludedServices), supportsMtu(supportsMtu), supportsPhy(supportsPhy), supportsBonding(supportsBonding), supportsExtendedAdvertising(supportsExtendedAdvertising), supportsL2cap(supportsL2cap), supportsClassicBluetooth(supportsClassicBluetooth), supportsBackgroundBle(supportsBackgroundBle), supportsMultipeerConnectivity(supportsMultipeerConnectivity) {}
+    explicit BluetoothCapabilities(std::string platform, bool supportsBleCentral, bool supportsBlePeripheral, bool supportsDescriptors, bool supportsIncludedServices, bool supportsMtu, bool supportsPhy, bool supportsBonding, bool supportsExtendedAdvertising, bool supportsL2cap, bool supportsClassicBluetooth, bool supportsBackgroundBle, bool supportsMultipeerConnectivity, bool supportsChannelSounding, bool supportsLeHighDataThroughputPhy, bool supportsConnectionSubrating): platform(platform), supportsBleCentral(supportsBleCentral), supportsBlePeripheral(supportsBlePeripheral), supportsDescriptors(supportsDescriptors), supportsIncludedServices(supportsIncludedServices), supportsMtu(supportsMtu), supportsPhy(supportsPhy), supportsBonding(supportsBonding), supportsExtendedAdvertising(supportsExtendedAdvertising), supportsL2cap(supportsL2cap), supportsClassicBluetooth(supportsClassicBluetooth), supportsBackgroundBle(supportsBackgroundBle), supportsMultipeerConnectivity(supportsMultipeerConnectivity), supportsChannelSounding(supportsChannelSounding), supportsLeHighDataThroughputPhy(supportsLeHighDataThroughputPhy), supportsConnectionSubrating(supportsConnectionSubrating) {}
 
   public:
     friend bool operator==(const BluetoothCapabilities& lhs, const BluetoothCapabilities& rhs) = default;
@@ -83,7 +86,10 @@ namespace margelo::nitro {
         JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsL2cap"))),
         JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsClassicBluetooth"))),
         JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsBackgroundBle"))),
-        JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsMultipeerConnectivity")))
+        JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsMultipeerConnectivity"))),
+        JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsChannelSounding"))),
+        JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsLeHighDataThroughputPhy"))),
+        JSIConverter<bool>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsConnectionSubrating")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::munimbluetooth::BluetoothCapabilities& arg) {
@@ -101,6 +107,9 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "supportsClassicBluetooth"), JSIConverter<bool>::toJSI(runtime, arg.supportsClassicBluetooth));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "supportsBackgroundBle"), JSIConverter<bool>::toJSI(runtime, arg.supportsBackgroundBle));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "supportsMultipeerConnectivity"), JSIConverter<bool>::toJSI(runtime, arg.supportsMultipeerConnectivity));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "supportsChannelSounding"), JSIConverter<bool>::toJSI(runtime, arg.supportsChannelSounding));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "supportsLeHighDataThroughputPhy"), JSIConverter<bool>::toJSI(runtime, arg.supportsLeHighDataThroughputPhy));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "supportsConnectionSubrating"), JSIConverter<bool>::toJSI(runtime, arg.supportsConnectionSubrating));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -124,6 +133,9 @@ namespace margelo::nitro {
       if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsClassicBluetooth")))) return false;
       if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsBackgroundBle")))) return false;
       if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsMultipeerConnectivity")))) return false;
+      if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsChannelSounding")))) return false;
+      if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsLeHighDataThroughputPhy")))) return false;
+      if (!JSIConverter<bool>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "supportsConnectionSubrating")))) return false;
       return true;
     }
   };

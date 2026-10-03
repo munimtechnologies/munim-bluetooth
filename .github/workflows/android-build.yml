@@ -13,6 +13,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'example/android/**'
+      - 'example/*.tsx'
+      - 'example/package.json'
       - 'nitrogen/generated/shared/**'
       - 'nitrogen/generated/android/**'
       - 'cpp/**'
@@ -27,6 +29,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'example/android/**'
+      - 'example/*.tsx'
+      - 'example/package.json'
       - '**/nitrogen/generated/shared/**'
       - '**/nitrogen/generated/android/**'
       - 'cpp/**'
@@ -46,10 +50,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
 
-      - name: Install dependencies (bun)
-        run: bun install
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Setup JDK 17
         uses: actions/setup-java@v5

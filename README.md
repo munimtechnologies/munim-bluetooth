@@ -131,6 +131,9 @@
 | Extended advertising | ❌ | ✅ | Android 8+ supports `startExtendedAdvertising()` on hardware with LE extended advertising. iOS does not expose BLE extended advertising. |
 | BLE L2CAP channel streams | ✅ | ✅ | iOS uses CoreBluetooth LE Credit Based Channels. Android requires Android 10+ for LE CoC sockets. Published and outbound channels require encryption by default. |
 | Classic Bluetooth RFCOMM | ❌ | ✅ | Android supports discovery, SPP-style RFCOMM client connections, server/listener sockets, disconnect, write, and receive events. iOS apps cannot use public Classic Bluetooth RFCOMM APIs. |
+| Connection subrating | ❌ | ✅ | Android 16 QPR2+ (API 36.1): `requestSubrateMode()` plus `subrateChanged` events. iOS picks connection parameters itself. |
+| Bond / encryption events | ❌ | ✅ | `bondStateChanged` for every device (with `bondLossReason` on API 36.1+), `bondKeyMissing` and `encryptionChanged` on Android 16+. |
+| Bluetooth Channel Sounding (distance) | ✅ | ❌ | iOS 27+ on hardware reporting `supportsChannelSounding` (N1-chip iPhone + Bluetooth 6 Channel Sounding accessory), foreground only. Needs an app built with Xcode 27. |
 | Apple Multipeer Connectivity | ✅ | ❌ | iOS/iPadOS devices can discover peers, approve incoming invitations explicitly, manually invite selected peers, and exchange encrypted messages. Android cannot join Apple's Multipeer sessions; use BLE/GATT for iOS-to-Android. |
 
 Call `getCapabilities()` at runtime when you need optional behavior. Platform support can still vary by OS version, hardware, permissions, and app background state.
@@ -245,6 +248,8 @@ The example above asserts that scan results are never used to derive physical lo
 ```
 
 Use `["connect"]` for connection-only apps, or add `"advertise"` for peripheral/background advertising. Set `androidBluetoothPermissions` to `false` to manage every Android permission outside the plugin.
+
+**Build defaults.** The Android library compiles against `compileSdk` 37 (Android 17) with `minSdk` 24, matching React Native 0.87 (AGP 9.2, Kotlin 2.2). An app's `rootProject.ext` values (`compileSdkVersion`, `minSdkVersion`, `targetSdkVersion`, `ndkVersion`) override them. Android 16/17 APIs are only called behind runtime version checks, so the library still runs on Android 7.0+ devices.
 
 ## Device-to-Device Messaging
 
@@ -654,6 +659,12 @@ await requestBluetoothPermission(['advertise'])
 
 Returns the platform/device Bluetooth feature set.
 
+Besides the long-standing flags, it reports:
+
+- `supportsChannelSounding`: iOS 27+ `CBCentralManager.supports(.channelSounding)` (hardware and region). Always `false` on Android, older iOS, or apps built with Xcode older than 27.
+- `supportsLeHighDataThroughputPhy`: Android 17+ (API 37) `BluetoothAdapter.isLeHighDataThroughputPhySupported()`. Always `false` on iOS.
+- `supportsConnectionSubrating`: Android 16 QPR2+ (API 36.1), where `requestSubrateMode()` exists. Always `false` on iOS.
+
 **Returns:** Promise<BluetoothCapabilities>
 
 #### `startBackgroundSession(options)`
@@ -716,7 +727,7 @@ Starts scanning for BLE devices.
   - `serviceUUIDs?` (string[]): Filter by service UUIDs
   - `allowDuplicates?` (boolean): Allow duplicate scan results
   - `scanMode?` ('lowPower' | 'balanced' | 'lowLatency'): Scan mode
-  - `rssiThreshold?` (number): Drop results weaker than this RSSI (dBm), filtered in-process
+  - `rssiThreshold?` (number): Drop results weaker than this RSSI (dBm). Filtered in-process everywhere; Android 16 QPR2+ (API 36.1) also hands it to the controller (`ScanSettings.Builder.setRssiThreshold`, clamped to -127...20) so weak advertisements never wake the app
   - `namePrefix?` (string): Only report names starting with this prefix, filtered in-process
   - `deviceName?` (string): Only report this exact advertised/local name. Android `ScanFilter.setDeviceName`; iOS filters in-process.
   - `deviceAddress?` (string): Android only. Only report this MAC address (`ScanFilter.setDeviceAddress`). Ignored on iOS, which has no MAC addresses.
@@ -754,6 +765,8 @@ Connects to a BLE device.
   - `autoConnect?` (boolean): Android passes `autoConnect = true` to `connectGatt`, a background connection that completes whenever the device is next in range (slower, but it does not give up). iOS 17+ sets `CBConnectPeripheralOptionEnableAutoReconnect`, so the system reconnects after a link loss: `deviceDisconnected` then carries `isReconnecting: true`, `connectionStateChanged` reports `connecting`, and `deviceConnected` fires again when the link is back. Ignored on older iOS.
 
 **Returns:** Promise<void>. Rejects when the timeout elapses first.
+
+On Android 17+ (API 37) the connection uses `connectGatt(BluetoothGattConnectionSettings, Executor, callback)` (the `Context` overloads are deprecated there) with the LE transport and the same `autoConnect` choice; older releases keep `connectGatt(context, autoConnect, callback, TRANSPORT_LE)`.
 
 #### `disconnect(deviceId)`
 
@@ -865,6 +878,12 @@ Use `addEventListener(eventName, callback)` for BLE status and data events.
 | `l2capChannelPublishFailed`, `l2capChannelOpenFailed` | LE L2CAP failure status. |
 | `l2capDataReceived` | LE L2CAP stream data: `{ channelId, psm, deviceId, value }`. |
 | `rssiUpdated` | `{ deviceId, rssi }` |
+| `bondStateChanged` | Android: `{ deviceId, bondState, previousBondState?, bondLossReason? }` for every device. `bondLossReason` (`unknown`, `bredrAuthFailure`, `bredrIncomingPairing`, `leEncryptFailure`, `leIncomingPairing`) is reported on Android 16 QPR2+ when a bond was lost. |
+| `bondKeyMissing` | Android 16+: `{ deviceId }` when the peer lost its bond keys (`ACTION_KEY_MISSING`). Android 16 keeps the bond and disconnects; Android 17 first re-pairs on its own and only reports this if that fails. |
+| `encryptionChanged` | Android 16+: `{ deviceId, status, enabled, algorithm?, keySize?, transport? }` from `ACTION_ENCRYPTION_CHANGE`. |
+| `subrateChanged` | Android 16 QPR2+: `{ deviceId, mode, status }` from `onSubrateChange`; `mode` is `off`, `low`, `balanced`, `high`, `systemUpdate`, `notUpdated`, or `unknown`. |
+| `channelSoundingResults` | iOS 27+: `{ deviceId, distance?, error?, errorCode? }`, `distance` in metres. |
+| `channelSoundingCompleted` | iOS 27+: `{ deviceId, error?, errorCode? }` when a Channel Sounding session ends. |
 | `peripheralReadRequest` | `{ centralId, serviceUUID, characteristicUUID, value }` |
 | `peripheralWriteRequest` | `{ centralId, serviceUUID, characteristicUUID, value }` |
 | `peripheralSubscribed` | `{ centralId, serviceUUID, characteristicUUID }` |
@@ -961,9 +980,39 @@ Removes an Android bond when the OS exposes that operation. iOS rejects with an 
 
 **Returns:** Promise<BondState>
 
+#### `requestSubrateMode(deviceId, mode)`
+
+Asks for an LE connection subrate mode: `'off' | 'low' | 'balanced' | 'high'` (`BluetoothGatt.SUBRATE_MODE_*`). Android 16 QPR2+ (API 36.1) only. Resolves once the stack accepted the request and rejects with the reason otherwise (for example the device is not bonded, or the controller has no subrating). The resulting mode arrives as a `subrateChanged` event, which also fires when the stack or peer changes the mode on its own. iOS and older Android reject as unsupported; check `getCapabilities().supportsConnectionSubrating` first.
+
+**Returns:** Promise<void>
+
+#### `startChannelSoundingSession(deviceId, options?)`, `stopChannelSoundingSession(deviceId)`
+
+Bluetooth Channel Sounding (distance ranging) with a connected peripheral, iOS 27+:
+
+```ts
+const { supportsChannelSounding } = await getCapabilities()
+if (supportsChannelSounding) {
+  const stop = addEventListener('channelSoundingResults', ({ distance, error }) => {
+    if (distance != null) console.log(`${distance.toFixed(2)} m`)
+  })
+  await startChannelSoundingSession(deviceId) // role: 'initiator' (the only role iOS offers)
+  // ...
+  await stopChannelSoundingSession(deviceId) // channelSoundingCompleted follows
+}
+```
+
+- Needs an N1-chip iPhone and a Bluetooth 6 Channel Sounding accessory, and works in the foreground only.
+- `startChannelSoundingSession` rejects when the device/region does not support Channel Sounding, when the peripheral is not connected, on iOS < 27, on Android (its `android.ranging` API is not wrapped), and in apps built with Xcode older than 27.
+- Each procedure emits `channelSoundingResults` (`distance` in metres, or `error`); the end of the session emits `channelSoundingCompleted`.
+
+**Returns:** Promise<void>
+
 #### `startExtendedAdvertising(options)`
 
 Starts an Android BLE extended advertising set on Android 8+ hardware that supports LE extended advertising. iOS rejects with an unsupported error.
+
+`txPowerLevel` (dBm) is clamped to what the OS accepts: -127...1 dBm, or -127...20 dBm on Android 17+ (API 37). `maxTxPower: true` asks for the strongest level the controller offers (`TX_POWER_MAX_AVAILABLE` on Android 17+, `TX_POWER_MAX` before).
 
 **Returns:** Promise<string>
 
@@ -1314,6 +1363,12 @@ const DeviceScanner = () => {
 3. **Services Not Visible**: Verify that your service UUIDs are properly formatted
 4. **Scanning Not Working**: On Android 6.0+, ensure location permissions are granted
 5. **Connection Fails**: Verify the device is in range and advertising
+
+### Xcode 27
+
+- Apps built with Xcode 27 must adopt the UIScene lifecycle or they crash at launch on iOS 27 (Apple TN3187). Bare React Native apps need a `SceneDelegate`; see `example/ios/MunimBluetoothExample/AppDelegate.swift`. Expo SDK 57 apps set `expo-build-properties` → `ios.enableSceneSupport: true`.
+- `react-native-nitro-modules` 0.36/0.37 built with Xcode 27 crashes at launch on iOS 17 and older (dyld: missing `std::exception_ptr::__from_native_exception_pointer`, margelo/nitro#1652). Until a fixed Nitro release ships, patch `NitroModules/ios/utils/RuntimeError.hpp` so `makeException` throws and catches the error and returns `std::current_exception()` instead of calling `std::make_exception_ptr` (upstream fix PR margelo/nitro#1666), for example with `patch-package`.
+- iOS 27 APIs (Channel Sounding) only compile in with Xcode 27 / Swift 6.4; Xcode 26 builds still work and report them as unsupported.
 
 ### Expo-Specific Issues
 

@@ -40,7 +40,41 @@ import type {
   ScanPhy,
   BondedDevice,
   BluetoothDeviceType,
+  SubrateMode,
 } from './specs/munim-bluetooth.nitro'
+
+/** Bluetooth Channel Sounding role. iOS 27 offers only `initiator`. */
+export type ChannelSoundingRole = 'initiator'
+
+export interface ChannelSoundingOptions {
+  /** Defaults to `initiator`, the only role iOS 27 supports. */
+  role?: ChannelSoundingRole
+}
+
+/** Why Android dropped a bond (API 36.1+ EXTRA_BOND_LOSS_REASON). */
+export type BondLossReason =
+  | 'unknown'
+  | 'bredrAuthFailure'
+  | 'bredrIncomingPairing'
+  | 'leEncryptFailure'
+  | 'leIncomingPairing'
+
+/** Encryption algorithm reported by Android 16+ ACTION_ENCRYPTION_CHANGE. */
+export type EncryptionAlgorithm = 'none' | 'e0' | 'aes' | 'unknown'
+
+/** Link transport reported with Android encryption changes. */
+export type BluetoothTransport = 'auto' | 'bredr' | 'le' | 'unknown'
+
+/**
+ * Subrate mode reported by `subrateChanged`. Besides the requestable modes,
+ * Android reports `systemUpdate` when the stack changed the mode itself and
+ * `notUpdated` when a request did not change it.
+ */
+export type ReportedSubrateMode =
+  | SubrateMode
+  | 'systemUpdate'
+  | 'notUpdated'
+  | 'unknown'
 
 /** Android Bluetooth Class of Device metadata reported during Classic discovery. */
 export interface ClassicBluetoothClass {
@@ -167,6 +201,51 @@ export type BluetoothEventMap = {
     deviceId: string
     bondState: BondState
     previousBondState?: BondState
+    /**
+     * Android 16 QPR2+ (API 36.1): why an existing bond was lost, when the
+     * system reports it with the transition to `none`.
+     */
+    bondLossReason?: BondLossReason
+  }
+  /**
+   * Android 16+ (API 36): the remote device no longer has the bond keys
+   * (ACTION_KEY_MISSING). Android 16 keeps the bond and disconnects; Android
+   * 17 first tries to re-pair on its own and only reports this if that fails.
+   */
+  bondKeyMissing: { deviceId: string }
+  /** Android 16+ (API 36): link encryption changed (ACTION_ENCRYPTION_CHANGE). */
+  encryptionChanged: {
+    deviceId: string
+    /** Android status code; 0 means the change succeeded. */
+    status: number
+    enabled: boolean
+    algorithm?: EncryptionAlgorithm
+    /** Encryption key size in bytes. */
+    keySize?: number
+    transport?: BluetoothTransport
+  }
+  /** Android 16 QPR2+ (API 36.1): BluetoothGattCallback.onSubrateChange. */
+  subrateChanged: {
+    deviceId: string
+    mode: ReportedSubrateMode
+    /** GATT status; 0 means success. */
+    status: number
+  }
+  /**
+   * iOS 27+: one Channel Sounding procedure finished. `distance` is in
+   * metres; `error` is set (and `distance` absent) when the procedure failed.
+   */
+  channelSoundingResults: {
+    deviceId: string
+    distance?: number
+    error?: string
+    errorCode?: number
+  }
+  /** iOS 27+: a Channel Sounding session ended (cancelled or failed). */
+  channelSoundingCompleted: {
+    deviceId: string
+    error?: string
+    errorCode?: number
   }
   mtuChanged: { deviceId: string; mtu: number; status?: number }
   phyChanged: {
@@ -675,6 +754,44 @@ export function removeBond(deviceId: string): Promise<BondState> {
 }
 
 /**
+ * Ask for an LE connection subrate mode (Android 16 QPR2+ / API 36.1).
+ * Resolves when the stack accepted the request; the result arrives as a
+ * `subrateChanged` event. Check `getCapabilities().supportsConnectionSubrating`
+ * first: iOS and older Android reject as unsupported.
+ */
+export function requestSubrateMode(
+  deviceId: string,
+  mode: SubrateMode
+): Promise<void> {
+  return MunimBluetooth.requestSubrateMode(deviceId, mode)
+}
+
+/**
+ * Start a Bluetooth Channel Sounding (distance ranging) session with a
+ * connected peripheral (iOS 27+, `supportsChannelSounding` hardware,
+ * foreground only). Distances arrive as `channelSoundingResults` events.
+ */
+export function startChannelSoundingSession(
+  deviceId: string,
+  options?: ChannelSoundingOptions
+): Promise<void> {
+  const role = options?.role ?? 'initiator'
+  if (role !== 'initiator') {
+    return Promise.reject(
+      new Error(`Unsupported Channel Sounding role: ${String(role)}`)
+    )
+  }
+  return MunimBluetooth.startChannelSoundingSession(deviceId)
+}
+
+/**
+ * Cancel the active Channel Sounding session with a peripheral (iOS 27+).
+ */
+export function stopChannelSoundingSession(deviceId: string): Promise<void> {
+  return MunimBluetooth.stopChannelSoundingSession(deviceId)
+}
+
+/**
  * Start BLE extended advertising where supported.
  */
 export function startExtendedAdvertising(
@@ -891,7 +1008,9 @@ export function addDeviceFoundListener(
     return () => {}
   }
 
-  const subscription = eventEmitter.addListener('deviceFound', callback)
+  const subscription = eventEmitter.addListener('deviceFound', (payload) =>
+    callback(payload as unknown as BLEDevice)
+  )
   return () => subscription.remove()
 }
 
@@ -913,7 +1032,9 @@ export function addEventListener<EventName extends BluetoothEventName>(
     return () => {}
   }
 
-  const subscription = eventEmitter.addListener(eventName, callback)
+  const subscription = eventEmitter.addListener(eventName, (payload) =>
+    callback(payload as unknown as BluetoothEventMap[EventName])
+  )
   return () => subscription.remove()
 }
 
@@ -971,6 +1092,7 @@ export type {
   ScanPhy,
   BondedDevice,
   BluetoothDeviceType,
+  SubrateMode,
 }
 
 // Default export for convenience
@@ -1014,6 +1136,9 @@ export default {
   createBond,
   getBondedDevices,
   removeBond,
+  requestSubrateMode,
+  startChannelSoundingSession,
+  stopChannelSoundingSession,
   startExtendedAdvertising,
   stopExtendedAdvertising,
   publishL2CAPChannel,

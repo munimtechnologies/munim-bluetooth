@@ -19,6 +19,16 @@ import type {
 const TEST_SERVICE_UUID = '71f271d0-8f4c-4c4d-8a2d-6f3a9497b41d';
 const TEST_CHARACTERISTIC_UUID = '4ad4a6d2-3f4a-477c-9832-5e0d8f7654d8';
 const TEST_DESCRIPTOR_UUID = '00002901-0000-1000-8000-00805f9b34fb';
+// Read-only characteristic where each device publishes the results of its own
+// platform API checks, so the central can log the peer's results too (the
+// iPad has no other unattended way to report them).
+const TEST_REPORT_CHARACTERISTIC_UUID = '4ad4a6d2-3f4a-477c-9832-5e0d8f7654d9';
+const NOTIFY_VALUE = '6e6f74696679';
+const NOTIFY_TIMEOUT_MS = 8000;
+const UNKNOWN_DEVICE_ID =
+  Platform.OS === 'ios'
+    ? '00000000-0000-0000-0000-000000000000'
+    : '00:11:22:33:44:55';
 // Keep the test name short enough to coexist with a 128-bit service UUID in a
 // legacy BLE advertisement. Longer iOS names can move fields out of the packet
 // that Android uses for native service-filter matching.
@@ -62,6 +72,72 @@ function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function textToHex(text: string): string {
+  return Array.from(text)
+    .map((char) => char.charCodeAt(0).toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function hexToText(hex: string): string {
+  return (hex.match(/.{2}/g) ?? [])
+    .map((byte) => String.fromCharCode(parseInt(byte, 16)))
+    .join('');
+}
+
+async function rejectionOf(run: () => Promise<unknown>): Promise<string | null> {
+  try {
+    await run();
+    return null;
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+type ApiChecks = Record<string, string | number | boolean>;
+
+/**
+ * Exercises the Android 16/17 and iOS 27 additions that must degrade
+ * gracefully on hardware/OS releases without them. Values are kept short so
+ * the JSON fits in one GATT read.
+ */
+async function runLocalApiChecks(): Promise<ApiChecks> {
+  const checks: ApiChecks = { os: `${Platform.OS}${Platform.Version}` };
+  const caps = await MunimBluetooth.getCapabilities();
+  checks.cs = caps.supportsChannelSounding;
+  checks.hdt = caps.supportsLeHighDataThroughputPhy;
+  checks.sub = caps.supportsConnectionSubrating;
+  checks.csStart =
+    (await rejectionOf(() =>
+      MunimBluetooth.startChannelSoundingSession(UNKNOWN_DEVICE_ID)
+    ))?.slice(0, 60) ?? 'resolved';
+  checks.csStop =
+    (await rejectionOf(() =>
+      MunimBluetooth.stopChannelSoundingSession(UNKNOWN_DEVICE_ID)
+    ))?.slice(0, 40) ?? 'resolved';
+  checks.subReq =
+    (await rejectionOf(() =>
+      MunimBluetooth.requestSubrateMode(UNKNOWN_DEVICE_ID, 'balanced')
+    ))?.slice(0, 50) ?? 'resolved';
+  if (Platform.OS === 'android') {
+    if (caps.supportsExtendedAdvertising) {
+      try {
+        const id = await MunimBluetooth.startExtendedAdvertising({
+          connectable: false,
+          maxTxPower: true,
+          localName: 'MBT-ext',
+        });
+        MunimBluetooth.stopExtendedAdvertising(id);
+        checks.extMaxTx = 'ok';
+      } catch (error) {
+        checks.extMaxTx = formatError(error).slice(0, 40);
+      }
+    } else {
+      checks.extMaxTx = 'unsupported';
+    }
+  }
+  return checks;
+}
+
 function hasTestService(device: BLEDevice): boolean {
   const services = [
     ...(device.serviceUUIDs ?? []),
@@ -98,6 +174,11 @@ function buildTestService(): GATTService {
             permissions: ['read'],
           },
         ],
+      },
+      {
+        uuid: TEST_REPORT_CHARACTERISTIC_UUID,
+        properties: ['read'],
+        value: textToHex('{}'),
       },
     ],
   };
@@ -155,6 +236,20 @@ function App(): React.JSX.Element {
       },
     });
     addLog(`Peripheral advertising ${TEST_LOCAL_NAME}`, 'success');
+
+    try {
+      const checks = await runLocalApiChecks();
+      const json = JSON.stringify(checks);
+      addLog(`Local API checks: ${json}`, 'success');
+      await MunimBluetooth.updateCharacteristicValue(
+        TEST_SERVICE_UUID,
+        TEST_REPORT_CHARACTERISTIC_UUID,
+        textToHex(json),
+        false
+      );
+    } catch (error) {
+      addLog(`Local API checks failed: ${formatError(error)}`, 'error');
+    }
   }, [addLog]);
 
   const startScanning = useCallback(() => {
@@ -179,6 +274,8 @@ function App(): React.JSX.Element {
         : { serviceUUIDs: [TEST_SERVICE_UUID] }),
       allowDuplicates: false,
       scanMode: 'lowLatency',
+      // Controller-side on Android 16 QPR2+, in-process everywhere.
+      rssiThreshold: -100,
     });
     setStatus('Advertising and scanning for peer device');
     addLog(
@@ -303,12 +400,44 @@ function App(): React.JSX.Element {
         );
         addLog('Wrote characteristic value', 'success');
 
-        MunimBluetooth.subscribeToCharacteristic(
+        await MunimBluetooth.subscribeToCharacteristic(
           device.id,
           TEST_SERVICE_UUID,
           TEST_CHARACTERISTIC_UUID
         );
         addLog('Subscribed to characteristic notifications', 'success');
+
+        // The peer's automatic mode notifies subscribers of every write, so a
+        // write must come back as a notification.
+        const notified = new Promise<string>((resolve, reject) => {
+          const timer = setTimeout(() => {
+            remove();
+            reject(new Error('No notification within timeout'));
+          }, NOTIFY_TIMEOUT_MS);
+          const remove = MunimBluetooth.addEventListener(
+            'characteristicValueChanged',
+            (event) => {
+              if (
+                event.deviceId === device.id &&
+                event.characteristicUUID.toLowerCase() ===
+                  TEST_CHARACTERISTIC_UUID.toLowerCase() &&
+                event.value.toLowerCase() === NOTIFY_VALUE
+              ) {
+                clearTimeout(timer);
+                remove();
+                resolve(event.value);
+              }
+            }
+          );
+        });
+        await MunimBluetooth.writeCharacteristic(
+          device.id,
+          TEST_SERVICE_UUID,
+          TEST_CHARACTERISTIC_UUID,
+          NOTIFY_VALUE,
+          'write'
+        );
+        addLog(`Notification received ${await notified}`, 'success');
 
         const rssi = await MunimBluetooth.readRSSI(device.id);
         addLog(`RSSI ${Math.round(rssi)} dBm`, 'success');
@@ -324,6 +453,35 @@ function App(): React.JSX.Element {
 
         const connected = await MunimBluetooth.getConnectedDevices();
         addLog(`Connected devices reported by native layer: ${connected.length}`, 'success');
+
+        const bondState = await MunimBluetooth.getBondState(device.id);
+        addLog(`Bond state ${bondState}`, 'success');
+
+        const subrate = await rejectionOf(() =>
+          MunimBluetooth.requestSubrateMode(device.id, 'balanced')
+        );
+        addLog(
+          `Subrate request on live link: ${subrate ?? 'accepted'}`,
+          'success'
+        );
+        const channelSounding = await rejectionOf(() =>
+          MunimBluetooth.startChannelSoundingSession(device.id)
+        );
+        addLog(
+          `Channel Sounding on live link: ${channelSounding ?? 'started'}`,
+          'success'
+        );
+        if (channelSounding == null) {
+          await MunimBluetooth.stopChannelSoundingSession(device.id);
+        }
+
+        const report = await MunimBluetooth.readCharacteristic(
+          device.id,
+          TEST_SERVICE_UUID,
+          TEST_REPORT_CHARACTERISTIC_UUID
+        );
+        addLog(`Peer API report: ${hexToText(report.value)}`, 'success');
+        addLog('SMOKE PASS: GATT round trip and API checks complete', 'success');
         setStatus(`${connectedDeviceIds.current.size} peer BLE GATT smoke test(s) passed`);
       } catch (error) {
         try {
@@ -335,7 +493,7 @@ function App(): React.JSX.Element {
         connectedDeviceIds.current.delete(device.id);
         failedDeviceIds.current.add(device.id);
         setStatus('Peer BLE GATT smoke failed');
-        addLog(formatError(error), 'error');
+        addLog(`SMOKE FAIL: ${formatError(error)}`, 'error');
         startScanning();
       }
     },
@@ -582,6 +740,30 @@ function App(): React.JSX.Element {
       }),
       MunimBluetooth.addEventListener('peripheralSubscribed', (event) => {
         addLog(`Peer subscribed ${event.characteristicUUID}`, 'success');
+      }),
+      MunimBluetooth.addEventListener('bondStateChanged', (event) => {
+        addLog(
+          `Bond ${event.deviceId}: ${event.previousBondState ?? '?'} -> ${event.bondState}${event.bondLossReason ? ` (lost: ${event.bondLossReason})` : ''}`
+        );
+      }),
+      MunimBluetooth.addEventListener('bondKeyMissing', (event) => {
+        addLog(`Bond keys missing on ${event.deviceId}`, 'warning');
+      }),
+      MunimBluetooth.addEventListener('encryptionChanged', (event) => {
+        addLog(
+          `Encryption ${event.deviceId}: ${event.enabled ? 'on' : 'off'} ${event.algorithm ?? ''} ${event.keySize ?? ''}`
+        );
+      }),
+      MunimBluetooth.addEventListener('subrateChanged', (event) => {
+        addLog(`Subrate ${event.deviceId}: ${event.mode} (status ${event.status})`);
+      }),
+      MunimBluetooth.addEventListener('channelSoundingResults', (event) => {
+        addLog(
+          `Channel Sounding ${event.deviceId}: ${event.distance ?? event.error} m`
+        );
+      }),
+      MunimBluetooth.addEventListener('channelSoundingCompleted', (event) => {
+        addLog(`Channel Sounding done ${event.deviceId} ${event.error ?? ''}`);
       }),
       MunimBluetooth.addEventListener('scanFailed', (event) => {
         addLog(`Scan failed: ${event.message}`, 'error');

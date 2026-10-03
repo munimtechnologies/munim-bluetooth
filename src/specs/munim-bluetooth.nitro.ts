@@ -92,7 +92,12 @@ export interface ScanOptions {
   serviceUUIDs?: string[]
   allowDuplicates?: boolean
   scanMode?: ScanMode
-  /** Drop scan results weaker than this RSSI (dBm), filtered in-process. */
+  /**
+   * Drop scan results weaker than this RSSI (dBm). Android 16 QPR2+ (API
+   * 36.1) also passes it to the controller via
+   * ScanSettings.Builder.setRssiThreshold so weak advertisements are dropped
+   * before they reach the app; every platform still filters in-process.
+   */
   rssiThreshold?: number
   /** Only report devices whose advertised/local name starts with this prefix. */
   namePrefix?: string
@@ -249,6 +254,13 @@ export type ConnectionPriority = 'balanced' | 'high' | 'lowPower'
 
 export type BondState = 'none' | 'bonding' | 'bonded' | 'unsupported'
 
+/**
+ * LE connection subrating modes (Android 16 QPR2+ / API 36.1,
+ * BluetoothGatt.SUBRATE_MODE_*). `off` disables subrating; `low`, `balanced`
+ * and `high` trade latency for power.
+ */
+export type SubrateMode = 'off' | 'low' | 'balanced' | 'high'
+
 /** Android BluetoothDevice.getType(). */
 export type BluetoothDeviceType = 'classic' | 'le' | 'dual' | 'unknown'
 
@@ -273,6 +285,23 @@ export interface BluetoothCapabilities {
   supportsClassicBluetooth: boolean
   supportsBackgroundBle: boolean
   supportsMultipeerConnectivity: boolean
+  /**
+   * iOS 27+: CBCentralManager.supports(.channelSounding) — the hardware and
+   * region support Bluetooth Channel Sounding (N1-chip iPhone). Always false
+   * on Android and older iOS.
+   */
+  supportsChannelSounding: boolean
+  /**
+   * Android 17+ (API 37): BluetoothAdapter.isLeHighDataThroughputPhySupported()
+   * reports FEATURE_SUPPORTED. Always false on iOS and older Android.
+   */
+  supportsLeHighDataThroughputPhy: boolean
+  /**
+   * Android 16 QPR2+ (API 36.1): requestSubrateMode() is available. Whether
+   * the controller and the peer accept a subrate request is only known per
+   * connection. Always false on iOS.
+   */
+  supportsConnectionSubrating: boolean
 }
 
 // Advertising options for startAdvertising
@@ -298,7 +327,17 @@ export interface ExtendedAdvertisingOptions {
   anonymous?: boolean
   includeTxPower?: boolean
   interval?: number
+  /**
+   * Requested TX power in dBm. Android accepts -127...1 dBm, or -127...20 dBm
+   * on Android 17+ (API 37); values above the limit are clamped.
+   */
   txPowerLevel?: number
+  /**
+   * Advertise at the strongest power the controller offers. Android 17+
+   * (API 37) uses TX_POWER_MAX_AVAILABLE (up to 20 dBm); older releases use
+   * TX_POWER_MAX (1 dBm). Overrides txPowerLevel when true.
+   */
+  maxTxPower?: boolean
   primaryPhy?: BluetoothPhy
   secondaryPhy?: BluetoothPhy
 }
@@ -804,6 +843,32 @@ export interface MunimBluetooth
     peerIds?: string[],
     reliable?: boolean
   ): Promise<void>
+
+  /**
+   * Ask for an LE connection subrate mode. Android 16 QPR2+ (API 36.1) only:
+   * resolves once the stack accepted the request, rejects with the reason
+   * otherwise (for example when the device is not bonded or the controller
+   * lacks subrating). The negotiated mode arrives as a `subrateChanged`
+   * event. iOS and older Android reject as unsupported.
+   */
+  requestSubrateMode(deviceId: string, mode: SubrateMode): Promise<void>
+
+  /**
+   * Start a Bluetooth Channel Sounding (distance ranging) session with a
+   * connected peripheral. iOS 27+ on hardware that reports
+   * `supportsChannelSounding` (N1-chip iPhone with a Bluetooth 6 Channel
+   * Sounding accessory); foreground only. Results arrive as
+   * `channelSoundingResults` events, the end of the session as
+   * `channelSoundingCompleted`. Rejects as unsupported elsewhere.
+   *
+   * The session always uses the initiator role, the only role iOS 27 offers.
+   */
+  startChannelSoundingSession(deviceId: string): Promise<void>
+
+  /**
+   * Cancel the active Channel Sounding session with a peripheral. iOS 27+.
+   */
+  stopChannelSoundingSession(deviceId: string): Promise<void>
 
   // ========== Event Management ==========
 

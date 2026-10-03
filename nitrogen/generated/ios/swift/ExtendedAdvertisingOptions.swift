@@ -18,7 +18,7 @@ public extension ExtendedAdvertisingOptions {
   /**
    * Create a new instance of `ExtendedAdvertisingOptions`.
    */
-  init(serviceUUIDs: [String]?, localName: String?, manufacturerData: String?, manufacturerCompanyId: Double?, manufacturerDataEntries: [ManufacturerDataEntry]?, advertisingData: AdvertisingDataTypes?, connectable: Bool?, scannable: Bool?, legacyMode: Bool?, anonymous: Bool?, includeTxPower: Bool?, interval: Double?, txPowerLevel: Double?, primaryPhy: BluetoothPhy?, secondaryPhy: BluetoothPhy?) {
+  init(serviceUUIDs: [String]?, localName: String?, manufacturerData: String?, manufacturerCompanyId: Double?, manufacturerDataEntries: [ManufacturerDataEntry]?, advertisingData: AdvertisingDataTypes?, connectable: Bool?, scannable: Bool?, legacyMode: Bool?, anonymous: Bool?, includeTxPower: Bool?, interval: Double?, txPowerLevel: Double?, maxTxPower: Bool?, primaryPhy: BluetoothPhy?, secondaryPhy: BluetoothPhy?) {
     self.init({ () -> bridge.std__optional_std__vector_std__string__ in
       if let __unwrappedValue = serviceUUIDs {
         return bridge.create_std__optional_std__vector_std__string__({ () -> bridge.std__vector_std__string_ in
@@ -106,6 +106,12 @@ public extension ExtendedAdvertisingOptions {
     }(), { () -> bridge.std__optional_double_ in
       if let __unwrappedValue = txPowerLevel {
         return bridge.create_std__optional_double_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_bool_ in
+      if let __unwrappedValue = maxTxPower {
+        return bridge.create_std__optional_bool_(__unwrappedValue)
       } else {
         return .init()
       }
@@ -266,6 +272,18 @@ public extension ExtendedAdvertisingOptions {
     return { () -> Double? in
       if bridge.has_value_std__optional_double_(self.__txPowerLevel) {
         let __unwrapped = bridge.get_std__optional_double_(self.__txPowerLevel)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
+  }
+  
+  @inline(__always)
+  var maxTxPower: Bool? {
+    return { () -> Bool? in
+      if bridge.has_value_std__optional_bool_(self.__maxTxPower) {
+        let __unwrapped = bridge.get_std__optional_bool_(self.__maxTxPower)
         return __unwrapped
       } else {
         return nil
