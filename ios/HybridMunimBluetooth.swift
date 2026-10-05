@@ -2930,9 +2930,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
         pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
         devicesNeedingServiceRediscovery.remove(deviceId)
+        let promise = pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)
         completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
         let services = buildGATTServices(from: peripheral.services ?? [])
-        pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)?.resolve(withResult: services)
+        promise?.resolve(withResult: services)
         emit("servicesDiscovered", body: [
             "deviceId": deviceId,
             "services": servicePayload(services)
@@ -3771,16 +3772,18 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         let deviceId = peripheral.identifier.uuidString
 
         if let error = error {
-            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
-            pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)?.reject(withError: error)
+            let promise = pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)
             pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
+            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
+            promise?.reject(withError: error)
             return
         }
 
         guard let services = peripheral.services, !services.isEmpty else {
-            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
-            pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)?.resolve(withResult: [])
+            let promise = pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)
             pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
+            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
+            promise?.resolve(withResult: [])
             return
         }
 
@@ -3797,9 +3800,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         let deviceId = peripheral.identifier.uuidString
 
         if let error = error {
-            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
-            pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)?.reject(withError: error)
+            let promise = pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)
             pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
+            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
+            promise?.reject(withError: error)
             return
         }
 
@@ -3820,9 +3824,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         let deviceId = peripheral.identifier.uuidString
 
         if let error = error {
-            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
-            pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)?.reject(withError: error)
+            let promise = pendingServiceDiscoveryPromises.removeValue(forKey: deviceId)
             pendingCharacteristicDiscoveryCounts.removeValue(forKey: deviceId)
+            completeGattOperation(deviceId: deviceId, kinds: ["discoverServices"], target: deviceId)
+            promise?.reject(withError: error)
             return
         }
 
@@ -3836,13 +3841,15 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
         if let error = error {
             for key in Array(pendingDescriptorReadPromises.keys) where key.hasPrefix(prefix) {
+                let promise = pendingDescriptorReadPromises.removeValue(forKey: key)
                 completeGattOperation(deviceId: deviceId, kinds: ["readDescriptor"], target: key)
-                pendingDescriptorReadPromises.removeValue(forKey: key)?.reject(withError: error)
+                promise?.reject(withError: error)
             }
             for key in Array(pendingDescriptorWritePromises.keys) where key.hasPrefix(prefix) {
-                completeGattOperation(deviceId: deviceId, kinds: ["writeDescriptor"], target: key)
-                pendingDescriptorWritePromises.removeValue(forKey: key)?.reject(withError: error)
+                let promise = pendingDescriptorWritePromises.removeValue(forKey: key)
                 pendingDescriptorWriteValues.removeValue(forKey: key)
+                completeGattOperation(deviceId: deviceId, kinds: ["writeDescriptor"], target: key)
+                promise?.reject(withError: error)
             }
             return
         }
@@ -3852,8 +3859,9 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             if let descriptor = findDescriptor(characteristic: characteristic, descriptorUUID: descriptorUUID) {
                 peripheral.readValue(for: descriptor)
             } else {
+                let promise = pendingDescriptorReadPromises.removeValue(forKey: key)
                 completeGattOperation(deviceId: deviceId, kinds: ["readDescriptor"], target: key)
-                pendingDescriptorReadPromises.removeValue(forKey: key)?.reject(withError: NSError(
+                promise?.reject(withError: NSError(
                     domain: "MunimBluetooth",
                     code: 1,
                     userInfo: [NSLocalizedDescriptionKey: "Descriptor not found: \(descriptorUUID)"]
@@ -3866,9 +3874,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                let value = pendingDescriptorWriteValues[key] {
                 peripheral.writeValue(value, for: descriptor)
             } else {
-                completeGattOperation(deviceId: deviceId, kinds: ["writeDescriptor"], target: key)
+                let promise = pendingDescriptorWritePromises.removeValue(forKey: key)
                 pendingDescriptorWriteValues.removeValue(forKey: key)
-                pendingDescriptorWritePromises.removeValue(forKey: key)?.reject(withError: NSError(
+                completeGattOperation(deviceId: deviceId, kinds: ["writeDescriptor"], target: key)
+                promise?.reject(withError: NSError(
                     domain: "MunimBluetooth",
                     code: 1,
                     userInfo: [NSLocalizedDescriptionKey: "Descriptor not found: \(descriptorUUID)"]
@@ -3887,8 +3896,11 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 serviceUUID: serviceUUID,
                 characteristicUUID: characteristic.uuid.uuidString
             )
+            // Take the promise before completing: completing starts the next queued
+            // operation, which may store its own promise under the same key.
+            let promise = pendingReadPromises.removeValue(forKey: key)
             completeGattOperation(deviceId: deviceId, kinds: ["readCharacteristic"], target: key)
-            pendingReadPromises.removeValue(forKey: key)?.reject(withError: error)
+            promise?.reject(withError: error)
             return
         }
 
@@ -3900,13 +3912,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             serviceUUID: serviceUUID,
             characteristicUUID: characteristic.uuid.uuidString
         )
+        let promise = pendingReadPromises.removeValue(forKey: key)
         completeGattOperation(deviceId: deviceId, kinds: ["readCharacteristic"], target: key)
         let value = CharacteristicValue(
             value: hexString,
             serviceUUID: serviceUUID,
             characteristicUUID: characteristic.uuid.uuidString
         )
-        pendingReadPromises.removeValue(forKey: key)?.resolve(withResult: value)
+        promise?.resolve(withResult: value)
 
         emit("characteristicValueChanged", body: [
             "deviceId": deviceId,
@@ -3931,13 +3944,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             descriptorUUID: descriptor.uuid.uuidString
         )
 
+        let promise = pendingDescriptorReadPromises.removeValue(forKey: key)
         completeGattOperation(deviceId: deviceId, kinds: ["readDescriptor"], target: key)
         if let error = error {
-            pendingDescriptorReadPromises.removeValue(forKey: key)?.reject(withError: error)
+            promise?.reject(withError: error)
             return
         }
 
-        pendingDescriptorReadPromises.removeValue(forKey: key)?.resolve(withResult: DescriptorValue(
+        promise?.resolve(withResult: DescriptorValue(
             value: descriptor.value.flatMap { descriptorValueToHex($0) } ?? "",
             serviceUUID: serviceUUID,
             characteristicUUID: characteristic.uuid.uuidString,
@@ -3954,12 +3968,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             characteristicUUID: characteristic.uuid.uuidString
         )
 
+        let promise = pendingWritePromises.removeValue(forKey: key)
         completeGattOperation(deviceId: deviceId, kinds: ["writeCharacteristic"], target: key)
         if let error = error {
-            pendingWritePromises.removeValue(forKey: key)?.reject(withError: error)
+            promise?.reject(withError: error)
             NSLog("Bluetooth: writeError")
         } else {
-            pendingWritePromises.removeValue(forKey: key)?.resolve(withResult: ())
+            promise?.resolve(withResult: ())
             debugLog("write succeeded characteristic=\(characteristic.uuid.uuidString)")
 	        }
 	    }
@@ -3976,11 +3991,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             descriptorUUID: descriptor.uuid.uuidString
         )
         pendingDescriptorWriteValues.removeValue(forKey: key)
+        let promise = pendingDescriptorWritePromises.removeValue(forKey: key)
         completeGattOperation(deviceId: deviceId, kinds: ["writeDescriptor"], target: key)
         if let error = error {
-            pendingDescriptorWritePromises.removeValue(forKey: key)?.reject(withError: error)
+            promise?.reject(withError: error)
         } else {
-            pendingDescriptorWritePromises.removeValue(forKey: key)?.resolve(withResult: ())
+            promise?.resolve(withResult: ())
         }
     }
 
@@ -3991,13 +4007,14 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             serviceUUID: characteristic.service?.uuid.uuidString ?? "",
             characteristicUUID: characteristic.uuid.uuidString
         )
+        let promise = pendingNotificationStatePromises.removeValue(forKey: key)
         completeGattOperation(deviceId: deviceId, kinds: ["subscribe", "unsubscribe"], target: key)
 
         if let error = error {
-            pendingNotificationStatePromises.removeValue(forKey: key)?.reject(withError: error)
+            promise?.reject(withError: error)
             NSLog("Bluetooth: notification state error - %@", error.localizedDescription)
         } else {
-            pendingNotificationStatePromises.removeValue(forKey: key)?.resolve(withResult: ())
+            promise?.resolve(withResult: ())
             NSLog(
                 "Bluetooth: notification state updated characteristic=%@ notifying=%@",
                 characteristic.uuid.uuidString,
@@ -4037,15 +4054,16 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
     func handlePeripheralDidReadRSSI(_ peripheral: CBPeripheral, rssi RSSI: NSNumber, error: Error?) {
         let deviceId = peripheral.identifier.uuidString
+        let promise = pendingRSSIPromises.removeValue(forKey: deviceId)
         completeGattOperation(deviceId: deviceId, kinds: ["readRSSI"], target: deviceId)
 
         if let error = error {
-            pendingRSSIPromises.removeValue(forKey: deviceId)?.reject(withError: error)
+            promise?.reject(withError: error)
             NSLog("Bluetooth: RSSI error peripheral=%@ error=%@", deviceId, error.localizedDescription)
             return
         }
 
-        pendingRSSIPromises.removeValue(forKey: deviceId)?.resolve(withResult: RSSI.doubleValue)
+        promise?.resolve(withResult: RSSI.doubleValue)
         emit("rssiUpdated", body: ["deviceId": deviceId, "rssi": RSSI.doubleValue])
         debugLog("RSSI peripheral=\(deviceId) value=\(RSSI)")
     }
