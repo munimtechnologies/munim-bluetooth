@@ -37,6 +37,8 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
         return [
             "deviceFound",
             "onDeviceFound",
+            // Android only; listed so subscribing on iOS is not an RCTLogError.
+            "deviceLost",
             "scanResult",
             "scanFailed",
             "advertisingStartFailed",
