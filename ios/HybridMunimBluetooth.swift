@@ -487,7 +487,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
             // Service UUIDs - ALLOWED
             if !options.serviceUUIDs.isEmpty {
-                let uuids = options.serviceUUIDs.compactMap { CBUUID(string: $0) }
+                let uuids = try options.serviceUUIDs.map { try makeCBUUID($0) }
                 advertisingData[CBAdvertisementDataServiceUUIDsKey] = uuids
     #if DEBUG
                 NSLog("[MunimBluetooth] Advertising service UUIDs: %@", options.serviceUUIDs)
@@ -514,7 +514,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             // Advertising data types - Most are NOT ALLOWED
             if let advertisingDataTypes = options.advertisingData {
                 // Only process allowed fields
-                processAdvertisingData(advertisingDataTypes, into: &advertisingData)
+                try processAdvertisingData(advertisingDataTypes, into: &advertisingData)
                 if let completeLocalName = advertisingDataTypes.completeLocalName {
                     advertisingData[CBAdvertisementDataLocalNameKey] = completeLocalName
     #if DEBUG
@@ -558,7 +558,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             peripheralManager.stopAdvertising()
 
             var newAdvertisingData: [String: Any] = [:]
-            processAdvertisingData(advertisingData, into: &newAdvertisingData)
+            try processAdvertisingData(advertisingData, into: &newAdvertisingData)
 
             currentAdvertisingData = normalizeAdvertisingData(advertisingData, serviceUUIDs: nil, localName: nil)
             peripheralManager.startAdvertising(newAdvertisingData)
@@ -613,7 +613,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             var createdServices: [(GATTService, CBMutableService)] = []
 
             for service in services {
-                let serviceUUID = CBUUID(string: service.uuid)
+                let serviceUUID = try makeCBUUID(service.uuid)
                 let mutableService = CBMutableService(type: serviceUUID, primary: true)
 
                 var characteristics: [CBMutableCharacteristic] = []
@@ -621,7 +621,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 NSLog("[MunimBluetooth] Service %@: %d characteristics", service.uuid, service.characteristics.count)
 
                 for characteristic in service.characteristics {
-                    let charUUID = CBUUID(string: characteristic.uuid)
+                    let charUUID = try makeCBUUID(characteristic.uuid)
 
                     var properties: CBCharacteristicProperties = []
                     for prop in characteristic.properties {
@@ -665,8 +665,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                         value: nil,
                         permissions: permissions
                     )
-                    mutableChar.descriptors = characteristic.descriptors?.compactMap {
-                        makeMutableDescriptor(from: $0)
+                    mutableChar.descriptors = try characteristic.descriptors?.compactMap {
+                        try makeMutableDescriptor(from: $0)
                     }
 
                     characteristics.append(mutableChar)
@@ -678,8 +678,11 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 createdServices.append((service, mutableService))
             }
 
+            // GATT allows several instances of one service UUID, which
+            // `uniqueKeysWithValues` would trap on; includes resolve to the first.
             let servicesByUUID = Dictionary(
-                uniqueKeysWithValues: createdServices.map { ($0.0.uuid.lowercased(), $0.1) }
+                createdServices.map { ($0.0.uuid.lowercased(), $0.1) },
+                uniquingKeysWith: { first, _ in first }
             )
 
             for (service, mutableService) in createdServices {
@@ -918,6 +921,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             }
 
             let manufacturerFilter = try parseManufacturerScanFilter(options)
+            let serviceUUIDs = try options?.serviceUUIDs?.map { try makeCBUUID($0) }
             scanOptions = options
             scanDeviceNameFilter = options?.deviceName.flatMap { $0.isEmpty ? nil : $0 }
             scanManufacturerFilter = manufacturerFilter
@@ -928,7 +932,6 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 scanOptions[CBCentralManagerScanOptionAllowDuplicatesKey] = options.allowDuplicates ?? false
             }
 
-            let serviceUUIDs = options?.serviceUUIDs?.map { CBUUID(string: $0) }
             centralManager.scanForPeripherals(
                 withServices: serviceUUIDs?.isEmpty == false ? serviceUUIDs : nil,
                 options: scanOptions as [String : Any]
@@ -1241,6 +1244,12 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
             }
             guard let data = hexStringToData(value) else {
                 promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid hex string for descriptor write"]))
+                return promise
+            }
+            // CoreBluetooth raises an uncatchable exception when the Client
+            // Characteristic Configuration descriptor is written directly.
+            guard !isClientCharacteristicConfiguration(descriptorUUID) else {
+                promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "iOS does not allow writing the Client Characteristic Configuration descriptor (0x2902); use subscribeToCharacteristic() or unsubscribeFromCharacteristic()"]))
                 return promise
             }
 
@@ -2290,6 +2299,32 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
+    /// `CBUUID(string:)` raises an Objective-C exception (which Swift cannot
+    /// catch) for anything that is not a 16/32-bit hex UUID or a full UUID, so
+    /// strings coming from JS are checked first.
+    private func makeCBUUID(_ value: String) throws -> CBUUID {
+        let isShortForm = value.range(
+            of: "^(0[xX])?[0-9A-Fa-f]{4}([0-9A-Fa-f]{4})?$",
+            options: .regularExpression
+        ) != nil
+        guard isShortForm || UUID(uuidString: value) != nil else {
+            throw NSError(
+                domain: "MunimBluetooth",
+                code: 3,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid Bluetooth UUID: '\(value)'. Use a 4 or 8 digit hex UUID or a full 128-bit UUID."]
+            )
+        }
+        return CBUUID(string: value)
+    }
+
+    /// The Client Characteristic Configuration descriptor (0x2902) in any of
+    /// the forms JS may pass it.
+    private func isClientCharacteristicConfiguration(_ uuid: String) -> Bool {
+        let normalized = uuid.lowercased()
+        return normalized == "2902" || normalized == "00002902" ||
+            normalized == "00002902-0000-1000-8000-00805f9b34fb"
+    }
+
     private func hexStringToData(_ hex: String) -> Data? {
         var data = Data()
         var hex = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2499,7 +2534,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
-    private func processAdvertisingData(_ data: AdvertisingDataTypes, into advertisingData: inout [String: Any]) {
+    private func processAdvertisingData(_ data: AdvertisingDataTypes, into advertisingData: inout [String: Any]) throws {
         if let localName = data.completeLocalName ?? data.shortenedLocalName {
             advertisingData[CBAdvertisementDataLocalNameKey] = localName
         }
@@ -2513,7 +2548,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         serviceUUIDs.append(contentsOf: data.completeServiceUUIDs128 ?? [])
 
         if !serviceUUIDs.isEmpty {
-            advertisingData[CBAdvertisementDataServiceUUIDsKey] = serviceUUIDs.map { CBUUID(string: $0) }
+            advertisingData[CBAdvertisementDataServiceUUIDsKey] = try serviceUUIDs.map { try makeCBUUID($0) }
         }
     }
 
@@ -2549,8 +2584,8 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         )
     }
 
-    private func makeMutableDescriptor(from descriptor: GATTDescriptor) -> CBMutableDescriptor? {
-        let descriptorUUID = CBUUID(string: descriptor.uuid)
+    private func makeMutableDescriptor(from descriptor: GATTDescriptor) throws -> CBMutableDescriptor? {
+        let descriptorUUID = try makeCBUUID(descriptor.uuid)
         let normalizedUUID = descriptorUUID.uuidString.lowercased()
         let userDescriptionUUID = CBUUID(string: CBUUIDCharacteristicUserDescriptionString).uuidString.lowercased()
         let formatUUID = CBUUID(string: CBUUIDCharacteristicFormatString).uuidString.lowercased()
