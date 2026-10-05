@@ -6,7 +6,12 @@ const ANDROID_BLUETOOTH_PERMISSIONS = {
     { name: 'android.permission.BLUETOOTH', maxSdkVersion: '30' },
     { name: 'android.permission.BLUETOOTH_ADMIN', maxSdkVersion: '30' },
     { name: 'android.permission.ACCESS_FINE_LOCATION', maxSdkVersion: '30' },
-    { name: 'android.permission.BLUETOOTH_SCAN' },
+    // Location is capped at API 30, so on Android 12+ scan results are only
+    // delivered when the scan permission disavows location (see README).
+    {
+      name: 'android.permission.BLUETOOTH_SCAN',
+      usesPermissionFlags: 'neverForLocation',
+    },
     { name: 'android.permission.BLUETOOTH_CONNECT' },
   ],
   connect: [
@@ -47,6 +52,9 @@ function ensureAndroidPermission(manifest, permission) {
     const attributes = { 'android:name': permission.name };
     if (permission.maxSdkVersion) {
       attributes['android:maxSdkVersion'] = permission.maxSdkVersion;
+    }
+    if (permission.usesPermissionFlags) {
+      attributes['android:usesPermissionFlags'] = permission.usesPermissionFlags;
     }
     permissions.push({ $: attributes });
   }
