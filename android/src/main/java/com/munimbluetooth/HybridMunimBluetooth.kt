@@ -474,13 +474,13 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
         for (serviceData in services) {
             val service = BluetoothGattService(
-                UUID.fromString(serviceData.uuid),
+                parseBleUuid(serviceData.uuid),
                 BluetoothGattService.SERVICE_TYPE_PRIMARY
             )
 
             for (characteristicData in serviceData.characteristics) {
                 val characteristic = BluetoothGattCharacteristic(
-                    UUID.fromString(characteristicData.uuid),
+                    parseBleUuid(characteristicData.uuid),
                     propertiesFromArray(characteristicData.properties),
                     characteristicPermissionsFromArray(
                         characteristicData.permissions,
@@ -493,7 +493,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
                 }
                 characteristicData.descriptors?.forEach { descriptorData ->
                     val descriptor = BluetoothGattDescriptor(
-                        UUID.fromString(descriptorData.uuid),
+                        parseBleUuid(descriptorData.uuid),
                         descriptorPermissionsFromArray(descriptorData.permissions)
                     )
                     descriptorData.value?.let { value ->
@@ -973,7 +973,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
             fun filter(serviceUUID: String?): ScanFilter {
                 val builder = ScanFilter.Builder()
-                serviceUUID?.let { builder.setServiceUuid(ParcelUuid.fromString(it)) }
+                serviceUUID?.let { builder.setServiceUuid(parseBleParcelUuid(it)) }
                 deviceName?.let { builder.setDeviceName(it) }
                 deviceAddress?.let { builder.setDeviceAddress(it) }
                 if (manufacturerId != null) {
@@ -1929,7 +1929,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         val promise = Promise<String>()
         val dataBuilder = AdvertiseData.Builder()
         options.serviceUUIDs?.forEach { uuid ->
-            dataBuilder.addServiceUuid(ParcelUuid.fromString(uuid))
+            dataBuilder.addServiceUuid(parseBleParcelUuid(uuid))
         }
         normalizeAdvertisingData(
             options.advertisingData,
@@ -2501,17 +2501,28 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             }
 
             val dataBuilder = AdvertiseData.Builder()
-            currentServiceUUIDs.forEach { uuid ->
-                dataBuilder.addServiceUuid(ParcelUuid.fromString(uuid))
-            }
-
             val scanResponseBuilder = AdvertiseData.Builder()
-            currentAdvertisingData?.let {
-                processAdvertisingData(
-                    data = it,
-                    dataBuilder = scanResponseBuilder,
-                    includeServiceUuids = false
+            try {
+                currentServiceUUIDs.forEach { uuid ->
+                    dataBuilder.addServiceUuid(parseBleParcelUuid(uuid))
+                }
+                currentAdvertisingData?.let {
+                    processAdvertisingData(
+                        data = it,
+                        dataBuilder = scanResponseBuilder,
+                        includeServiceUuids = false
+                    )
+                }
+            } catch (error: IllegalArgumentException) {
+                // This coroutine has no exception handler: an invalid UUID from
+                // JS would otherwise crash the app instead of failing the start.
+                val message = error.message ?: "Invalid advertising data"
+                Log.e(TAG, "Advertising failed: $message", error)
+                eventEmitter.emit(
+                    "advertisingStartFailed",
+                    mapOf("error" to message, "message" to message)
                 )
+                return@launch
             }
 
             val settings = AdvertiseSettings.Builder()
@@ -3918,10 +3929,10 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         serviceUUID: String,
         characteristicUUID: String
     ): BluetoothGattCharacteristic? {
-        val service = gatt.services.firstOrNull { it.uuid.toString().equals(serviceUUID, ignoreCase = true) }
+        val service = gatt.services.firstOrNull { isSameBleUuid(it.uuid, serviceUUID) }
             ?: return null
         return service.characteristics.firstOrNull {
-            it.uuid.toString().equals(characteristicUUID, ignoreCase = true)
+            isSameBleUuid(it.uuid, characteristicUUID)
         }
     }
 
@@ -3933,7 +3944,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     ): BluetoothGattDescriptor? {
         val characteristic = findCharacteristic(gatt, serviceUUID, characteristicUUID) ?: return null
         return characteristic.descriptors.firstOrNull {
-            it.uuid.toString().equals(descriptorUUID, ignoreCase = true)
+            isSameBleUuid(it.uuid, descriptorUUID)
         }
     }
 
@@ -4026,8 +4037,8 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         characteristicUUID: String
     ): BluetoothGattCharacteristic? {
         return try {
-            val service = gattServer?.getService(UUID.fromString(serviceUUID))
-            service?.getCharacteristic(UUID.fromString(characteristicUUID))
+            val service = gattServer?.getService(parseBleUuid(serviceUUID))
+            service?.getCharacteristic(parseBleUuid(characteristicUUID))
         } catch (_: IllegalArgumentException) {
             null
         }
@@ -4727,7 +4738,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
     private fun addServiceUUIDs(uuids: Array<String>?, dataBuilder: AdvertiseData.Builder) {
         uuids?.forEach { uuid ->
-            dataBuilder.addServiceUuid(ParcelUuid.fromString(uuid))
+            dataBuilder.addServiceUuid(parseBleParcelUuid(uuid))
         }
     }
 
@@ -4737,7 +4748,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
     ) {
         serviceDataEntries?.forEach { entry ->
             hexStringToByteArray(entry.data)?.let { dataBytes ->
-                dataBuilder.addServiceData(ParcelUuid.fromString(entry.uuid), dataBytes)
+                dataBuilder.addServiceData(parseBleParcelUuid(entry.uuid), dataBytes)
             }
         }
     }
@@ -4800,7 +4811,7 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
 
         serviceUUIDs.forEach { uuid ->
             val service = BluetoothGattService(
-                UUID.fromString(uuid),
+                parseBleUuid(uuid),
                 BluetoothGattService.SERVICE_TYPE_PRIMARY
             )
             gattServer?.addService(service)

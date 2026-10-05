@@ -257,7 +257,7 @@ class MunimBluetoothBackgroundService : Service() {
         val data = AdvertiseData.Builder()
 
         serviceUUIDs.forEach { uuid ->
-            runCatching { ParcelUuid.fromString(uuid) }.getOrNull()?.let(data::addServiceUuid)
+            runCatching { parseBleParcelUuid(uuid) }.getOrNull()?.let(data::addServiceUuid)
         }
 
         val scanResponse = AdvertiseData.Builder()
@@ -312,14 +312,14 @@ class MunimBluetoothBackgroundService : Service() {
             for (index in 0 until services.length()) {
                 val serviceJson = services.getJSONObject(index)
                 val service = BluetoothGattService(
-                    UUID.fromString(serviceJson.getString("uuid")),
+                    parseBleUuid(serviceJson.getString("uuid")),
                     BluetoothGattService.SERVICE_TYPE_PRIMARY
                 )
                 val characteristics = serviceJson.optJSONArray("characteristics") ?: JSONArray()
                 for (characteristicIndex in 0 until characteristics.length()) {
                     val characteristicJson = characteristics.getJSONObject(characteristicIndex)
                     val characteristic = BluetoothGattCharacteristic(
-                        UUID.fromString(characteristicJson.getString("uuid")),
+                        parseBleUuid(characteristicJson.getString("uuid")),
                         propertiesFromJson(characteristicJson.optJSONArray("properties")),
                         characteristicPermissionsFromJson(
                             characteristicJson.optJSONArray("permissions"),
@@ -342,7 +342,7 @@ class MunimBluetoothBackgroundService : Service() {
                     for (descriptorIndex in 0 until descriptors.length()) {
                         val descriptorJson = descriptors.getJSONObject(descriptorIndex)
                         val descriptor = BluetoothGattDescriptor(
-                            UUID.fromString(descriptorJson.getString("uuid")),
+                            parseBleUuid(descriptorJson.getString("uuid")),
                             descriptorPermissionsFromJson(descriptorJson.optJSONArray("permissions"))
                         )
                         optionalString(descriptorJson, "value")?.let { value ->
@@ -581,7 +581,7 @@ class MunimBluetoothBackgroundService : Service() {
         val filters = serviceUUIDs.mapNotNull { uuid ->
             runCatching {
                 ScanFilter.Builder()
-                    .setServiceUuid(ParcelUuid.fromString(uuid))
+                    .setServiceUuid(parseBleParcelUuid(uuid))
                     .build()
             }.getOrNull()
         }
