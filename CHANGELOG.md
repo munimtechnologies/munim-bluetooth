@@ -1,3 +1,9 @@
+## [0.10.2](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.10.1...v0.10.2) (2026-10-17)
+
+### 🐛 Bug Fixes
+
+* declare Multipeer's UDP Bonjour service and report Local Network access ([#52](https://github.com/munimtechnologies/munim-bluetooth/issues/52)) ([fcd1c0c](https://github.com/munimtechnologies/munim-bluetooth/commit/fcd1c0c54e13f41046536131e424b6d46e5bc36e))
+
 ## [0.10.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.10.0...v0.10.1) (2026-10-17)
 
 ### 🐛 Bug Fixes
