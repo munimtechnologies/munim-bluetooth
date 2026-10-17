@@ -44,6 +44,8 @@
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_munim-mesh._tcp</string>
+		<string>_munim-mesh._udp</string>
+		<string>_munimbluetooth._tcp</string>
 	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>

@@ -12,6 +12,7 @@ import type {
   BLEDevice,
   BackgroundSessionOptions,
   MultipeerSessionOptions,
+  LocalNetworkPermissionState,
   MultipeerPeer,
   MultipeerDiscoveryInfoEntry,
   MultipeerEncryptionPreference,
@@ -933,6 +934,20 @@ export function stopBackgroundSession(): void {
 }
 
 /**
+ * iOS: trigger (or re-check) the Local Network privacy prompt that Apple
+ * Multipeer Connectivity needs. Resolves 'granted', 'denied', or
+ * 'notDetermined' if the user has not answered within `timeoutMs` (default
+ * 30000). With access denied, Multipeer finds no peers and reports no error.
+ * Needs "_munimbluetooth._tcp" in NSBonjourServices (the config plugin adds
+ * it). Android resolves 'granted'.
+ */
+export function requestLocalNetworkPermission(
+  timeoutMs?: number
+): Promise<LocalNetworkPermissionState> {
+  return MunimBluetooth.requestLocalNetworkPermission(timeoutMs)
+}
+
+/**
  * Start Apple Multipeer Connectivity transport. This is iOS/iPadOS/macOS/tvOS
  * only; Android cannot join Apple Multipeer sessions. Automatic outgoing and
  * incoming invitations both default to false.
@@ -1064,6 +1079,7 @@ export type {
   BLEDevice,
   BackgroundSessionOptions,
   MultipeerSessionOptions,
+  LocalNetworkPermissionState,
   MultipeerPeer,
   MultipeerDiscoveryInfoEntry,
   MultipeerEncryptionPreference,
@@ -1155,6 +1171,7 @@ export default {
   writeClassic,
   startBackgroundSession,
   stopBackgroundSession,
+  requestLocalNetworkPermission,
   startMultipeerSession,
   stopMultipeerSession,
   inviteMultipeerPeer,

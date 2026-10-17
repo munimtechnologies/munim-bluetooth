@@ -72,6 +72,7 @@ import com.margelo.nitro.munimbluetooth.GATTQueueDiagnostic
 import com.margelo.nitro.munimbluetooth.GATTService
 import com.margelo.nitro.munimbluetooth.HybridMunimBluetoothSpec
 import com.margelo.nitro.munimbluetooth.L2CAPChannel
+import com.margelo.nitro.munimbluetooth.LocalNetworkPermissionState
 import com.margelo.nitro.munimbluetooth.ManufacturerDataEntry
 import com.margelo.nitro.munimbluetooth.MultipeerPeer
 import com.margelo.nitro.munimbluetooth.MultipeerSessionOptions
@@ -2417,6 +2418,11 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         }
         context.startService(intent)
         eventEmitter.emit("backgroundSessionStopped", mapOf("platform" to "android"))
+    }
+
+    override fun requestLocalNetworkPermission(timeoutMs: Double?): Promise<LocalNetworkPermissionState> {
+        // Apple Multipeer Connectivity is iOS-only and BLE does not use the local network.
+        return Promise.resolved(LocalNetworkPermissionState.GRANTED)
     }
 
     override fun startMultipeerSession(options: MultipeerSessionOptions) {

@@ -142,6 +142,14 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     };
   }
   
+  // pragma MARK: std::function<void(LocalNetworkPermissionState /* result */)>
+  Func_void_LocalNetworkPermissionState create_Func_void_LocalNetworkPermissionState(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = MunimBluetooth::Func_void_LocalNetworkPermissionState::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](LocalNetworkPermissionState result) mutable -> void {
+      swiftClosure.call(static_cast<int>(result));
+    };
+  }
+  
   // pragma MARK: std::function<void(const std::vector<MultipeerPeer>& /* result */)>
   Func_void_std__vector_MultipeerPeer_ create_Func_void_std__vector_MultipeerPeer_(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = MunimBluetooth::Func_void_std__vector_MultipeerPeer_::fromUnsafe(swiftClosureWrapper);

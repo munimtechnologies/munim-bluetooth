@@ -57,6 +57,8 @@ namespace margelo::nitro::munimbluetooth { struct ExtendedAdvertisingOptions; }
 namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
 // Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
+// Forward declaration of `LocalNetworkPermissionState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class LocalNetworkPermissionState; }
 // Forward declaration of `MultipeerSessionOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct MultipeerSessionOptions; }
 // Forward declaration of `MultipeerPeer` to properly resolve imports.
@@ -90,6 +92,7 @@ namespace margelo::nitro::munimbluetooth { enum class SubrateMode; }
 #include "ExtendedAdvertisingOptions.hpp"
 #include "L2CAPChannel.hpp"
 #include "BackgroundSessionOptions.hpp"
+#include "LocalNetworkPermissionState.hpp"
 #include "MultipeerSessionOptions.hpp"
 #include "MultipeerPeer.hpp"
 #include "SubrateMode.hpp"
@@ -178,6 +181,7 @@ namespace margelo::nitro::munimbluetooth {
       virtual std::shared_ptr<Promise<void>> writeClassic(const std::string& deviceId, const std::string& value) = 0;
       virtual void startBackgroundSession(const BackgroundSessionOptions& options) = 0;
       virtual void stopBackgroundSession() = 0;
+      virtual std::shared_ptr<Promise<LocalNetworkPermissionState>> requestLocalNetworkPermission(std::optional<double> timeoutMs) = 0;
       virtual void startMultipeerSession(const MultipeerSessionOptions& options) = 0;
       virtual void stopMultipeerSession() = 0;
       virtual void inviteMultipeerPeer(const std::string& peerId) = 0;

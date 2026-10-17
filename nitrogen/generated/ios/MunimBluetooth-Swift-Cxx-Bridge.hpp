@@ -38,6 +38,8 @@ namespace margelo::nitro::munimbluetooth { struct GATTService; }
 namespace margelo::nitro::munimbluetooth { class HybridMunimBluetoothSpec; }
 // Forward declaration of `L2CAPChannel` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
+// Forward declaration of `LocalNetworkPermissionState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class LocalNetworkPermissionState; }
 // Forward declaration of `ManufacturerDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ManufacturerDataEntry; }
 // Forward declaration of `MultipeerDiscoveryInfoEntry` to properly resolve imports.
@@ -83,6 +85,7 @@ namespace MunimBluetooth { class HybridMunimBluetoothSpec_cxx; }
 #include "GATTService.hpp"
 #include "HybridMunimBluetoothSpec.hpp"
 #include "L2CAPChannel.hpp"
+#include "LocalNetworkPermissionState.hpp"
 #include "ManufacturerDataEntry.hpp"
 #include "MultipeerDiscoveryInfoEntry.hpp"
 #include "MultipeerEncryptionPreference.hpp"
@@ -967,6 +970,40 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
     return Func_void_L2CAPChannel_Wrapper(std::move(value));
   }
   
+  // pragma MARK: std::shared_ptr<Promise<LocalNetworkPermissionState>>
+  /**
+   * Specialized version of `std::shared_ptr<Promise<LocalNetworkPermissionState>>`.
+   */
+  using std__shared_ptr_Promise_LocalNetworkPermissionState__ = std::shared_ptr<Promise<LocalNetworkPermissionState>>;
+  inline std::shared_ptr<Promise<LocalNetworkPermissionState>> create_std__shared_ptr_Promise_LocalNetworkPermissionState__() noexcept {
+    return Promise<LocalNetworkPermissionState>::create();
+  }
+  inline PromiseHolder<LocalNetworkPermissionState> wrap_std__shared_ptr_Promise_LocalNetworkPermissionState__(std::shared_ptr<Promise<LocalNetworkPermissionState>> promise) noexcept {
+    return PromiseHolder<LocalNetworkPermissionState>(std::move(promise));
+  }
+  
+  // pragma MARK: std::function<void(LocalNetworkPermissionState /* result */)>
+  /**
+   * Specialized version of `std::function<void(LocalNetworkPermissionState)>`.
+   */
+  using Func_void_LocalNetworkPermissionState = std::function<void(LocalNetworkPermissionState /* result */)>;
+  /**
+   * Wrapper class for a `std::function<void(LocalNetworkPermissionState / * result * /)>`, this can be used from Swift.
+   */
+  class Func_void_LocalNetworkPermissionState_Wrapper final {
+  public:
+    explicit Func_void_LocalNetworkPermissionState_Wrapper(std::function<void(LocalNetworkPermissionState /* result */)>&& func): _function(std::make_unique<std::function<void(LocalNetworkPermissionState /* result */)>>(std::move(func))) {}
+    inline void call(int result) const noexcept {
+      _function->operator()(static_cast<LocalNetworkPermissionState>(result));
+    }
+  private:
+    std::unique_ptr<std::function<void(LocalNetworkPermissionState /* result */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_LocalNetworkPermissionState create_Func_void_LocalNetworkPermissionState(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_LocalNetworkPermissionState_Wrapper wrap_Func_void_LocalNetworkPermissionState(Func_void_LocalNetworkPermissionState value) noexcept {
+    return Func_void_LocalNetworkPermissionState_Wrapper(std::move(value));
+  }
+  
   // pragma MARK: std::vector<MultipeerDiscoveryInfoEntry>
   /**
    * Specialized version of `std::vector<MultipeerDiscoveryInfoEntry>`.
@@ -1207,6 +1244,15 @@ namespace margelo::nitro::munimbluetooth::bridge::swift {
   }
   inline Result_std__shared_ptr_Promise_L2CAPChannel___ create_Result_std__shared_ptr_Promise_L2CAPChannel___(const std::exception_ptr& error) noexcept {
     return Result<std::shared_ptr<Promise<L2CAPChannel>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<Promise<LocalNetworkPermissionState>>>
+  using Result_std__shared_ptr_Promise_LocalNetworkPermissionState___ = Result<std::shared_ptr<Promise<LocalNetworkPermissionState>>>;
+  inline Result_std__shared_ptr_Promise_LocalNetworkPermissionState___ create_Result_std__shared_ptr_Promise_LocalNetworkPermissionState___(const std::shared_ptr<Promise<LocalNetworkPermissionState>>& value) noexcept {
+    return Result<std::shared_ptr<Promise<LocalNetworkPermissionState>>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_Promise_LocalNetworkPermissionState___ create_Result_std__shared_ptr_Promise_LocalNetworkPermissionState___(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<Promise<LocalNetworkPermissionState>>>::withError(error);
   }
   
   // pragma MARK: Result<std::shared_ptr<Promise<std::vector<MultipeerPeer>>>>

@@ -107,6 +107,7 @@ namespace margelo::nitro::munimbluetooth {
     std::shared_ptr<Promise<void>> writeClassic(const std::string& deviceId, const std::string& value) override;
     void startBackgroundSession(const BackgroundSessionOptions& options) override;
     void stopBackgroundSession() override;
+    std::shared_ptr<Promise<LocalNetworkPermissionState>> requestLocalNetworkPermission(std::optional<double> timeoutMs) override;
     void startMultipeerSession(const MultipeerSessionOptions& options) override;
     void stopMultipeerSession() override;
     void inviteMultipeerPeer(const std::string& peerId) override;

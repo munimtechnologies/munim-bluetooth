@@ -41,6 +41,8 @@ namespace margelo::nitro::munimbluetooth { struct BondedDevice; }
 namespace margelo::nitro::munimbluetooth { enum class BluetoothDeviceType; }
 // Forward declaration of `L2CAPChannel` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
+// Forward declaration of `LocalNetworkPermissionState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class LocalNetworkPermissionState; }
 // Forward declaration of `MultipeerPeer` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct MultipeerPeer; }
 // Forward declaration of `MultipeerPeerState` to properly resolve imports.
@@ -126,6 +128,8 @@ namespace margelo::nitro::munimbluetooth { enum class SubrateMode; }
 #include "JBluetoothDeviceType.hpp"
 #include "L2CAPChannel.hpp"
 #include "JL2CAPChannel.hpp"
+#include "LocalNetworkPermissionState.hpp"
+#include "JLocalNetworkPermissionState.hpp"
 #include "MultipeerPeer.hpp"
 #include "JMultipeerPeer.hpp"
 #include "MultipeerPeerState.hpp"
@@ -899,6 +903,22 @@ namespace margelo::nitro::munimbluetooth {
   void JHybridMunimBluetoothSpec::stopBackgroundSession() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopBackgroundSession");
     method(_javaPart);
+  }
+  std::shared_ptr<Promise<LocalNetworkPermissionState>> JHybridMunimBluetoothSpec::requestLocalNetworkPermission(std::optional<double> timeoutMs) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JDouble> /* timeoutMs */)>("requestLocalNetworkPermission");
+    auto __result = method(_javaPart, timeoutMs.has_value() ? jni::JDouble::valueOf(timeoutMs.value()) : nullptr);
+    return [&]() {
+      auto __promise = Promise<LocalNetworkPermissionState>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<JLocalNetworkPermissionState>(__boxedResult);
+        __promise->resolve(__result->toCpp());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
   }
   void JHybridMunimBluetoothSpec::startMultipeerSession(const MultipeerSessionOptions& options) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JMultipeerSessionOptions> /* options */)>("startMultipeerSession");

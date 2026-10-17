@@ -365,6 +365,17 @@ export interface MultipeerDiscoveryInfoEntry {
   value: string
 }
 
+/**
+ * iOS Local Network privacy state, which Apple Multipeer Connectivity needs.
+ * `notDetermined`: the user has not answered the prompt within the timeout.
+ * `unavailable`: the probe could not run.
+ */
+export type LocalNetworkPermissionState =
+  | 'granted'
+  | 'denied'
+  | 'notDetermined'
+  | 'unavailable'
+
 export interface MultipeerSessionOptions {
   /**
    * Bonjour service type, 1-15 chars: lowercase letters, numbers, hyphen.
@@ -803,6 +814,21 @@ export interface MunimBluetooth
    * Stop the active background BLE session.
    */
   stopBackgroundSession(): void
+
+  /**
+   * iOS: trigger (or re-check) the Local Network privacy prompt that Apple
+   * Multipeer Connectivity needs, by publishing and browsing a private Bonjour
+   * service ("_munimbluetooth._tcp", which must be in NSBonjourServices; the
+   * config plugin adds it). Resolves 'granted', 'denied', or 'notDetermined'
+   * if the user has not answered within `timeoutMs` (default 30000, 1000 to
+   * 120000). With access denied, Multipeer finds no peers and reports no
+   * error, so call this before startMultipeerSession() to tell the user.
+   * Android: resolves 'granted' (Multipeer is Apple-only and BLE does not use
+   * the local network).
+   */
+  requestLocalNetworkPermission(
+    timeoutMs?: number
+  ): Promise<LocalNetworkPermissionState>
 
   /**
    * Start Apple Multipeer Connectivity discovery/session transport.

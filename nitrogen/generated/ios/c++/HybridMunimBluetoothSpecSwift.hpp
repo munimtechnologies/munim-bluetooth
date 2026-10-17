@@ -78,6 +78,8 @@ namespace margelo::nitro::munimbluetooth { struct ExtendedAdvertisingOptions; }
 namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
 // Forward declaration of `BackgroundSessionOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct BackgroundSessionOptions; }
+// Forward declaration of `LocalNetworkPermissionState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class LocalNetworkPermissionState; }
 // Forward declaration of `MultipeerSessionOptions` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct MultipeerSessionOptions; }
 // Forward declaration of `MultipeerDiscoveryInfoEntry` to properly resolve imports.
@@ -128,6 +130,7 @@ namespace margelo::nitro::munimbluetooth { enum class SubrateMode; }
 #include "ExtendedAdvertisingOptions.hpp"
 #include "L2CAPChannel.hpp"
 #include "BackgroundSessionOptions.hpp"
+#include "LocalNetworkPermissionState.hpp"
 #include "MultipeerSessionOptions.hpp"
 #include "MultipeerDiscoveryInfoEntry.hpp"
 #include "MultipeerEncryptionPreference.hpp"
@@ -576,6 +579,14 @@ namespace margelo::nitro::munimbluetooth {
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
+    }
+    inline std::shared_ptr<Promise<LocalNetworkPermissionState>> requestLocalNetworkPermission(std::optional<double> timeoutMs) override {
+      auto __result = _swiftPart.requestLocalNetworkPermission(timeoutMs);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
     }
     inline void startMultipeerSession(const MultipeerSessionOptions& options) override {
       auto __result = _swiftPart.startMultipeerSession(std::forward<decltype(options)>(options));
