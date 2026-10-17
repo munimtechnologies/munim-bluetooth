@@ -87,24 +87,24 @@
     }
   },
   "devDependencies": {
-    "@react-native/gradle-plugin": "^0.87.1",
+    "@react-native/gradle-plugin": "^0.88.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/jest": "^29.5.14",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.3.0",
     "conventional-changelog-conventionalcommits": "^9.3.1",
-    "nitrogen": "0.36.5",
-    "react": "19.2.3",
-    "react-native": "0.87.1",
+    "nitrogen": "0.37.1",
+    "react": "19.3.0",
+    "react-native": "0.88.0",
     "react-native-builder-bob": "^0.43.1",
-    "react-native-nitro-modules": "0.36.5",
+    "react-native-nitro-modules": "0.37.1",
     "semantic-release": "^25.0.9",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-nitro-modules": ">=0.36.5 <1"
+    "react-native-nitro-modules": ">=0.37.1 <1"
   },
   "overrides": {
     "brace-expansion@1.x": "1.1.21",
