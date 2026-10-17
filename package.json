@@ -104,7 +104,7 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-nitro-modules": ">=0.37.1 <1"
+    "react-native-nitro-modules": ">=0.36.5 <1"
   },
   "overrides": {
     "brace-expansion@1.x": "1.1.21",
