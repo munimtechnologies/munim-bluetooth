@@ -330,6 +330,23 @@ function App(): React.JSX.Element {
       // Safe cleanup before restarting the local peer browser/advertiser.
     }
 
+    // With Local Network access denied, Multipeer finds no peers and reports
+    // no error, so check it (this also shows the prompt on first launch).
+    MunimBluetooth.requestLocalNetworkPermission(15000)
+      .then((state) => {
+        if (state === 'granted') {
+          addLog('Local Network access granted', 'success');
+        } else {
+          addLog(
+            `Local Network access ${state}: Multipeer cannot find peers. Allow it in Settings > Privacy & Security > Local Network.`,
+            'warning'
+          );
+        }
+      })
+      .catch((error) =>
+        addLog(`Local Network check failed: ${formatError(error)}`, 'warning')
+      );
+
     try {
       MunimBluetooth.startMultipeerSession({
         serviceType: MULTIPEER_SERVICE_TYPE,

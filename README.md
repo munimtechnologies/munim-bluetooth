@@ -172,6 +172,8 @@ For iOS, the library is automatically linked. However, you need to add the follo
 <key>NSBonjourServices</key>
 <array>
   <string>_munim-mesh._tcp</string>
+  <string>_munim-mesh._udp</string>
+  <string>_munimbluetooth._tcp</string>
 </array>
 ```
 
@@ -185,14 +187,14 @@ For iOS, the library is automatically linked. However, you need to add the follo
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth for BLE communication",
         "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to create a peripheral device",
         "NSLocalNetworkUsageDescription": "This app uses the local network to discover and communicate with nearby peer devices",
-        "NSBonjourServices": ["_munim-mesh._tcp"]
+        "NSBonjourServices": ["_munim-mesh._tcp", "_munim-mesh._udp", "_munimbluetooth._tcp"]
       }
     }
   }
 }
 ```
 
-With the included Expo config plugin, the default `munim-mesh` Multipeer service is declared automatically. For custom service types:
+`_munim-mesh._udp` is required as well as `_munim-mesh._tcp`: Multipeer Connectivity browses both, and iOS's Local Network privacy blocks any service type missing from the list. `_munimbluetooth._tcp` is the private service `requestLocalNetworkPermission()` uses. With the included Expo config plugin, all three are declared automatically (both entries for each service type). For custom service types:
 
 ```json
 {
@@ -271,10 +273,18 @@ import {
   addEventListener,
   inviteMultipeerPeer,
   rejectMultipeerInvitation,
+  requestLocalNetworkPermission,
   sendMultipeerMessage,
   startMultipeerSession,
   stopMultipeerSession,
 } from 'munim-bluetooth'
+
+// Multipeer needs Local Network access. If it is denied, discovery finds no
+// peers and reports no error, so check first (this shows the prompt once).
+const access = await requestLocalNetworkPermission()
+if (access !== 'granted') {
+  showHint('Allow Local Network access in Settings > Privacy & Security > Local Network')
+}
 
 startMultipeerSession({
   serviceType: 'munim-mesh',
@@ -311,7 +321,9 @@ addEventListener('multipeerMessageReceived', ({ displayName, value }) => {
 stopMultipeerSession()
 ```
 
-Multipeer service types must be 1-15 lowercase letters/numbers/hyphens, and the matching Bonjour entry must be declared in iOS `Info.plist` as `_<serviceType>._tcp` (for example `_munim-mesh._tcp`). The Expo config plugin adds `_munim-mesh._tcp` by default and accepts a `multipeerServiceTypes` option for custom service types.
+Multipeer service types must be 1-15 lowercase letters/numbers/hyphens, and the matching Bonjour entries must be declared in iOS `Info.plist` as both `_<serviceType>._tcp` and `_<serviceType>._udp` (for example `_munim-mesh._tcp` and `_munim-mesh._udp`). The Expo config plugin adds both for `munim-mesh` by default and accepts a `multipeerServiceTypes` option for custom service types.
+
+If two devices never find each other, check Local Network access first: with it denied (Settings > Privacy & Security > Local Network), iOS hides peers without any error. iOS asks only once per app, the first time it advertises or browses. `requestLocalNetworkPermission()` reports the state, so apps can tell users what to change.
 
 Incoming invitations use opaque, runtime-only IDs. At most 32 are retained; they expire after the configured invitation timeout (capped at 60 seconds) and are rejected automatically. Setting `autoInvite` or `autoAcceptInvitations` to `true` is an explicit broad trust decision and should only be used when discovery itself is authenticated.
 
@@ -682,6 +694,16 @@ Starts a best-effort background BLE session. Android starts a foreground service
 #### `stopBackgroundSession()`
 
 Stops the active background BLE session and clears persisted Android service restore state.
+
+#### `requestLocalNetworkPermission(timeoutMs?)`
+
+iOS: shows (on first use) or re-checks the Local Network privacy prompt that Multipeer Connectivity needs, by publishing and browsing the private `_munimbluetooth._tcp` Bonjour service (declare it in `NSBonjourServices`; the config plugin does).
+
+**Parameters:**
+
+- `timeoutMs?` (number): How long to wait for an answer, 1000 to 120000. Defaults to `30000`.
+
+**Returns:** `Promise<'granted' | 'denied' | 'notDetermined' | 'unavailable'>`. `notDetermined` means the user did not answer within `timeoutMs`. Android resolves `'granted'`: Multipeer is Apple-only and BLE does not use the local network.
 
 #### `startMultipeerSession(options)`
 

@@ -66,6 +66,7 @@ public protocol HybridMunimBluetoothSpec_protocol: HybridObject {
   func writeClassic(deviceId: String, value: String) throws -> Promise<Void>
   func startBackgroundSession(options: BackgroundSessionOptions) throws -> Void
   func stopBackgroundSession() throws -> Void
+  func requestLocalNetworkPermission(timeoutMs: Double?) throws -> Promise<LocalNetworkPermissionState>
   func startMultipeerSession(options: MultipeerSessionOptions) throws -> Void
   func stopMultipeerSession() throws -> Void
   func inviteMultipeerPeer(peerId: String) throws -> Void

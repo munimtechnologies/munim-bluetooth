@@ -50,6 +50,8 @@ namespace margelo::nitro::munimbluetooth { struct GATTService; }
 namespace margelo::nitro::munimbluetooth { class HybridMunimBluetoothSpec; }
 // Forward declaration of `L2CAPChannel` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct L2CAPChannel; }
+// Forward declaration of `LocalNetworkPermissionState` to properly resolve imports.
+namespace margelo::nitro::munimbluetooth { enum class LocalNetworkPermissionState; }
 // Forward declaration of `ManufacturerDataEntry` to properly resolve imports.
 namespace margelo::nitro::munimbluetooth { struct ManufacturerDataEntry; }
 // Forward declaration of `MultipeerDiscoveryInfoEntry` to properly resolve imports.
@@ -111,6 +113,7 @@ namespace margelo::nitro::munimbluetooth { enum class WriteType; }
 #include "GATTService.hpp"
 #include "HybridMunimBluetoothSpec.hpp"
 #include "L2CAPChannel.hpp"
+#include "LocalNetworkPermissionState.hpp"
 #include "ManufacturerDataEntry.hpp"
 #include "MultipeerDiscoveryInfoEntry.hpp"
 #include "MultipeerEncryptionPreference.hpp"

@@ -244,6 +244,10 @@ abstract class HybridMunimBluetoothSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
+  abstract fun requestLocalNetworkPermission(timeoutMs: Double?): Promise<LocalNetworkPermissionState>
+  
+  @DoNotStrip
+  @Keep
   abstract fun startMultipeerSession(options: MultipeerSessionOptions): Unit
   
   @DoNotStrip

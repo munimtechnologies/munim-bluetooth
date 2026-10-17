@@ -136,14 +136,19 @@ function normalizeMultipeerServiceTypes(value) {
     .map((serviceType) =>
       serviceType
         .replace(/^_/, '')
-        .replace(/\._tcp$/, '')
+        .replace(/\._(tcp|udp)$/, '')
         .replace(/^_/, '')
     );
 }
 
-function bonjourServiceName(serviceType) {
-  return `_${serviceType}._tcp`;
+// Multipeer Connectivity browses both the TCP and the UDP Bonjour service, and
+// iOS's Local Network privacy blocks any type missing from NSBonjourServices.
+function bonjourServiceNames(serviceType) {
+  return [`_${serviceType}._tcp`, `_${serviceType}._udp`];
 }
+
+// Private service requestLocalNetworkPermission() publishes and browses.
+const LOCAL_NETWORK_PROBE_SERVICE = '_munimbluetooth._tcp';
 
 function withMunimBluetooth(config, options = {}) {
   const bluetoothBackground =
@@ -174,8 +179,9 @@ function withMunimBluetooth(config, options = {}) {
 
       const bonjourServices = new Set(infoPlist.NSBonjourServices ?? []);
       multipeerServiceTypes
-        .map(bonjourServiceName)
+        .flatMap(bonjourServiceNames)
         .forEach((serviceName) => bonjourServices.add(serviceName));
+      bonjourServices.add(LOCAL_NETWORK_PROBE_SERVICE);
       infoPlist.NSBonjourServices = Array.from(bonjourServices);
     }
 

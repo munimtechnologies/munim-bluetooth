@@ -67,6 +67,7 @@ namespace margelo::nitro::munimbluetooth {
       prototype.registerHybridMethod("writeClassic", &HybridMunimBluetoothSpec::writeClassic);
       prototype.registerHybridMethod("startBackgroundSession", &HybridMunimBluetoothSpec::startBackgroundSession);
       prototype.registerHybridMethod("stopBackgroundSession", &HybridMunimBluetoothSpec::stopBackgroundSession);
+      prototype.registerHybridMethod("requestLocalNetworkPermission", &HybridMunimBluetoothSpec::requestLocalNetworkPermission);
       prototype.registerHybridMethod("startMultipeerSession", &HybridMunimBluetoothSpec::startMultipeerSession);
       prototype.registerHybridMethod("stopMultipeerSession", &HybridMunimBluetoothSpec::stopMultipeerSession);
       prototype.registerHybridMethod("inviteMultipeerPeer", &HybridMunimBluetoothSpec::inviteMultipeerPeer);

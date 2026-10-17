@@ -1841,6 +1841,18 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
         }
     }
 
+    func requestLocalNetworkPermission(timeoutMs: Double?) throws -> Promise<LocalNetworkPermissionState> {
+        let timeout = timeoutMs ?? 30_000
+        guard timeout.isFinite, timeout >= 1_000, timeout <= 120_000 else {
+            throw NSError(domain: "MunimBluetooth", code: 1005, userInfo: [NSLocalizedDescriptionKey: "timeoutMs must be between 1000 and 120000"])
+        }
+        let promise = Promise<LocalNetworkPermissionState>()
+        LocalNetworkPermissionProbe().run(timeout: timeout / 1_000) { state in
+            promise.resolve(withResult: state)
+        }
+        return promise
+    }
+
     func startMultipeerSession(options: MultipeerSessionOptions) throws {
         try onBluetoothThread {
             do {
