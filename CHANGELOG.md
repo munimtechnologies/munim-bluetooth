@@ -1,3 +1,9 @@
+## [0.10.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.9.1...v0.10.0) (2026-10-17)
+
+### ✨ Features
+
+* React Native 0.88 and Nitro Modules 0.37.1 ([#51](https://github.com/munimtechnologies/munim-bluetooth/issues/51)) ([78b22a9](https://github.com/munimtechnologies/munim-bluetooth/commit/78b22a9977e1f61609b86e7c199489601b82defe))
+
 ## [0.9.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.9.0...v0.9.1) (2026-10-08)
 
 ### 🐛 Bug Fixes
