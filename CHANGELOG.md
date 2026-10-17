@@ -1,3 +1,9 @@
+## [0.10.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.10.0...v0.10.1) (2026-10-17)
+
+### 🐛 Bug Fixes
+
+* accept react-native-nitro-modules 0.36.5 again ([3dd57e3](https://github.com/munimtechnologies/munim-bluetooth/commit/3dd57e3f53b23c77d9cfa5894dd4102599591f8e)), closes [margelo/nitro#1573](https://github.com/margelo/nitro/issues/1573)
+
 ## [0.10.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.9.1...v0.10.0) (2026-10-17)
 
 ### ✨ Features
