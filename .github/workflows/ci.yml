@@ -1,0 +1,57 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Package checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Nitrogen output is up to date
+        run: |
+          npx nitrogen --logLevel="warning"
+          node scripts/patch-nitro-optionals.js
+          node post-script.js
+          git diff --exit-code -- nitrogen/
+
+      - name: Typecheck library
+        run: npm run typecheck
+
+      - name: Typecheck example
+        working-directory: example
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test -- --ci
+
+      - name: Build
+        run: npx bob build
+
+      - name: Pack (dry run)
+        run: npm pack --dry-run
