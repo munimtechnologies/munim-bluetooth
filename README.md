@@ -103,7 +103,8 @@
 - 🧵 **LE L2CAP Channels**: Stream payloads over LE Credit Based Channels on supported iOS and Android versions
 - 🔌 **Android Classic Bluetooth**: Android RFCOMM client/server messaging for SPP-style devices
 - 🎯 **TypeScript Support**: Full TypeScript definitions included
-- ⚡ **High Performance**: Built with React Native's Nitro modules architecture
+- ⚡ **High Performance**: Built with React Native's Nitro modules architecture; binary (`ArrayBuffer`) read/write/notification paths, natively batched scan results and notifications, and flow-controlled writes and notifications
+- 🪪 **System Device Picker**: `showDevicePicker()` uses Android CompanionDeviceManager and iOS 18+ AccessorySetupKit, so users can pick an accessory without granting location or broad Bluetooth scan access
 - 🚀 **Expo Compatible**: Works seamlessly with Expo managed and bare workflows
 - 🔐 **Permission Handling**: Built-in permission request helpers
 
@@ -120,7 +121,13 @@
 | Central characteristic read | ✅ | ✅ | Resolves with hex-encoded values. Native timeout rejects if callbacks do not arrive. |
 | Central characteristic write | ✅ | ✅ | Supports `write` and `writeWithoutResponse`. With-response writes have native timeout protection; write-without-response is flow controlled, and `getMaximumWriteLength()` reports the payload limit. |
 | Central descriptor read/write | ✅ | ✅ | Uses `readDescriptor()` and `writeDescriptor()` with hex-encoded values. Native timeout rejects if callbacks do not arrive. |
-| Central notify/indicate subscription | ✅ | ✅ | Values emit through `characteristicValueChanged`. |
+| Central notify/indicate subscription | ✅ | ✅ | Values emit through `characteristicValueChanged` (hex), or as `ArrayBuffer`s in native batches through `addCharacteristicNotificationListener()`. |
+| Binary data path | ✅ | ✅ | `readCharacteristicBytes()`, `writeCharacteristicBytes()`, `writeCharacteristicChunks()`, `updateCharacteristicValueBytes()` take and return `ArrayBuffer`s instead of hex strings. |
+| Batched scan results | ✅ | ✅ | `addScanResultsListener()` delivers one array per interval with one entry per device. |
+| Peripheral notification pacing | ✅ | ✅ | `updateCharacteristicValue(…, notify)` resolves when the stack took the value (iOS `peripheralManagerIsReady`, Android `onNotificationSent`), so awaiting it streams without drops. |
+| System device picker | ✅ | ✅ | `showDevicePicker()`: iOS 18+ AccessorySetupKit (declare `NSAccessorySetupKitSupports`), Android 8+ CompanionDeviceManager. |
+| System-connected devices | ✅ | ✅ | `getSystemConnectedDevices()`: iOS `retrieveConnectedPeripherals(withServices:)` (service UUIDs required); Android `BluetoothManager.getConnectedDevices(GATT)` (no service filter). |
+| Connection alerts / ANCS | ✅ | ➖ | iOS `connect()` options `notifyOnConnection`, `notifyOnDisconnection`, `notifyOnNotification`, `requiresANCS`, `enableTransportBridging`; Android ignores them. |
 | RSSI read | ✅ | ✅ | Resolves with dBm. |
 | ATT MTU request | ➖ | ✅ | Android negotiates the requested MTU. iOS negotiates the MTU itself; `requestMTU()` resolves with the MTU in effect. |
 | Connection priority | ➖ | ✅ | Android `requestConnectionPriority()`; iOS resolves `false`. |
@@ -137,6 +144,90 @@
 | Apple Multipeer Connectivity | ✅ | ❌ | iOS/iPadOS devices can discover peers, approve incoming invitations explicitly, manually invite selected peers, and exchange encrypted messages. Android cannot join Apple's Multipeer sessions; use BLE/GATT for iOS-to-Android. |
 
 Call `getCapabilities()` at runtime when you need optional behavior. Platform support can still vary by OS version, hardware, permissions, and app background state.
+
+## High-throughput data
+
+The hex-string APIs stay available, but data-heavy apps should use the
+binary path: values cross the bridge as `ArrayBuffer`s, notifications and scan
+results are collected natively and delivered in batches, and every write and
+notification is flow controlled so nothing is dropped when the radio is busy.
+
+```ts
+import {
+  addCharacteristicNotificationListener,
+  addScanResultsListener,
+  readCharacteristicBytes,
+  updateCharacteristicValueBytes,
+  writeCharacteristicBytes,
+  writeCharacteristicChunks,
+} from 'munim-bluetooth'
+
+// Notifications as ArrayBuffers, at most one JS call per 16 ms.
+const removeNotifications = addCharacteristicNotificationListener(
+  (notifications) => {
+    for (const { deviceId, characteristicUUID, value } of notifications) {
+      const bytes = new Uint8Array(value)
+      // ...
+    }
+  },
+  { batchIntervalMs: 16 }
+)
+
+// Scan results: one array per 250 ms, one entry per device (latest RSSI).
+const removeScan = addScanResultsListener((devices) => render(devices), {
+  batchIntervalMs: 250,
+})
+
+const firmware: Uint8Array = await loadFirmware()
+// Split into MTU-sized write-without-response chunks, sent in order with
+// native flow control and up to 8 writes in flight.
+await writeCharacteristicChunks(deviceId, SERVICE, DATA_CHAR, firmware)
+
+await writeCharacteristicBytes(deviceId, SERVICE, CONTROL_CHAR, new Uint8Array([1]))
+const version = new Uint8Array(
+  await readCharacteristicBytes(deviceId, SERVICE, VERSION_CHAR)
+)
+
+// Peripheral role: awaiting each update paces the sender to the link.
+for (const frame of frames) {
+  await updateCharacteristicValueBytes(SERVICE, STREAM_CHAR, frame, true)
+}
+```
+
+While a batched listener is active, the matching legacy events
+(`characteristicValueChanged` for notifications, `deviceFound`/`onDeviceFound`/`scanResult`)
+are only built and sent for event names that have an `addEventListener()`
+subscriber, so the two paths do not both pay the cost. `bytesToHex()` and
+`hexToBytes()` convert between the two representations.
+
+## System device picker
+
+`showDevicePicker()` shows the operating system's accessory picker. The user
+chooses a device and the app gets access to it without the location or
+nearby-devices scan permission. It returns an `id` you can pass to
+`connect()`.
+
+```ts
+const device = await showDevicePicker({
+  filters: [{ serviceUUID: '180D', namePrefix: 'Polar' }],
+  displayName: 'Heart rate strap', // iOS picker label
+})
+await connect(device.id)
+const granted = await getAssociatedDevices()
+await removeAssociatedDevice(device.associationId)
+```
+
+- **Android 8+**: `CompanionDeviceManager.associate()`. Filters may use
+  `serviceUUID`, `namePrefix`, and `manufacturerId`/`manufacturerData`/
+  `manufacturerDataMask`. `singleDevice: true` asks to confirm the first match.
+- **iOS 18+**: AccessorySetupKit. Every filter needs a `serviceUUID`, and the
+  app must declare `NSAccessorySetupKitSupports` (`Bluetooth`) and list the
+  UUIDs in `NSAccessorySetupBluetoothServices` (the Expo plugin's
+  `accessorySetup` option does both). Declaring AccessorySetupKit changes how
+  iOS authorizes CoreBluetooth for the app (see Apple's AccessorySetupKit
+  documentation), so only declare it if the picker is how your app finds its
+  accessory. Without the keys `getCapabilities().supportsDevicePicker` is
+  false and the call rejects.
 
 ## 📦 Installation
 
@@ -251,7 +342,20 @@ The example above asserts that scan results are never used to derive physical lo
 
 Use `["connect"]` for connection-only apps, or add `"advertise"` for peripheral/background advertising. Set `androidBluetoothPermissions` to `false` to manage every Android permission outside the plugin.
 
-**Build defaults.** The Android library compiles against `compileSdk` 37 (Android 17) with `minSdk` 24, matching React Native 0.87 (AGP 9.2, Kotlin 2.2). An app's `rootProject.ext` values (`compileSdkVersion`, `minSdkVersion`, `targetSdkVersion`, `ndkVersion`) override them. Android 16/17 APIs are only called behind runtime version checks, so the library still runs on Android 7.0+ devices.
+To use `showDevicePicker()` on iOS, add the `accessorySetup` option. It declares `NSAccessorySetupKitSupports` (`Bluetooth`) and the AccessorySetupKit service UUIDs (and optional advertised names) in `Info.plist`:
+
+```json
+["munim-bluetooth", {
+  "accessorySetup": {
+    "bluetoothServices": ["0000180D-0000-1000-8000-00805F9B34FB"],
+    "bluetoothNames": ["Polar"]
+  }
+}]
+```
+
+On Android the plugin (and the library manifest) declares the optional `android.software.companion_device_setup` feature used by the picker.
+
+**Build defaults.** The Android library compiles against `compileSdk` 37 (Android 17) with `minSdk` 24, matching React Native 0.88 (AGP 9.2, Kotlin 2.2; `targetSdk` 37). An app's `rootProject.ext` values (`compileSdkVersion`, `minSdkVersion`, `targetSdkVersion`, `ndkVersion`) override them. Android 16/17 APIs are only called behind runtime version checks, so the library still runs on Android 7.0+ devices.
 
 ## Device-to-Device Messaging
 
@@ -785,6 +889,9 @@ Connects to a BLE device.
 - `options?` (object):
   - `timeoutMs?` (number): Cancel the attempt and reject after this many milliseconds. Defaults to 15000, or no timeout when `autoConnect` is true. `0` waits indefinitely.
   - `autoConnect?` (boolean): Android passes `autoConnect = true` to `connectGatt`, a background connection that completes whenever the device is next in range (slower, but it does not give up). iOS 17+ sets `CBConnectPeripheralOptionEnableAutoReconnect`, so the system reconnects after a link loss: `deviceDisconnected` then carries `isReconnecting: true`, `connectionStateChanged` reports `connecting`, and `deviceConnected` fires again when the link is back. Ignored on older iOS.
+  - `notifyOnConnection?`, `notifyOnDisconnection?`, `notifyOnNotification?` (boolean, iOS): show a system alert for that event while the app is suspended (`CBConnectPeripheralOptionNotifyOn…Key`).
+  - `requiresANCS?` (boolean, iOS 13+): require Apple Notification Center Service authorization for the link, for accessories that read the phone's notifications.
+  - `enableTransportBridging?` (boolean, iOS 13+): bridge a Classic connection of a dual-mode accessory to LE.
 
 **Returns:** Promise<void>. Rejects when the timeout elapses first.
 
@@ -942,6 +1049,38 @@ record if iOS scanners need to read it reliably.
 The older `manufacturerData` string is kept for backwards compatibility but is
 deprecated: iOS reports the raw blob with the company identifier still prefixed,
 while Android reports only the first entry with the identifier stripped.
+
+#### `readCharacteristicBytes(deviceId, serviceUUID, characteristicUUID)`
+
+Like `readCharacteristic()`, but resolves with an `ArrayBuffer`.
+
+#### `writeCharacteristicBytes(deviceId, serviceUUID, characteristicUUID, value, writeType?)`
+
+Like `writeCharacteristic()`, but takes an `ArrayBuffer`, typed array, `DataView`, or `number[]`. The bytes are copied before the call returns.
+
+#### `writeCharacteristicChunks(deviceId, serviceUUID, characteristicUUID, value, options?)`
+
+Writes a payload of any size as consecutive characteristic writes of `getMaximumWriteLength()` bytes (or `options.chunkSize`), in order. `options.writeType` defaults to `writeWithoutResponse`; `options.maxInFlight` (default 8) bounds how many writes JS queues ahead of the native flow control. Rejects with the first failed chunk.
+
+#### `updateCharacteristicValueBytes(serviceUUID, characteristicUUID, value, notify?)`
+
+Peripheral role: like `updateCharacteristicValue()` with raw bytes. With `notify`, resolves once the value was handed to the stack for every subscribed central; rejects when more than 1024 (iOS) / 256 per central (Android) values are already waiting.
+
+#### `addCharacteristicNotificationListener(callback, options?)`
+
+Receives `{ deviceId, serviceUUID, characteristicUUID, value: ArrayBuffer }[]` for notifications and indications. `options.batchIntervalMs` (default 0 = deliver immediately) collects values natively first. Returns a remove function.
+
+#### `addScanResultsListener(callback, options?)`
+
+Receives `BLEDevice[]` batches while scanning; each device appears once per batch with its latest advertisement. `options.batchIntervalMs` defaults to 100. Returns a remove function.
+
+#### `showDevicePicker(options)`, `getAssociatedDevices()`, `removeAssociatedDevice(associationId)`
+
+See [System device picker](#system-device-picker).
+
+#### `getSystemConnectedDevices(serviceUUIDs?)`
+
+Devices the OS reports as connected, including ones connected by other apps: `{ id, name? }[]`. iOS requires at least one service UUID; Android ignores the filter.
 
 #### `getConnectedDevices()`
 
