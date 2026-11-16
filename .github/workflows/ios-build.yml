@@ -95,15 +95,16 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
+      # Pods are only reused for an identical Podfile.lock and package-lock:
+      # a Pods/ directory restored from an older React Native makes
+      # `pod install` stop with "changed the version of the dependency".
       - name: Cache CocoaPods
         uses: actions/cache@v6
         with:
           path: |
             ~/.cocoapods/repos
             example/ios/Pods
-          key: ${{ runner.os }}-xcode${{ matrix.xcode }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode${{ matrix.xcode }}-pods-
+          key: ${{ runner.os }}-xcode${{ matrix.xcode }}-pods-${{ hashFiles('example/ios/Podfile.lock', 'package-lock.json') }}
 
       - name: Install Pods
         working-directory: example/ios
