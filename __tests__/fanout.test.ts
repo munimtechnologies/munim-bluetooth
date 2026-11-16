@@ -1,8 +1,10 @@
 import {
   BatchedListenerHub,
   EventListenerCounter,
+  MAX_ATTRIBUTE_VALUE_LENGTH,
   chunkRanges,
   runWindowed,
+  writeChunkSize,
 } from '../src/fanout'
 
 describe('BatchedListenerHub', () => {
@@ -106,6 +108,30 @@ describe('chunkRanges', () => {
   it('rejects invalid chunk sizes', () => {
     expect(() => chunkRanges(10, 0)).toThrow(RangeError)
     expect(() => chunkRanges(10, 1.5)).toThrow(RangeError)
+  })
+})
+
+describe('writeChunkSize', () => {
+  it('caps MTU-derived lengths at the 512-byte attribute limit', () => {
+    // MTU 517 (Android 14+ default) reports MTU - 3 = 514.
+    expect(writeChunkSize(517 - 3)).toBe(512)
+    expect(writeChunkSize(512)).toBe(512)
+    expect(writeChunkSize(MAX_ATTRIBUTE_VALUE_LENGTH + 1000)).toBe(512)
+  })
+
+  it('keeps smaller lengths, floors fractions and never returns 0', () => {
+    expect(writeChunkSize(244)).toBe(244)
+    expect(writeChunkSize(182.9)).toBe(182)
+    expect(writeChunkSize(20)).toBe(20)
+    expect(writeChunkSize(0)).toBe(1)
+    expect(writeChunkSize(-5)).toBe(1)
+    expect(writeChunkSize(Number.NaN)).toBe(512)
+  })
+
+  it('splits a 32 KiB payload at MTU 517 into 512-byte writes', () => {
+    const ranges = chunkRanges(32 * 1024, writeChunkSize(514))
+    expect(ranges).toHaveLength(64)
+    expect(ranges.every(([start, end]) => end - start === 512)).toBe(true)
   })
 })
 

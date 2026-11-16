@@ -1060,7 +1060,7 @@ Like `writeCharacteristic()`, but takes an `ArrayBuffer`, typed array, `DataView
 
 #### `writeCharacteristicChunks(deviceId, serviceUUID, characteristicUUID, value, options?)`
 
-Writes a payload of any size as consecutive characteristic writes of `getMaximumWriteLength()` bytes (or `options.chunkSize`), in order. `options.writeType` defaults to `writeWithoutResponse`; `options.maxInFlight` (default 8) bounds how many writes JS queues ahead of the native flow control. Rejects with the first failed chunk.
+Writes a payload of any size as consecutive characteristic writes of `getMaximumWriteLength()` bytes (or `options.chunkSize`), never more than 512 bytes each (the ATT limit on a characteristic value, which applies even when MTU − 3 is larger, e.g. 514 at MTU 517), in order. `options.writeType` defaults to `writeWithoutResponse`; `options.maxInFlight` (default 8) bounds how many writes JS queues ahead of the native flow control. Rejects with the first failed chunk.
 
 #### `updateCharacteristicValueBytes(serviceUUID, characteristicUUID, value, notify?)`
 
@@ -1106,7 +1106,7 @@ Requests an ATT MTU on Android and resolves with the negotiated value. CoreBluet
 
 #### `getMaximumWriteLength(deviceId, type)`
 
-Returns the largest value, in bytes, that one characteristic write can carry on this connection. Use it to chunk write-without-response payloads.
+Returns the largest value, in bytes, that one characteristic write can carry on this connection. Use it to chunk write-without-response payloads. The result never exceeds 512 bytes, the largest characteristic value ATT allows, even when the MTU is larger (MTU 517 gives 512, not 514). Writes and `updateCharacteristicValue()` values above 512 bytes reject on both platforms.
 
 - `type`: `'withResponse' | 'withoutResponse'`
 - iOS: CoreBluetooth's `maximumWriteValueLength(for:)`.

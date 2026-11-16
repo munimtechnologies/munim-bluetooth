@@ -881,6 +881,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     /// handed to CoreBluetooth, which paces callers to the link.
     private func updateLocalCharacteristic(serviceUUID: String, characteristicUUID: String, data: Data, notify: Bool) -> Promise<Void> {
         let promise = Promise<Void>()
+        guard data.count <= Self.maxAttributeValueLength else {
+            promise.reject(withError: Self.attributeTooLongError(data.count))
+            return promise
+        }
         let key = peripheralCharacteristicKey(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
         peripheralCharacteristicValues[key] = data
 
@@ -1448,7 +1452,7 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support writeWithoutResponse"]))
                 return promise
             }
-            let maximumLength = peripheral.maximumWriteValueLength(for: .withoutResponse)
+            let maximumLength = min(peripheral.maximumWriteValueLength(for: .withoutResponse), Self.maxAttributeValueLength)
             guard data.count <= maximumLength else {
                 promise.reject(withError: NSError(domain: "MunimBluetooth", code: 413, userInfo: [NSLocalizedDescriptionKey: "Value is \(data.count) bytes but write-without-response is limited to \(maximumLength) bytes on this connection; use getMaximumWriteLength() to chunk it"]))
                 return promise
@@ -1470,6 +1474,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
 
         guard characteristic.properties.contains(.write) else {
             promise.reject(withError: NSError(domain: "MunimBluetooth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic does not support write"]))
+            return promise
+        }
+        guard data.count <= Self.maxAttributeValueLength else {
+            promise.reject(withError: Self.attributeTooLongError(data.count))
             return promise
         }
 
@@ -1740,7 +1748,10 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
                 return promise
             }
             let writeType: CBCharacteristicWriteType = type == .withoutresponse ? .withoutResponse : .withResponse
-            promise.resolve(withResult: Double(peripheral.maximumWriteValueLength(for: writeType)))
+            // A characteristic value is at most 512 bytes (ATT), even when
+            // MTU - 3 is larger (MTU 517 gives 514).
+            let length = min(peripheral.maximumWriteValueLength(for: writeType), Self.maxAttributeValueLength)
+            promise.resolve(withResult: Double(length))
             return promise
         }
     }
@@ -4516,6 +4527,13 @@ class HybridMunimBluetooth: HybridMunimBluetoothSpec {
     private static let maxL2CAPOutboundBufferBytes = 1_048_576
     private static let maxQueuedWritesWithoutResponse = 1_024
     private static let maxPendingSubscriberUpdates = 1_024
+    /// ATT limit on a characteristic value, independent of the MTU.
+    private static let maxAttributeValueLength = 512
+
+    private static func attributeTooLongError(_ size: Int) -> NSError {
+        NSError(domain: "MunimBluetooth", code: 413, userInfo: [NSLocalizedDescriptionKey: "Value is \(size) bytes; a characteristic value is at most \(maxAttributeValueLength) bytes. Split it with writeCharacteristicChunks() or getMaximumWriteLength()"])
+    }
+
     private static let maxNotificationBatch = 256
     private static let maxScanBatch = 128
     static let deviceFoundEvents = ["deviceFound", "onDeviceFound", "scanResult"]

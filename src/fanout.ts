@@ -152,6 +152,19 @@ export async function runWindowed(
   if (state.failure) throw state.failure.error
 }
 
+/** ATT limit on one characteristic value, regardless of the MTU. */
+export const MAX_ATTRIBUTE_VALUE_LENGTH = 512
+
+/**
+ * Chunk size for one characteristic write: the requested/reported length,
+ * floored, never above 512 bytes (MTU 517 reports MTU - 3 = 514, which
+ * Android rejects) and never below 1.
+ */
+export function writeChunkSize(length: number): number {
+  if (!Number.isFinite(length)) return MAX_ATTRIBUTE_VALUE_LENGTH
+  return Math.max(1, Math.min(Math.floor(length), MAX_ATTRIBUTE_VALUE_LENGTH))
+}
+
 /** Split `total` bytes into [start, end) ranges of at most `chunkSize`. */
 export function chunkRanges(
   total: number,

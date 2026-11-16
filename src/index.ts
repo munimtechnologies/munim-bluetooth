@@ -54,6 +54,7 @@ import {
   EventListenerCounter,
   chunkRanges,
   runWindowed,
+  writeChunkSize,
 } from './fanout'
 import {
   bytesToHex,
@@ -1136,7 +1137,8 @@ export interface WriteChunksOptions {
   writeType?: WriteType
   /**
    * Largest chunk to send. Defaults to getMaximumWriteLength() for the write
-   * type, which follows the negotiated MTU.
+   * type, which follows the negotiated MTU. Always capped at 512 bytes, the
+   * largest characteristic value ATT allows.
    */
   chunkSize?: number
   /**
@@ -1167,7 +1169,7 @@ export async function writeCharacteristicChunks(
       deviceId,
       writeType === 'write' ? 'withResponse' : 'withoutResponse'
     ))
-  const ranges = chunkRanges(buffer.byteLength, Math.floor(chunkSize))
+  const ranges = chunkRanges(buffer.byteLength, writeChunkSize(chunkSize))
   await runWindowed(ranges.length, options?.maxInFlight ?? 8, (index) => {
     const [start, end] = ranges[index]!
     return MunimBluetooth.writeCharacteristicBytes(

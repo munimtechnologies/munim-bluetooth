@@ -593,6 +593,9 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         payload: ByteArray,
         notify: Boolean
     ): Promise<Unit> {
+        if (payload.size > MAX_ATTRIBUTE_VALUE_LENGTH) {
+            return Promise.rejected(attributeTooLong(payload.size))
+        }
         val characteristic = findLocalCharacteristic(serviceUUID, characteristicUUID)
             ?: return Promise.rejected(IllegalArgumentException("Local characteristic $characteristicUUID was not found"))
 
@@ -1444,6 +1447,9 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
         data: ByteArray,
         writeType: WriteType
     ): Promise<Unit> {
+        if (data.size > MAX_ATTRIBUTE_VALUE_LENGTH) {
+            return Promise.rejected(attributeTooLong(data.size))
+        }
         val resolvedWriteType = when (writeType) {
             WriteType.WRITEWITHOUTRESPONSE -> BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             else -> BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
@@ -1741,8 +1747,11 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             // A no-response write is a single ATT packet: MTU minus the
             // 3-byte opcode/handle header. Android only reports the MTU via
             // onMtuChanged, so before any exchange this is the 23-byte
-            // default; call requestMTU() first for an accurate value.
-            WriteLengthType.WITHOUTRESPONSE -> (negotiatedMtus[deviceId] ?: DEFAULT_ATT_MTU) - 3
+            // default; call requestMTU() first for an accurate value. An
+            // attribute value is still capped at 512 bytes: with MTU 517
+            // MTU-3 is 514, which writeCharacteristic() rejects.
+            WriteLengthType.WITHOUTRESPONSE ->
+                ((negotiatedMtus[deviceId] ?: DEFAULT_ATT_MTU) - 3).coerceAtMost(MAX_ATTRIBUTE_VALUE_LENGTH)
             // With-response writes above MTU-3 become a long (prepared) write,
             // bounded by the 512-byte maximum attribute value length.
             WriteLengthType.WITHRESPONSE -> MAX_ATTRIBUTE_VALUE_LENGTH
@@ -3670,6 +3679,13 @@ class HybridMunimBluetooth : HybridMunimBluetoothSpec() {
             if (!hasLegacyListeners("characteristicValueChanged")) return
         }
         emitCharacteristicValueChanged(deviceId, buildCharacteristicValue(characteristic, valueBytes))
+    }
+
+    private fun attributeTooLong(size: Int): IllegalArgumentException {
+        return IllegalArgumentException(
+            "Value is $size bytes; a characteristic value is at most $MAX_ATTRIBUTE_VALUE_LENGTH bytes. " +
+                "Split it with writeCharacteristicChunks() or getMaximumWriteLength()"
+        )
     }
 
     private fun hasLegacyListeners(eventName: String): Boolean {
