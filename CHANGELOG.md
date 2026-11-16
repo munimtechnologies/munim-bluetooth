@@ -1,3 +1,22 @@
+## [0.11.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.10.2...v0.11.0) (2026-11-16)
+
+### ✨ Features
+
+* ArrayBuffer data path, batched listeners and a system device picker ([3c3779c](https://github.com/munimtechnologies/munim-bluetooth/commit/3c3779c9f0278b7517a427e9d5c68633b23706ed))
+
+### 🐛 Bug Fixes
+
+* cap characteristic values at 512 bytes regardless of MTU ([83f3f0c](https://github.com/munimtechnologies/munim-bluetooth/commit/83f3f0c14406424a42c44c92c74267f62701c590))
+
+### 📚 Documentation
+
+* binary data path, batched listeners, device picker and support table ([a330256](https://github.com/munimtechnologies/munim-bluetooth/commit/a3302564af1a7d5c7f8b2509edae38ee383f4520))
+
+### 🛠️ Other changes
+
+* **deps:** React Native 0.88.1, Nitro 0.37.2, TypeScript 6, semantic-release 26 ([e9b8a0c](https://github.com/munimtechnologies/munim-bluetooth/commit/e9b8a0c1de531c5571a75ca89361baa51975e138))
+* **example:** throughput test, device picker and batched scan results ([87554b8](https://github.com/munimtechnologies/munim-bluetooth/commit/87554b8a9761c5448f197fae711726fe1276dd27))
+
 ## [0.10.2](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.10.1...v0.10.2) (2026-10-17)
 
 ### 🐛 Bug Fixes
