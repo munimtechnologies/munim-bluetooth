@@ -42,7 +42,29 @@ import type {
   BondedDevice,
   BluetoothDeviceType,
   SubrateMode,
+  CharacteristicNotification,
+  SystemConnectedDevice,
+  DevicePickerFilter,
+  DevicePickerOptions,
+  AssociatedDevice,
+  WriteType,
 } from './specs/munim-bluetooth.nitro'
+import {
+  BatchedListenerHub,
+  EventListenerCounter,
+  chunkRanges,
+  runWindowed,
+  writeChunkSize,
+} from './fanout'
+import {
+  bytesToHex,
+  hexToBytes,
+  toArrayBuffer,
+  type BytesLike,
+} from './bytes'
+
+export { bytesToHex, hexToBytes, toArrayBuffer }
+export type { BytesLike } from './bytes'
 
 /** Bluetooth Channel Sounding role. iOS 27 offers only `initiator`. */
 export type ChannelSoundingRole = 'initiator'
@@ -328,6 +350,18 @@ if (Platform.OS === 'android') {
     )
   }
 }
+
+// Native code skips building these payloads while a batched listener is set
+// and no JS listener for the legacy event exists.
+const listenerCounter = new EventListenerCounter(
+  new Set([
+    'deviceFound',
+    'onDeviceFound',
+    'scanResult',
+    'characteristicValueChanged',
+  ]),
+  (eventName, count) => MunimBluetooth.setEventListenerCount(eventName, count)
+)
 
 // ========== Peripheral Features ==========
 
@@ -1005,6 +1039,208 @@ export function sendMultipeerMessage(
   return MunimBluetooth.sendMultipeerMessage(value, peerIds, reliable)
 }
 
+// ========== Binary fast path ==========
+
+export interface BatchedListenerOptions {
+  /**
+   * Collect values natively for this many milliseconds and deliver them in
+   * one call. 0 (the default for notifications) delivers each value as soon
+   * as it arrives; scan results default to 100 ms. When several listeners
+   * ask for different intervals the smallest one is used.
+   */
+  batchIntervalMs?: number
+}
+
+const notificationHub = new BatchedListenerHub<CharacteristicNotification>(
+  (deliver, batchIntervalMs) =>
+    MunimBluetooth.setCharacteristicNotificationListener(
+      deliver,
+      batchIntervalMs
+    ),
+  () => MunimBluetooth.removeCharacteristicNotificationListener()
+)
+
+const scanResultsHub = new BatchedListenerHub<BLEDevice>(
+  (deliver, batchIntervalMs) =>
+    MunimBluetooth.setScanResultsListener(deliver, batchIntervalMs),
+  () => MunimBluetooth.removeScanResultsListener()
+)
+
+/**
+ * Receive notifications/indications as raw bytes (ArrayBuffer), batched
+ * natively. This skips the hex encoding and event-bridge round trip of
+ * `characteristicValueChanged`; while at least one such listener exists and
+ * nobody listens to `characteristicValueChanged` through addEventListener(),
+ * that legacy event is not emitted for notifications. Read results are not
+ * delivered here (readCharacteristicBytes() returns them).
+ *
+ * @returns A function that removes the listener.
+ */
+export function addCharacteristicNotificationListener(
+  callback: (notifications: CharacteristicNotification[]) => void,
+  options?: BatchedListenerOptions
+): () => void {
+  return notificationHub.add(callback, options?.batchIntervalMs ?? 0)
+}
+
+/**
+ * Receive scan results in batches. Within one batch every device appears
+ * once, with its latest advertisement and RSSI. While at least one such
+ * listener exists, the legacy `deviceFound`/`onDeviceFound`/`scanResult`
+ * events are only emitted for names that have an addEventListener()
+ * subscriber.
+ *
+ * @returns A function that removes the listener.
+ */
+export function addScanResultsListener(
+  callback: (devices: BLEDevice[]) => void,
+  options?: BatchedListenerOptions
+): () => void {
+  return scanResultsHub.add(callback, options?.batchIntervalMs ?? 100)
+}
+
+/** Read a characteristic and resolve with its raw bytes. */
+export function readCharacteristicBytes(
+  deviceId: string,
+  serviceUUID: string,
+  characteristicUUID: string
+): Promise<ArrayBuffer> {
+  return MunimBluetooth.readCharacteristicBytes(
+    deviceId,
+    serviceUUID,
+    characteristicUUID
+  )
+}
+
+/**
+ * Write raw bytes to a characteristic. Accepts an ArrayBuffer, any typed
+ * array/DataView, or an array of byte values.
+ */
+export function writeCharacteristicBytes(
+  deviceId: string,
+  serviceUUID: string,
+  characteristicUUID: string,
+  value: BytesLike,
+  writeType?: WriteType
+): Promise<void> {
+  return MunimBluetooth.writeCharacteristicBytes(
+    deviceId,
+    serviceUUID,
+    characteristicUUID,
+    toArrayBuffer(value),
+    writeType ?? 'write'
+  )
+}
+
+export interface WriteChunksOptions {
+  /** Defaults to 'writeWithoutResponse'. */
+  writeType?: WriteType
+  /**
+   * Largest chunk to send. Defaults to getMaximumWriteLength() for the write
+   * type, which follows the negotiated MTU. Always capped at 512 bytes, the
+   * largest characteristic value ATT allows.
+   */
+  chunkSize?: number
+  /**
+   * Writes kept in flight at once (default 8). Native code still hands each
+   * write-without-response to the stack only when it has room, so this only
+   * bounds how far JS runs ahead.
+   */
+  maxInFlight?: number
+}
+
+/**
+ * Send a payload larger than one ATT packet as consecutive characteristic
+ * writes, in order, with native flow control. Resolves when every chunk was
+ * accepted; rejects with the first failure (later chunks are not sent).
+ */
+export async function writeCharacteristicChunks(
+  deviceId: string,
+  serviceUUID: string,
+  characteristicUUID: string,
+  value: BytesLike,
+  options?: WriteChunksOptions
+): Promise<void> {
+  const writeType = options?.writeType ?? 'writeWithoutResponse'
+  const buffer = toArrayBuffer(value)
+  const chunkSize =
+    options?.chunkSize ??
+    (await getMaximumWriteLength(
+      deviceId,
+      writeType === 'write' ? 'withResponse' : 'withoutResponse'
+    ))
+  const ranges = chunkRanges(buffer.byteLength, writeChunkSize(chunkSize))
+  await runWindowed(ranges.length, options?.maxInFlight ?? 8, (index) => {
+    const [start, end] = ranges[index]!
+    return MunimBluetooth.writeCharacteristicBytes(
+      deviceId,
+      serviceUUID,
+      characteristicUUID,
+      buffer.slice(start, end),
+      writeType
+    )
+  })
+}
+
+/**
+ * Peripheral role: set a local characteristic value from raw bytes and
+ * optionally notify subscribers. With `notify`, resolves once the value was
+ * handed to the Bluetooth stack for every subscriber, so awaiting each call
+ * streams notifications as fast as the link allows without dropping any.
+ */
+export function updateCharacteristicValueBytes(
+  serviceUUID: string,
+  characteristicUUID: string,
+  value: BytesLike,
+  notify?: boolean
+): Promise<void> {
+  return MunimBluetooth.updateCharacteristicValueBytes(
+    serviceUUID,
+    characteristicUUID,
+    toArrayBuffer(value),
+    notify ?? false
+  )
+}
+
+// ========== System devices ==========
+
+/**
+ * Devices the OS reports as connected, including ones other apps connected.
+ * iOS needs at least one service UUID; Android ignores the filter.
+ */
+export function getSystemConnectedDevices(
+  serviceUUIDs: string[] = []
+): Promise<SystemConnectedDevice[]> {
+  return MunimBluetooth.getSystemConnectedDevices(serviceUUIDs)
+}
+
+/**
+ * Show the system accessory picker (Android CompanionDeviceManager, iOS 18+
+ * AccessorySetupKit) and resolve with the device the user chose. The app
+ * gets access to that device without a location or broad Bluetooth scan
+ * permission. Rejects if the user cancels.
+ */
+export function showDevicePicker(
+  options: DevicePickerOptions
+): Promise<AssociatedDevice> {
+  if (!options?.filters?.length) {
+    return Promise.reject(
+      new Error('showDevicePicker needs at least one filter')
+    )
+  }
+  return MunimBluetooth.showDevicePicker(options)
+}
+
+/** Devices previously granted through showDevicePicker(). */
+export function getAssociatedDevices(): Promise<AssociatedDevice[]> {
+  return MunimBluetooth.getAssociatedDevices()
+}
+
+/** Revoke a device granted through showDevicePicker(). */
+export function removeAssociatedDevice(associationId: string): Promise<void> {
+  return MunimBluetooth.removeAssociatedDevice(associationId)
+}
+
 // ========== Event Management ==========
 
 /**
@@ -1026,7 +1262,14 @@ export function addDeviceFoundListener(
   const subscription = eventEmitter.addListener('deviceFound', (payload) =>
     callback(payload as unknown as BLEDevice)
   )
-  return () => subscription.remove()
+  listenerCounter.increment('deviceFound')
+  let removed = false
+  return () => {
+    if (removed) return
+    removed = true
+    subscription.remove()
+    listenerCounter.decrement('deviceFound')
+  }
 }
 
 /**
@@ -1050,7 +1293,14 @@ export function addEventListener<EventName extends BluetoothEventName>(
   const subscription = eventEmitter.addListener(eventName, (payload) =>
     callback(payload as unknown as BluetoothEventMap[EventName])
   )
-  return () => subscription.remove()
+  listenerCounter.increment(eventName)
+  let removed = false
+  return () => {
+    if (removed) return
+    removed = true
+    subscription.remove()
+    listenerCounter.decrement(eventName)
+  }
 }
 
 /**
@@ -1109,6 +1359,12 @@ export type {
   BondedDevice,
   BluetoothDeviceType,
   SubrateMode,
+  CharacteristicNotification,
+  SystemConnectedDevice,
+  DevicePickerFilter,
+  DevicePickerOptions,
+  AssociatedDevice,
+  WriteType,
 }
 
 // Default export for convenience
@@ -1179,6 +1435,20 @@ export default {
   rejectMultipeerInvitation,
   getMultipeerPeers,
   sendMultipeerMessage,
+  // Binary fast path
+  readCharacteristicBytes,
+  writeCharacteristicBytes,
+  writeCharacteristicChunks,
+  updateCharacteristicValueBytes,
+  addCharacteristicNotificationListener,
+  addScanResultsListener,
+  // System devices
+  getSystemConnectedDevices,
+  showDevicePicker,
+  getAssociatedDevices,
+  removeAssociatedDevice,
+  bytesToHex,
+  hexToBytes,
   // Events
   addDeviceFoundListener,
   addEventListener,

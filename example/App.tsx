@@ -23,6 +23,16 @@ const TEST_DESCRIPTOR_UUID = '00002901-0000-1000-8000-00805f9b34fb';
 // platform API checks, so the central can log the peer's results too (the
 // iPad has no other unattended way to report them).
 const TEST_REPORT_CHARACTERISTIC_UUID = '4ad4a6d2-3f4a-477c-9832-5e0d8f7654d9';
+// Throughput test: the central writes "go:<count>:<size>" to the sink
+// characteristic; the peripheral answers with <count> notifications of
+// <size> bytes on the stream characteristic (bytes 0-3 = sequence number).
+// The central also pushes a payload into the sink with
+// writeCharacteristicChunks() to time the write direction.
+const TEST_STREAM_CHARACTERISTIC_UUID = '4ad4a6d2-3f4a-477c-9832-5e0d8f7654da';
+const TEST_SINK_CHARACTERISTIC_UUID = '4ad4a6d2-3f4a-477c-9832-5e0d8f7654db';
+const THROUGHPUT_NOTIFICATIONS = 500;
+const THROUGHPUT_WRITE_BYTES = 32 * 1024;
+const THROUGHPUT_IDLE_MS = 5000;
 const NOTIFY_VALUE = '6e6f74696679';
 const NOTIFY_TIMEOUT_MS = 8000;
 const UNKNOWN_DEVICE_ID =
@@ -180,8 +190,42 @@ function buildTestService(): GATTService {
         properties: ['read'],
         value: textToHex('{}'),
       },
+      {
+        uuid: TEST_STREAM_CHARACTERISTIC_UUID,
+        properties: ['notify'],
+      },
+      {
+        uuid: TEST_SINK_CHARACTERISTIC_UUID,
+        properties: ['write', 'writeWithoutResponse'],
+      },
     ],
   };
+}
+
+function sameUuid(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase();
+}
+
+type ThroughputMode = 'binary' | 'hex';
+
+/** Peripheral side: stream `count` notifications of `size` bytes. */
+async function streamNotifications(count: number, size: number): Promise<number> {
+  const started = Date.now();
+  const payload = new Uint8Array(size);
+  const view = new DataView(payload.buffer);
+  for (let i = 0; i < count; i++) {
+    view.setUint32(0, i);
+    payload.fill(i & 0xff, 4);
+    // Resolves once the stack took the value, so this paces to the link
+    // without dropping notifications.
+    await MunimBluetooth.updateCharacteristicValueBytes(
+      TEST_SERVICE_UUID,
+      TEST_STREAM_CHARACTERISTIC_UUID,
+      payload,
+      true
+    );
+  }
+  return Date.now() - started;
 }
 
 function App(): React.JSX.Element {
@@ -194,6 +238,7 @@ function App(): React.JSX.Element {
     useState(false);
   const [isMultipeerActive, setIsMultipeerActive] = useState(false);
   const [multipeerPeers, setMultipeerPeers] = useState<MultipeerPeer[]>([]);
+  const [scanBatchStats, setScanBatchStats] = useState({ batches: 0, devices: 0 });
   const nextLogId = useRef(1);
   const didAutoRun = useRef(false);
   const connectedDeviceIds = useRef<Set<string>>(new Set());
@@ -610,6 +655,180 @@ function App(): React.JSX.Element {
     }
   }, [addLog]);
 
+  const firstConnectedPeer = useCallback((): string | undefined => {
+    return Array.from(connectedDeviceIds.current)[0];
+  }, []);
+
+  /** Central side: one notification-throughput run in the given mode. */
+  const runThroughput = useCallback(
+    async (mode: ThroughputMode) => {
+      const deviceId = firstConnectedPeer();
+      if (!deviceId) {
+        addLog('Throughput: run the smoke test first so a peer is connected', 'warning');
+        return;
+      }
+      try {
+        // Android negotiates; iOS reports the MTU it already uses.
+        const mtu = await MunimBluetooth.requestMTU(deviceId, 247);
+        if (Platform.OS === 'android') {
+          await MunimBluetooth.requestConnectionPriority(deviceId, 'high');
+        }
+        // iOS peripherals cap a notification at 182 bytes (185-byte MTU).
+        const size = Math.max(20, Math.min(mtu - 3, 182));
+        await MunimBluetooth.subscribeToCharacteristic(
+          deviceId,
+          TEST_SERVICE_UUID,
+          TEST_STREAM_CHARACTERISTIC_UUID
+        );
+
+        let received = 0;
+        let bytes = 0;
+        let firstAt = 0;
+        let lastAt = Date.now();
+        let maxSequence = -1;
+        let calls = 0;
+        const onValue = (value: Uint8Array) => {
+          if (value.length !== size) return;
+          const now = Date.now();
+          if (received === 0) firstAt = now;
+          lastAt = now;
+          received++;
+          bytes += value.length;
+          const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
+          maxSequence = Math.max(maxSequence, view.getUint32(0));
+        };
+        const remove =
+          mode === 'binary'
+            ? MunimBluetooth.addCharacteristicNotificationListener(
+                (notifications) => {
+                  calls++;
+                  for (const n of notifications) {
+                    if (
+                      n.deviceId === deviceId &&
+                      sameUuid(n.characteristicUUID, TEST_STREAM_CHARACTERISTIC_UUID)
+                    ) {
+                      onValue(new Uint8Array(n.value));
+                    }
+                  }
+                },
+                { batchIntervalMs: 16 }
+              )
+            : MunimBluetooth.addEventListener('characteristicValueChanged', (event) => {
+                calls++;
+                if (
+                  event.deviceId === deviceId &&
+                  sameUuid(event.characteristicUUID, TEST_STREAM_CHARACTERISTIC_UUID)
+                ) {
+                  onValue(MunimBluetooth.hexToBytes(event.value));
+                }
+              });
+
+        addLog(`Throughput (${mode}): asking peer for ${THROUGHPUT_NOTIFICATIONS} x ${size} B`);
+        try {
+          await MunimBluetooth.writeCharacteristic(
+            deviceId,
+            TEST_SERVICE_UUID,
+            TEST_SINK_CHARACTERISTIC_UUID,
+            textToHex(`go:${THROUGHPUT_NOTIFICATIONS}:${size}`),
+            'write'
+          );
+          lastAt = Date.now();
+          // Done when everything arrived or the stream went quiet.
+          while (
+            received < THROUGHPUT_NOTIFICATIONS &&
+            Date.now() - lastAt < THROUGHPUT_IDLE_MS
+          ) {
+            await new Promise<void>((resolve) => setTimeout(resolve, 50));
+          }
+        } finally {
+          remove();
+        }
+        await MunimBluetooth.unsubscribeFromCharacteristic(
+          deviceId,
+          TEST_SERVICE_UUID,
+          TEST_STREAM_CHARACTERISTIC_UUID
+        );
+        const seconds = Math.max(lastAt - firstAt, 1) / 1000;
+        const lost = maxSequence + 1 - received;
+        addLog(
+          `THROUGHPUT ${mode}: ${received}/${THROUGHPUT_NOTIFICATIONS} notifications, ` +
+            `${(bytes / 1024 / seconds).toFixed(1)} KB/s, lost ${lost}, ` +
+            `${calls} JS callbacks, mtu ${mtu}`,
+          received === THROUGHPUT_NOTIFICATIONS && lost === 0 ? 'success' : 'warning'
+        );
+
+        // Write direction: chunked write-without-response into the sink.
+        const payload = new Uint8Array(THROUGHPUT_WRITE_BYTES).map((_, i) => i & 0xff);
+        const writeStarted = Date.now();
+        await MunimBluetooth.writeCharacteristicChunks(
+          deviceId,
+          TEST_SERVICE_UUID,
+          TEST_SINK_CHARACTERISTIC_UUID,
+          payload
+        );
+        const writeSeconds = Math.max(Date.now() - writeStarted, 1) / 1000;
+        addLog(
+          `THROUGHPUT write: ${THROUGHPUT_WRITE_BYTES} B in ${(writeSeconds * 1000).toFixed(0)} ms ` +
+            `(${(THROUGHPUT_WRITE_BYTES / 1024 / writeSeconds).toFixed(1)} KB/s)`,
+          'success'
+        );
+      } catch (error) {
+        addLog(`Throughput ${mode} failed: ${formatError(error)}`, 'error');
+      }
+    },
+    [addLog, firstConnectedPeer]
+  );
+
+  const pickDevice = useCallback(async () => {
+    try {
+      const device = await MunimBluetooth.showDevicePicker({
+        filters: [{ serviceUUID: TEST_SERVICE_UUID }],
+        displayName: 'Munim test peer',
+      });
+      addLog(
+        `Picker chose ${device.name ?? 'unnamed'} id=${device.id} association=${device.associationId}`,
+        'success'
+      );
+      if (device.id) {
+        await MunimBluetooth.connect(device.id);
+        const services = await MunimBluetooth.discoverServices(device.id);
+        addLog(`Picker device connected, ${services.length} services`, 'success');
+        MunimBluetooth.disconnect(device.id);
+      }
+      const associations = await MunimBluetooth.getAssociatedDevices();
+      addLog(
+        `Associations: ${associations.map((a) => `${a.name ?? '?'}(${a.associationId})`).join(', ') || 'none'}`,
+        'success'
+      );
+    } catch (error) {
+      addLog(`Device picker: ${formatError(error)}`, 'warning');
+    }
+  }, [addLog]);
+
+  const forgetAssociations = useCallback(async () => {
+    try {
+      const associations = await MunimBluetooth.getAssociatedDevices();
+      for (const association of associations) {
+        await MunimBluetooth.removeAssociatedDevice(association.associationId);
+      }
+      addLog(`Removed ${associations.length} association(s)`, 'success');
+    } catch (error) {
+      addLog(`Remove associations failed: ${formatError(error)}`, 'warning');
+    }
+  }, [addLog]);
+
+  const listSystemConnected = useCallback(async () => {
+    try {
+      const devices = await MunimBluetooth.getSystemConnectedDevices([TEST_SERVICE_UUID]);
+      addLog(
+        `System-connected: ${devices.map((d) => d.name ?? d.id).join(', ') || 'none'}`,
+        'success'
+      );
+    } catch (error) {
+      addLog(`System-connected failed: ${formatError(error)}`, 'warning');
+    }
+  }, [addLog]);
+
   const stopEverything = useCallback(() => {
     try {
       MunimBluetooth.stopScan();
@@ -753,8 +972,36 @@ function App(): React.JSX.Element {
         addLog(`Peer read ${event.characteristicUUID}`, 'success');
       }),
       MunimBluetooth.addEventListener('peripheralWriteRequest', (event) => {
+        if (sameUuid(event.characteristicUUID, TEST_SINK_CHARACTERISTIC_UUID)) {
+          const command = hexToText(event.value).match(/^go:(\d+):(\d+)$/);
+          if (command) {
+            const count = Number(command[1]);
+            const size = Number(command[2]);
+            addLog(`Throughput: streaming ${count} x ${size} B`);
+            streamNotifications(count, size)
+              .then((ms) =>
+                addLog(
+                  `Throughput: sent ${count} notifications in ${ms} ms (${((count * size) / 1024 / Math.max(ms / 1000, 0.001)).toFixed(1)} KB/s)`,
+                  'success'
+                )
+              )
+              .catch((error) =>
+                addLog(`Throughput stream failed: ${formatError(error)}`, 'error')
+              );
+          }
+          // Sink writes (the write-throughput payload) are not logged.
+          return;
+        }
         addLog(`Peer wrote ${event.characteristicUUID}: ${event.value}`, 'success');
       }),
+      MunimBluetooth.addScanResultsListener(
+        (batch) =>
+          setScanBatchStats((previous) => ({
+            batches: previous.batches + 1,
+            devices: previous.devices + batch.length,
+          })),
+        { batchIntervalMs: 250 }
+      ),
       MunimBluetooth.addEventListener('peripheralSubscribed', (event) => {
         addLog(`Peer subscribed ${event.characteristicUUID}`, 'success');
       }),
@@ -924,6 +1171,43 @@ function App(): React.JSX.Element {
         </View>
       </View>
 
+      <View style={styles.buttonRow}>
+        <View style={styles.button}>
+          <Button
+            title="Throughput (binary)"
+            onPress={() => runThroughput('binary')}
+            color="#AF52DE"
+          />
+        </View>
+        <View style={styles.button}>
+          <Button
+            title="Throughput (hex)"
+            onPress={() => runThroughput('hex')}
+            color="#8E8E93"
+          />
+        </View>
+      </View>
+
+      <View style={styles.buttonRow}>
+        <View style={styles.button}>
+          <Button title="Pick Device" onPress={pickDevice} color="#32ADE6" />
+        </View>
+        <View style={styles.button}>
+          <Button
+            title="Forget Picked"
+            onPress={forgetAssociations}
+            color="#FF453A"
+          />
+        </View>
+        <View style={styles.button}>
+          <Button
+            title="System Conn."
+            onPress={listSystemConnected}
+            color="#64D2FF"
+          />
+        </View>
+      </View>
+
       {capabilities ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Capabilities</Text>
@@ -933,7 +1217,12 @@ function App(): React.JSX.Element {
             {String(capabilities.supportsDescriptors)} l2cap=
             {String(capabilities.supportsL2cap)} classic=
             {String(capabilities.supportsClassicBluetooth)} multipeer=
-            {String(capabilities.supportsMultipeerConnectivity)}
+            {String(capabilities.supportsMultipeerConnectivity)} picker=
+            {String(capabilities.supportsDevicePicker)}
+          </Text>
+          <Text style={styles.monoText}>
+            batched scan: {scanBatchStats.devices} results in{' '}
+            {scanBatchStats.batches} batches
           </Text>
         </View>
       ) : null}

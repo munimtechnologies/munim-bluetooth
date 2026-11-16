@@ -236,6 +236,104 @@ export interface ConnectOptions {
    * after a link loss. Defaults to false.
    */
   autoConnect?: boolean
+  /**
+   * iOS: show a system alert when the peripheral connects while the app is
+   * suspended (CBConnectPeripheralOptionNotifyOnConnectionKey). Ignored on
+   * Android.
+   */
+  notifyOnConnection?: boolean
+  /**
+   * iOS: show a system alert when the peripheral disconnects while the app is
+   * suspended (CBConnectPeripheralOptionNotifyOnDisconnectionKey). Ignored on
+   * Android.
+   */
+  notifyOnDisconnection?: boolean
+  /**
+   * iOS: show a system alert for every notification received while the app
+   * is suspended (CBConnectPeripheralOptionNotifyOnNotificationKey). Ignored
+   * on Android.
+   */
+  notifyOnNotification?: boolean
+  /**
+   * iOS 13+: ask the system to require Apple Notification Center Service
+   * (ANCS) authorization for this connection
+   * (CBConnectPeripheralOptionRequiresANCS), so the accessory can read the
+   * phone's notifications. Ignored on Android.
+   */
+  requiresANCS?: boolean
+  /**
+   * iOS 13+: bridge a Classic (BR/EDR) connection of a dual-mode accessory
+   * to LE (CBConnectPeripheralOptionEnableTransportBridgingKey). Ignored on
+   * Android.
+   */
+  enableTransportBridging?: boolean
+}
+
+/**
+ * One notification or indication value, delivered as raw bytes by
+ * addCharacteristicNotificationListener().
+ */
+export interface CharacteristicNotification {
+  deviceId: string
+  serviceUUID: string
+  characteristicUUID: string
+  value: ArrayBuffer
+}
+
+/** A device the operating system reports as connected (by any app). */
+export interface SystemConnectedDevice {
+  /** Usable as a deviceId for connect(). */
+  id: string
+  name?: string
+}
+
+/** One accessory filter for showDevicePicker(). */
+export interface DevicePickerFilter {
+  /**
+   * Advertised service UUID. Required on iOS (AccessorySetupKit needs it and
+   * it must be listed in NSAccessorySetupBluetoothServices).
+   */
+  serviceUUID?: string
+  /**
+   * Android: the advertised name must start with this. iOS: the advertised
+   * name must contain it (ASDiscoveryDescriptor.bluetoothNameSubstring).
+   */
+  namePrefix?: string
+  /** Android only: Bluetooth SIG company identifier of manufacturer data. */
+  manufacturerId?: number
+  /** Android only: hex manufacturer payload prefix. Requires manufacturerId. */
+  manufacturerData?: string
+  /** Android only: hex bit mask for manufacturerData, same length. */
+  manufacturerDataMask?: string
+}
+
+export interface DevicePickerOptions {
+  /** At least one filter. Android ORs them; iOS shows one picker item each. */
+  filters: DevicePickerFilter[]
+  /** iOS: name shown on the picker items. Defaults to "Accessory". */
+  displayName?: string
+  /**
+   * Android: ask the user to confirm the first matching device instead of
+   * showing a list (AssociationRequest.Builder.setSingleDevice). Ignored on
+   * iOS.
+   */
+  singleDevice?: boolean
+}
+
+/**
+ * A device the user granted to this app through the system device picker
+ * (Android CompanionDeviceManager, iOS AccessorySetupKit).
+ */
+export interface AssociatedDevice {
+  /**
+   * Usable as a deviceId for connect(): the MAC address on Android, the
+   * CoreBluetooth peripheral identifier on iOS. Empty when the platform did
+   * not report one.
+   */
+  id: string
+  name?: string
+  /** Pass to removeAssociatedDevice(). */
+  associationId: string
 }
 
 // Write type for characteristic writes
@@ -305,6 +403,11 @@ export interface BluetoothCapabilities {
    * connection. Always false on iOS.
    */
   supportsConnectionSubrating: boolean
+  /**
+   * showDevicePicker() is available: Android 8+ (CompanionDeviceManager) or
+   * iOS 18+ (AccessorySetupKit) with NSAccessorySetupKitSupports declared.
+   */
+  supportsDevicePicker: boolean
 }
 
 // Advertising options for startAdvertising
@@ -898,6 +1001,105 @@ export interface MunimBluetooth
    * Cancel the active Channel Sounding session with a peripheral. iOS 27+.
    */
   stopChannelSoundingSession(deviceId: string): Promise<void>
+
+  // ========== Binary fast path ==========
+
+  /**
+   * Read a characteristic and resolve with its raw bytes (no hex encoding).
+   */
+  readCharacteristicBytes(
+    deviceId: string,
+    serviceUUID: string,
+    characteristicUUID: string
+  ): Promise<ArrayBuffer>
+
+  /**
+   * Write raw bytes to a characteristic. Same queueing and flow control as
+   * writeCharacteristic(); the buffer is copied before this returns.
+   */
+  writeCharacteristicBytes(
+    deviceId: string,
+    serviceUUID: string,
+    characteristicUUID: string,
+    value: ArrayBuffer,
+    writeType: WriteType
+  ): Promise<void>
+
+  /**
+   * Peripheral role: set a local characteristic value from raw bytes and
+   * optionally notify subscribers. With `notify`, the promise resolves once
+   * the value was handed to the Bluetooth stack for every subscribed
+   * central, so awaiting it paces the sender to the link.
+   */
+  updateCharacteristicValueBytes(
+    serviceUUID: string,
+    characteristicUUID: string,
+    value: ArrayBuffer,
+    notify: boolean
+  ): Promise<void>
+
+  /**
+   * Deliver notifications/indications as raw bytes to one native listener.
+   * Values are collected natively for `batchIntervalMs` (0 = deliver each
+   * one immediately) and handed over in one call. Replaces any previous
+   * listener.
+   */
+  setCharacteristicNotificationListener(
+    listener: (notifications: CharacteristicNotification[]) => void,
+    batchIntervalMs: number
+  ): void
+
+  /** Remove the native notification listener. */
+  removeCharacteristicNotificationListener(): void
+
+  /**
+   * Deliver scan results in batches to one native listener. Within a batch a
+   * device appears once, with its latest advertisement. Replaces any
+   * previous listener.
+   */
+  setScanResultsListener(
+    listener: (devices: BLEDevice[]) => void,
+    batchIntervalMs: number
+  ): void
+
+  /** Remove the native scan results listener. */
+  removeScanResultsListener(): void
+
+  /**
+   * Internal: how many JS listeners the event wrapper holds for a high-rate
+   * event, so native code can skip building payloads nobody receives while
+   * the batched listeners are in use.
+   */
+  setEventListenerCount(eventName: string, count: number): void
+
+  // ========== System devices ==========
+
+  /**
+   * Devices the OS reports as connected, including ones connected by other
+   * apps. iOS: retrieveConnectedPeripherals(withServices:) (serviceUUIDs is
+   * required and must not be empty). Android: BluetoothManager
+   * getConnectedDevices(GATT); Android cannot filter by service without
+   * connecting, so serviceUUIDs is ignored.
+   */
+  getSystemConnectedDevices(
+    serviceUUIDs: string[]
+  ): Promise<SystemConnectedDevice[]>
+
+  /**
+   * Show the system accessory picker and resolve with the device the user
+   * chose. Android 8+: CompanionDeviceManager.associate() (no location or
+   * scan permission needed). iOS 18+: AccessorySetupKit
+   * (ASAccessorySession.showPicker); the app must declare
+   * NSAccessorySetupKitSupports and NSAccessorySetupBluetoothServices (the
+   * config plugin's `accessorySetup` option). Rejects when the user cancels.
+   */
+  showDevicePicker(options: DevicePickerOptions): Promise<AssociatedDevice>
+
+  /** Devices previously granted through showDevicePicker(). */
+  getAssociatedDevices(): Promise<AssociatedDevice[]>
+
+  /** Revoke a device granted through showDevicePicker(). */
+  removeAssociatedDevice(associationId: string): Promise<void>
 
   // ========== Event Management ==========
 

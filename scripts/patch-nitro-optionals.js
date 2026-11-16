@@ -45,7 +45,7 @@ for (const file of fs.readdirSync(swiftDir).filter((name) => name.endsWith('.swi
   // Parameter names repeat across methods with different types, so resolve
   // them per method.
   source = source
-    .split(/(?=\n  @inline\(__always\)\n)/)
+    .split(/(?=\n {2}@inline\(__always\)\n)/)
     .map((chunk) => {
       const signature = chunk.match(/public final func \w+\(([^)]*)\)/)
       if (!signature) return chunk

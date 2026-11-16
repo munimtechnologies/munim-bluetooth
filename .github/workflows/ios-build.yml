@@ -70,16 +70,16 @@ jobs:
           - runner: xcode-27
             xcode: '27.0'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: ${{ matrix.xcode }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -95,15 +95,16 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
+      # Pods are only reused for an identical Podfile.lock and package-lock:
+      # a Pods/ directory restored from an older React Native makes
+      # `pod install` stop with "changed the version of the dependency".
       - name: Cache CocoaPods
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cocoapods/repos
             example/ios/Pods
-          key: ${{ runner.os }}-xcode${{ matrix.xcode }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode${{ matrix.xcode }}-pods-
+          key: ${{ runner.os }}-xcode${{ matrix.xcode }}-pods-${{ hashFiles('example/ios/Podfile.lock', 'package-lock.json') }}
 
       - name: Install Pods
         working-directory: example/ios

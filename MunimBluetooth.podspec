@@ -30,6 +30,10 @@ Pod::Spec.new do |s|
     Pod::UI.puts "[MunimBluetooth] Skipping Nitro autolinking – #{autolinking_script} not found"
   end
 
+  # AccessorySetupKit only exists on iOS 18+; weak-link it so the app still
+  # launches on older releases (showDevicePicker() then rejects).
+  s.ios.weak_frameworks = "AccessorySetupKit"
+
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'
   s.dependency 'NitroModules'

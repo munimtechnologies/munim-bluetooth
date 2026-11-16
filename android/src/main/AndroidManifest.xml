@@ -8,6 +8,8 @@
   <!-- Not required: a hard requirement filters the host app out of Play for
        devices without BLE. Check getCapabilities()/isBluetoothEnabled() at runtime. -->
   <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+  <!-- showDevicePicker() uses CompanionDeviceManager when present. -->
+  <uses-feature android:name="android.software.companion_device_setup" android:required="false" />
 
   <application>
     <service
