@@ -118,12 +118,6 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
         Self.stateLock.unlock()
     }
 
-    func emitDeviceFound(_ deviceData: [String: Any]) {
-        emitOnMain("deviceFound", body: deviceData)
-        emitOnMain("onDeviceFound", body: deviceData)
-        emitOnMain("scanResult", body: deviceData)
-    }
-
     func emit(_ eventName: String, body: [String: Any]) {
         Self.emitOrQueue(eventName, body: body)
     }
@@ -142,15 +136,11 @@ class MunimBluetoothEventEmitter: RCTEventEmitter {
         emitter?.emitOnMain(eventName, body: body)
     }
 
+    /// RCTEventEmitter.sendEvent is thread-safe (it enqueues a JS call), so
+    /// events go out from the calling queue. Hopping to the main queue per
+    /// event made every scan result and notification wait behind UI work.
     private func emitOnMain(_ eventName: String, body: [String: Any]) {
-        if Thread.isMainThread {
-            sendEvent(withName: eventName, body: body)
-            return
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            self?.sendEvent(withName: eventName, body: body)
-        }
+        sendEvent(withName: eventName, body: body)
     }
 
     // Must be called while stateLock is held.

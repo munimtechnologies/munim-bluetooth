@@ -150,62 +150,125 @@ function bonjourServiceNames(serviceType) {
 // Private service requestLocalNetworkPermission() publishes and browses.
 const LOCAL_NETWORK_PROBE_SERVICE = '_munimbluetooth._tcp';
 
-function withMunimBluetooth(config, options = {}) {
+// AccessorySetupKit (iOS 18+, showDevicePicker): the picker only matches
+// accessories whose service UUIDs / names the app declares up front.
+function normalizeAccessorySetup(value) {
+  if (value === undefined || value === null || value === false) {
+    return null;
+  }
+  if (typeof value !== 'object') {
+    throw new TypeError('accessorySetup must be an object or false');
+  }
+  const bluetoothServices = (value.bluetoothServices ?? []).map((uuid) =>
+    String(uuid).trim().toUpperCase()
+  );
+  const bluetoothNames = (value.bluetoothNames ?? []).map((name) =>
+    String(name)
+  );
+  if (bluetoothServices.length === 0) {
+    throw new TypeError(
+      'accessorySetup.bluetoothServices must list at least one service UUID'
+    );
+  }
+  return { bluetoothServices, bluetoothNames };
+}
+
+function mergeUnique(existing, additions) {
+  return Array.from(new Set([...(existing ?? []), ...additions]));
+}
+
+function applyInfoPlist(infoPlist, options = {}) {
   const bluetoothBackground =
     options.bluetoothBackground === undefined ? true : options.bluetoothBackground;
   const multipeerServiceTypes = normalizeMultipeerServiceTypes(
     options.multipeerServiceTypes
   );
+  const accessorySetup = normalizeAccessorySetup(options.accessorySetup);
+
+  infoPlist.NSBluetoothAlwaysUsageDescription =
+    options.bluetoothAlwaysUsageDescription ??
+    infoPlist.NSBluetoothAlwaysUsageDescription ??
+    'This app uses Bluetooth to scan for, connect to, and communicate with nearby devices.';
+  infoPlist.NSBluetoothPeripheralUsageDescription =
+    options.bluetoothPeripheralUsageDescription ??
+    infoPlist.NSBluetoothPeripheralUsageDescription ??
+    'This app uses Bluetooth peripheral mode to advertise services and exchange data with nearby devices.';
+
+  if (multipeerServiceTypes.length > 0) {
+    infoPlist.NSLocalNetworkUsageDescription =
+      options.localNetworkUsageDescription ??
+      infoPlist.NSLocalNetworkUsageDescription ??
+      'This app uses the local network to discover and communicate with nearby peer devices.';
+
+    const bonjourServices = new Set(infoPlist.NSBonjourServices ?? []);
+    multipeerServiceTypes
+      .flatMap(bonjourServiceNames)
+      .forEach((serviceName) => bonjourServices.add(serviceName));
+    bonjourServices.add(LOCAL_NETWORK_PROBE_SERVICE);
+    infoPlist.NSBonjourServices = Array.from(bonjourServices);
+  }
+
+  if (bluetoothBackground) {
+    const modes = new Set(infoPlist.UIBackgroundModes ?? []);
+    IOS_BACKGROUND_MODES.forEach((mode) => modes.add(mode));
+    infoPlist.UIBackgroundModes = Array.from(modes);
+  }
+
+  if (accessorySetup) {
+    infoPlist.NSAccessorySetupKitSupports = mergeUnique(
+      infoPlist.NSAccessorySetupKitSupports,
+      ['Bluetooth']
+    );
+    infoPlist.NSAccessorySetupBluetoothServices = mergeUnique(
+      infoPlist.NSAccessorySetupBluetoothServices,
+      accessorySetup.bluetoothServices
+    );
+    if (accessorySetup.bluetoothNames.length > 0) {
+      infoPlist.NSAccessorySetupBluetoothNames = mergeUnique(
+        infoPlist.NSAccessorySetupBluetoothNames,
+        accessorySetup.bluetoothNames
+      );
+    }
+  }
+
+  return infoPlist;
+}
+
+function applyAndroidManifest(manifest, options = {}) {
   const androidBluetoothPermissions = normalizeAndroidBluetoothPermissions(
     options.androidBluetoothPermissions
   );
+  androidBluetoothPermissions
+    .flatMap((permission) => ANDROID_BLUETOOTH_PERMISSIONS[permission])
+    .concat(ANDROID_SERVICE_PERMISSIONS)
+    .forEach((permission) => ensureAndroidPermission(manifest, permission));
+  ensureAndroidFeature(manifest, 'android.hardware.bluetooth', false);
+  ensureAndroidFeature(manifest, 'android.hardware.bluetooth_le', false);
+  // showDevicePicker(): CompanionDeviceManager. Optional so Play does not
+  // filter out devices without it; getCapabilities() reports support.
+  ensureAndroidFeature(manifest, 'android.software.companion_device_setup', false);
+  ensureBackgroundService(manifest);
+  return manifest;
+}
+
+function withMunimBluetooth(config, options = {}) {
+  // Validate eagerly so a bad option fails at prebuild, not at a mod.
+  normalizeMultipeerServiceTypes(options.multipeerServiceTypes);
+  normalizeAndroidBluetoothPermissions(options.androidBluetoothPermissions);
+  normalizeAccessorySetup(options.accessorySetup);
 
   config = withInfoPlist(config, (pluginConfig) => {
-    const infoPlist = pluginConfig.modResults;
-    infoPlist.NSBluetoothAlwaysUsageDescription =
-      options.bluetoothAlwaysUsageDescription ??
-      infoPlist.NSBluetoothAlwaysUsageDescription ??
-      'This app uses Bluetooth to scan for, connect to, and communicate with nearby devices.';
-    infoPlist.NSBluetoothPeripheralUsageDescription =
-      options.bluetoothPeripheralUsageDescription ??
-      infoPlist.NSBluetoothPeripheralUsageDescription ??
-      'This app uses Bluetooth peripheral mode to advertise services and exchange data with nearby devices.';
-
-    if (multipeerServiceTypes.length > 0) {
-      infoPlist.NSLocalNetworkUsageDescription =
-        options.localNetworkUsageDescription ??
-        infoPlist.NSLocalNetworkUsageDescription ??
-        'This app uses the local network to discover and communicate with nearby peer devices.';
-
-      const bonjourServices = new Set(infoPlist.NSBonjourServices ?? []);
-      multipeerServiceTypes
-        .flatMap(bonjourServiceNames)
-        .forEach((serviceName) => bonjourServices.add(serviceName));
-      bonjourServices.add(LOCAL_NETWORK_PROBE_SERVICE);
-      infoPlist.NSBonjourServices = Array.from(bonjourServices);
-    }
-
-    if (bluetoothBackground) {
-      const modes = new Set(infoPlist.UIBackgroundModes ?? []);
-      IOS_BACKGROUND_MODES.forEach((mode) => modes.add(mode));
-      infoPlist.UIBackgroundModes = Array.from(modes);
-    }
-
+    applyInfoPlist(pluginConfig.modResults, options);
     return pluginConfig;
   });
 
   return withAndroidManifest(config, (pluginConfig) => {
-    const manifest = pluginConfig.modResults.manifest;
-    androidBluetoothPermissions
-      .flatMap((permission) => ANDROID_BLUETOOTH_PERMISSIONS[permission])
-      .concat(ANDROID_SERVICE_PERMISSIONS)
-      .forEach((permission) => ensureAndroidPermission(manifest, permission));
-    ensureAndroidFeature(manifest, 'android.hardware.bluetooth', false);
-    ensureAndroidFeature(manifest, 'android.hardware.bluetooth_le', false);
-    ensureBackgroundService(manifest);
+    applyAndroidManifest(pluginConfig.modResults.manifest, options);
     return pluginConfig;
   });
 }
 
 module.exports = withMunimBluetooth;
 module.exports.default = withMunimBluetooth;
+module.exports.applyInfoPlist = applyInfoPlist;
+module.exports.applyAndroidManifest = applyAndroidManifest;
