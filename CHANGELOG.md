@@ -1,3 +1,9 @@
+## [0.11.1](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.11.0...v0.11.1) (2026-11-17)
+
+### 🛠️ Other changes
+
+* **deps:** patch vulnerable dev dependencies (addressable) ([#54](https://github.com/munimtechnologies/munim-bluetooth/issues/54)) ([da82059](https://github.com/munimtechnologies/munim-bluetooth/commit/da820593f53b2c12fd96373e8e2cc28c39fd247a))
+
 ## [0.11.0](https://github.com/munimtechnologies/munim-bluetooth/compare/v0.10.2...v0.11.0) (2026-11-16)
 
 ### ✨ Features
